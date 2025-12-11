@@ -692,6 +692,94 @@ export default function App() {
             </div>
           )}
 
+          {currentView === 'accounts' && (
+            <div>
+              <div className="flex justify-between mb-6">
+                <h2 className={`text-2xl font-bold ${txt}`}>الحسابات</h2>
+                <button onClick={() => { setModalType('addAcc'); setShowModal(true); }} className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl"><Plus className="w-5 h-5" />إضافة</button>
+              </div>
+              {accounts.length === 0 ? <div className={`${card} p-12 rounded-xl border text-center`}><Users className={`w-16 h-16 mx-auto mb-4 ${sub}`} /><p className={sub}>لا توجد حسابات</p></div> : (
+                <div className="space-y-3">
+                  {accounts.map(a => (
+                    <div key={a.id} className={`${card} p-4 rounded-xl border`}>
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`text-xs px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>{a.id}</span>
+                            <h3 className={`font-bold ${txt}`}>{a.name}</h3>
+                          </div>
+                          <p className={`text-sm ${sub}`}>{a.description}</p>
+                          <div className={`grid md:grid-cols-3 gap-2 text-sm mt-2`}>
+                            <div><span className={sub}>الرابط: </span><a href={a.loginUrl} target="_blank" rel="noreferrer" className="text-blue-500">{a.loginUrl}</a></div>
+                            <div><span className={sub}>المستخدم: </span><span className="font-mono text-black">{a.username}</span></div>
+                            <div><span className={sub}>كلمة المرور: </span><span className="font-mono text-black">{a.password}</span></div>
+                          </div>
+                          <div className={`flex gap-3 text-xs ${sub} mt-2`}>
+                            <span>الاشتراك: {a.subscriptionDate}</span>
+                            <span className="text-green-500 font-bold">{a.daysRemaining} يوم</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Btn onClick={() => { setEditingItem({ ...a }); setModalType('editAcc'); setShowModal(true); }} icon={Pencil} color="bg-blue-600" title="تعديل" />
+                          <Btn onClick={() => { setSelectedItem(a); setModalType('delAcc'); setShowModal(true); }} icon={Trash2} color="bg-red-600" title="حذف" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentView === 'users' && (
+            <div>
+              <div className="flex justify-between mb-6">
+                <h2 className={`text-2xl font-bold ${txt}`}>المستخدمين</h2>
+                <button onClick={() => { setModalType('addUser'); setShowModal(true); }} className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl"><Plus className="w-5 h-5" />إضافة</button>
+              </div>
+              <div className="space-y-3">
+                {users.map(u => (
+                  <div key={u.id} className={`${card} p-4 rounded-xl border`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">{u.username.charAt(0)}</div>
+                        <div><h3 className={`font-bold ${txt}`}>{u.username}</h3><p className={`text-sm ${sub}`}>{u.role === 'owner' ? 'مالك' : 'مستخدم'}</p></div>
+                        <span className={`text-xs px-2 py-0.5 rounded ${u.active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{u.active !== false ? 'نشط' : 'معطل'}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Btn onClick={() => { setEditingItem({ ...u }); setModalType('editUser'); setShowModal(true); }} icon={Pencil} color="bg-blue-600" title="تعديل" />
+                        <Btn onClick={() => { setSelectedItem(u); setModalType('delUser'); setShowModal(true); }} icon={Trash2} color="bg-red-600" title="حذف" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {currentView === 'audit' && (
+            <div>
+              <h2 className={`text-2xl font-bold mb-6 ${txt}`}>السجل</h2>
+              <div className="mb-6"><h3 className={`font-bold mb-3 ${txt}`}>الدخول</h3>
+                <div className={`${card} rounded-xl border overflow-hidden`}><table className="w-full"><thead className={darkMode ? 'bg-gray-700' : 'bg-gray-100'}><tr><th className={`p-3 text-right ${txt}`}>المستخدم</th><th className={`p-3 text-right ${txt}`}>الإجراء</th><th className={`p-3 text-right ${txt}`}>الوقت</th></tr></thead><tbody>{loginLog.slice(0, 10).map((l, i) => <tr key={l.id} className={i % 2 === 0 ? (darkMode ? 'bg-gray-800/50' : 'bg-gray-50') : ''}><td className={`p-3 ${txt}`}>{l.user}</td><td className="p-3"><span className={`px-2 py-1 rounded text-xs ${l.action === 'دخول' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{l.action}</span></td><td className={`p-3 text-sm ${sub}`}>{new Date(l.timestamp).toLocaleString('ar-SA')}</td></tr>)}</tbody></table></div>
+              </div>
+              <div><h3 className={`font-bold mb-3 ${txt}`}>العمليات</h3>
+                <div className={`${card} rounded-xl border overflow-hidden`}><table className="w-full"><thead className={darkMode ? 'bg-gray-700' : 'bg-gray-100'}><tr><th className={`p-3 text-right ${txt}`}>الوقت</th><th className={`p-3 text-right ${txt}`}>المستخدم</th><th className={`p-3 text-right ${txt}`}>الإجراء</th><th className={`p-3 text-right ${txt}`}>الوصف</th></tr></thead><tbody>{auditLog.map((l, i) => <tr key={l.id} className={i % 2 === 0 ? (darkMode ? 'bg-gray-800/50' : 'bg-gray-50') : ''}><td className={`p-3 text-sm ${sub}`}>{new Date(l.timestamp).toLocaleString('ar-SA')}</td><td className={`p-3 ${txt}`}>{l.user}</td><td className="p-3"><span className={`px-2 py-1 rounded text-xs ${darkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'}`}>{l.action}</span></td><td className={`p-3 text-sm ${sub}`}>{l.description}</td></tr>)}</tbody></table></div>
+              </div>
+            </div>
+          )}
+
+          <Footer />
+        </div>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className={`${card} p-6 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border`}>
+            {modalType === 'delExp' && <><h3 className={`text-xl font-bold mb-4 ${txt}`}>حذف مصروف</h3><p className={`mb-6 ${sub}`}>حذف "{selectedItem?.name}"؟</p><div className="flex gap-3 justify-end"><button onClick={() => setShowModal(false)} className={`px-4 py-2 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}>إلغاء</button><button onClick={() => delExpense(selectedItem)} className="px-4 py-2 bg-red-600 text-white rounded-xl">حذف</button></div></>}
+            {modalType === 'delTask' && <><h3 className={`text-xl font-bold mb-4 ${txt}`}>حذف مهمة</h3><p className={`mb-6 ${sub}`}>حذف "{selectedItem?.title}"؟</p><div className="flex gap-3 justify-end"><button onClick={() => setShowModal(false)} className={`px-4 py-2 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}>إلغاء</button><button onClick={() => delTask(selectedItem)} className="px-4 py-2 bg-red-600 text-white rounded-xl">حذف</button></div></>}
+            {modalType === 'delAcc' && <><h3 className={`text-xl font-bold mb-4 ${txt}`}>حذف حساب</h3><p className={`mb-6 ${sub}`}>حذف "{selectedItem?.name}"؟</p><div className="flex gap-
+
           {currentView === 'tasks' && (
             <div>
               <div className="flex justify-between mb-6">
