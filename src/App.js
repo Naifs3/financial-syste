@@ -1387,7 +1387,7 @@ export default function App() {
                               }} />
                             </label>
                             <button onClick={() => {
-                              if (confirm('هل تريد حذف هذا المجلد؟')) {
+                              if (window.confirm('هل تريد حذف هذا المجلد؟')) {
                                 const newFolders = selectedProject.folders.filter((_, i) => i !== fi);
                                 const np = projects.map(p => p.id === selectedProject.id ? { ...p, folders: newFolders } : p);
                                 setProjects(np); setSelectedProject({ ...selectedProject, folders: newFolders }); save({ projects: np });
