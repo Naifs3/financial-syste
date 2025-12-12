@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
-import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, ChevronLeft, ChevronDown, ChevronUp, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, CreditCard, TrendingUp, DollarSign, Wallet, FolderPlus, AlertTriangle, Image, Globe, Type } from 'lucide-react';
+import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, ChevronLeft, ChevronDown, ChevronUp, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, CreditCard, TrendingUp, DollarSign, Wallet, FolderPlus, AlertTriangle, Image, Map, Type, Search } from 'lucide-react';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDpzPCma5c4Tuxd5htRHOvm4aYLRbj8Qkg",
@@ -14,19 +14,23 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const APP_VERSION = "4.2.0";
+const APP_VERSION = "4.3.0";
+
+const formatNumber = (num) => {
+  return new Intl.NumberFormat('en-US').format(num);
+};
+
+const SAR = () => <span style={{ fontFamily: 'Arial' }}>&#x0631;&#x002E;&#x0633;</span>;
 
 const versionHistory = [
-  { version: "4.2.0", date: "2024-12-14", changes: ["إصلاح الوقت والعبارات التشجيعية", "خريطة تفاعلية مع دبوس", "تحكم بأحجام الخط", "تحسينات الواجهة"] },
-  { version: "4.1.0", date: "2024-12-14", changes: ["ترحيب ديناميكي", "سجل الدفعات", "بطاقات إحصائيات"] },
-  { version: "4.0.0", date: "2024-12-13", changes: ["نظام صلاحيات متقدم", "تخصيص الألوان"] },
+  { version: "4.3.0", date: "2024-12-14", changes: ["خريطة تفاعلية مع بحث", "تحسين عرض البيانات", "إزالة الفقاعات", "بطاقات المستخدمين"] },
+  { version: "4.2.0", date: "2024-12-14", changes: ["إصلاح الوقت والعبارات", "تحكم بأحجام الخط"] },
+  { version: "4.1.0", date: "2024-12-14", changes: ["ترحيب ديناميكي", "سجل الدفعات"] },
 ];
 
 const quotes = [
   "النجاح يبدأ بخطوة 🚀", "استثمر وقتك بحكمة ⏰", "التخطيط المالي مفتاح النجاح 💰", "كل يوم فرصة جديدة 🌟",
   "الإصرار يصنع المستحيل 💪", "فكر كبيراً وابدأ صغيراً 🎯", "المثابرة طريق التميز ⭐", "النظام أساس النجاح 📊",
-  "استثمر في نفسك أولاً 📚", "الجودة قبل الكمية ✅", "خطط اليوم لغد أفضل 📅", "العمل الجاد يؤتي ثماره 🌱",
-  "كن إيجابياً دائماً 😊", "النجاح رحلة وليس وجهة 🛤️", "تعلم من كل تجربة 🧠", "الوقت أثمن الموارد ⌛"
 ];
 
 const getGreeting = (username, hour) => {
@@ -62,42 +66,72 @@ const FinancialPattern = () => (
         <text x="250" y="150" fontSize="40" fill="currentColor" transform="rotate(18 250 150)">¥</text>
         <text x="60" y="200" fontSize="38" fill="currentColor" transform="rotate(30 60 200)">ر.س</text>
         <text x="350" y="220" fontSize="50" fill="currentColor" transform="rotate(-20 350 220)">$</text>
-        <text x="120" y="280" fontSize="46" fill="currentColor" transform="rotate(12 120 280)">€</text>
-        <text x="280" y="320" fontSize="42" fill="currentColor" transform="rotate(-35 280 320)">£</text>
       </pattern>
     </defs>
     <rect width="100%" height="100%" fill="url(#fin-pattern)" />
   </svg>
 );
 
-const MapPicker = ({ value, onChange, onClose, darkMode }) => {
+const MapPicker = ({ onSelect, onClose, darkMode }) => {
   const [search, setSearch] = useState('');
-  const [position, setPosition] = useState({ lat: 21.4858, lng: 39.1925 });
-  
-  const handleMapClick = () => {
-    const url = `https://www.google.com/maps?q=${position.lat},${position.lng}`;
-    onChange(url, `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`);
-    onClose();
+  const [searching, setSearching] = useState(false);
+  const [position, setPosition] = useState({ lat: 24.7136, lng: 46.6753 });
+  const [locationName, setLocationName] = useState('الرياض');
+  const mapRef = useRef(null);
+
+  const searchLocation = async () => {
+    if (!search.trim()) return;
+    setSearching(true);
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(search)}&limit=1`);
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const result = data[0];
+        setPosition({ lat: parseFloat(result.lat), lng: parseFloat(result.lon) });
+        setLocationName(result.display_name.split(',')[0]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    }
+    setSearching(false);
+  };
+
+  const handleConfirm = () => {
+    const mapUrl = `https://www.google.com/maps?q=${position.lat},${position.lng}`;
+    onSelect(mapUrl, locationName, `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
-      <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl w-full max-w-2xl overflow-hidden`}>
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4">
+      <div className={`${darkMode ? 'bg-gray-900' : 'bg-white'} rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl`}>
         <div className={`p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between items-center`}>
-          <h3 className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>تحديد الموقع على الخريطة</h3>
-          <button onClick={onClose} className={darkMode ? 'text-gray-400' : 'text-gray-500'}><X className="w-5 h-5" /></button>
+          <h3 className={`font-bold text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>تحديد الموقع</h3>
+          <button onClick={onClose} className={`p-1 rounded-lg ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}><X className="w-5 h-5" /></button>
         </div>
+        
         <div className="p-4">
-          <input 
-            type="text" 
-            placeholder="ابحث عن موقع..." 
-            value={search} 
-            onChange={e => setSearch(e.target.value)}
-            className={`w-full p-3 rounded-xl border mb-4 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-          />
-          <div className="relative h-64 bg-gray-200 rounded-xl overflow-hidden cursor-pointer" onClick={handleMapClick}>
+          <div className="flex gap-2 mb-4">
+            <input 
+              type="text" 
+              placeholder="ابحث عن موقع (مثال: برج المملكة، الرياض)" 
+              value={search} 
+              onChange={e => setSearch(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && searchLocation()}
+              className={`flex-1 p-3 rounded-xl border text-sm ${darkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'}`}
+            />
+            <button 
+              onClick={searchLocation} 
+              disabled={searching}
+              className={`px-4 rounded-xl ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white flex items-center gap-2`}
+            >
+              {searching ? <Loader className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            </button>
+          </div>
+          
+          <div className="relative rounded-xl overflow-hidden border-2 border-gray-300" style={{ height: '300px' }}>
             <iframe
-              src={`https://maps.google.com/maps?q=${position.lat},${position.lng}&t=k&z=15&output=embed`}
+              ref={mapRef}
+              src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${position.lat},${position.lng}&zoom=15&maptype=roadmap&language=ar`}
               width="100%"
               height="100%"
               style={{ border: 0 }}
@@ -105,14 +139,22 @@ const MapPicker = ({ value, onChange, onClose, darkMode }) => {
               loading="lazy"
             />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <MapPin className="w-10 h-10 text-red-500 drop-shadow-lg" />
+              <div className="flex flex-col items-center">
+                <MapPin className="w-10 h-10 text-red-500 drop-shadow-lg" style={{ marginBottom: '-8px' }} />
+                <div className="w-2 h-2 bg-red-500 rounded-full shadow-lg" />
+              </div>
             </div>
           </div>
-          <p className={`text-xs mt-2 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>اضغط على الخريطة لتحديد الموقع</p>
+          
+          <div className={`mt-3 p-3 rounded-xl text-sm ${darkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-600'}`}>
+            <p><strong>الموقع:</strong> {locationName}</p>
+            <p><strong>الإحداثيات:</strong> {position.lat.toFixed(6)}, {position.lng.toFixed(6)}</p>
+          </div>
         </div>
+
         <div className={`p-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex gap-3 justify-end`}>
-          <button onClick={onClose} className={`px-4 py-2 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200'}`}>إلغاء</button>
-          <button onClick={handleMapClick} className="px-4 py-2 bg-blue-500 text-white rounded-xl">تأكيد الموقع</button>
+          <button onClick={onClose} className={`px-5 py-2.5 rounded-xl text-sm ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}>إلغاء</button>
+          <button onClick={handleConfirm} className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm">تأكيد الموقع</button>
         </div>
       </div>
     </div>
@@ -177,9 +219,9 @@ export default function App() {
   const [archivedProjects, setArchivedProjects] = useState([]);
   const [loginLog, setLoginLog] = useState([]);
 
-  const emptyExpense = { name: '', amount: '', currency: 'ر.س', dueDate: '', type: 'شهري', reason: '', status: 'قيد الانتظار', location: '', mapUrl: '' };
-  const emptyTask = { title: '', description: '', dueDate: '', assignedTo: '', priority: 'متوسطة', status: 'قيد الانتظار', projectId: '', sectionId: '', location: '', mapUrl: '' };
-  const emptyProject = { name: '', description: '', client: '', location: '', phone: '', startDate: '', endDate: '', budget: '', status: 'جاري', mapUrl: '', files: { images: [], documents: [], others: [] } };
+  const emptyExpense = { name: '', amount: '', currency: 'ر.س', dueDate: '', type: 'شهري', reason: '', status: 'قيد الانتظار', location: '', mapUrl: '', coordinates: '' };
+  const emptyTask = { title: '', description: '', dueDate: '', assignedTo: '', priority: 'متوسطة', status: 'قيد الانتظار', projectId: '', sectionId: '', location: '', mapUrl: '', coordinates: '' };
+  const emptyProject = { name: '', description: '', client: '', location: '', phone: '', startDate: '', endDate: '', budget: '', status: 'جاري', mapUrl: '', coordinates: '', files: { images: [], documents: [], others: [] } };
   const emptyAccount = { name: '', description: '', loginUrl: '', username: '', password: '', subscriptionDate: '', daysRemaining: 365 };
   const emptyUser = { username: '', password: '', role: 'member', active: true };
   const emptySection = { name: '', color: 'blue' };
@@ -190,7 +232,6 @@ export default function App() {
   const [newAccount, setNewAccount] = useState(emptyAccount);
   const [newUser, setNewUser] = useState(emptyUser);
   const [newSection, setNewSection] = useState(emptySection);
-
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -285,6 +326,7 @@ export default function App() {
     }
     setShowAuditPanel(false);
   };
+
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -465,13 +507,13 @@ export default function App() {
     setShowMapPicker(true);
   };
 
-  const handleMapSelect = (url, location) => {
-    if (mapPickerTarget === 'newExpense') setNewExpense({ ...newExpense, mapUrl: url, location });
-    else if (mapPickerTarget === 'editExpense') setEditingItem({ ...editingItem, mapUrl: url, location });
-    else if (mapPickerTarget === 'newTask') setNewTask({ ...newTask, mapUrl: url, location });
-    else if (mapPickerTarget === 'editTask') setEditingItem({ ...editingItem, mapUrl: url, location });
-    else if (mapPickerTarget === 'newProject') setNewProject({ ...newProject, mapUrl: url, location });
-    else if (mapPickerTarget === 'editProject') setEditingItem({ ...editingItem, mapUrl: url, location });
+  const handleMapSelect = (url, location, coordinates) => {
+    if (mapPickerTarget === 'newExpense') setNewExpense({ ...newExpense, mapUrl: url, location, coordinates });
+    else if (mapPickerTarget === 'editExpense') setEditingItem({ ...editingItem, mapUrl: url, location, coordinates });
+    else if (mapPickerTarget === 'newTask') setNewTask({ ...newTask, mapUrl: url, location, coordinates });
+    else if (mapPickerTarget === 'editTask') setEditingItem({ ...editingItem, mapUrl: url, location, coordinates });
+    else if (mapPickerTarget === 'newProject') setNewProject({ ...newProject, mapUrl: url, location, coordinates });
+    else if (mapPickerTarget === 'editProject') setEditingItem({ ...editingItem, mapUrl: url, location, coordinates });
     setShowMapPicker(false);
   };
 
@@ -483,7 +525,6 @@ export default function App() {
   const txt = darkMode ? 'text-white' : 'text-gray-900';
   const txtMd = darkMode ? 'text-gray-200' : 'text-gray-700';
   const txtSm = darkMode ? 'text-gray-400' : 'text-gray-500';
-  const scrollbar = darkMode ? '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-800 [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full' : '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full';
 
   const totalArchived = (archivedExpenses?.length || 0) + (archivedTasks?.length || 0) + (archivedAccounts?.length || 0) + (archivedProjects?.length || 0);
   const urgentExpenses = expenses.filter(e => e.status !== 'مدفوع' && e.type !== 'مرة واحدة' && calcDays(e.dueDate) <= 15 && calcDays(e.dueDate) !== null);
@@ -493,8 +534,9 @@ export default function App() {
   const yearlyExpenses = expenses.filter(e => e.type === 'سنوي').reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
   const onceExpenses = expenses.filter(e => e.type === 'مرة واحدة').reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
 
-  const Chip = ({ children, color }) => (
-    <span className={`text-xs px-2 py-1 rounded-full ${color || (darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600')}`}>{children}</span>
+  const Label = ({ children }) => <span className={`text-xs ${txtSm}`}>{children}</span>;
+  const Priority = ({ level }) => (
+    <span className={`text-xs px-2 py-0.5 rounded ${level === 'عالية' ? 'bg-red-500 text-white' : level === 'متوسطة' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'}`}>{level}</span>
   );
 
   const IconBtn = ({ onClick, icon: Icon, title, disabled }) => (
@@ -503,15 +545,18 @@ export default function App() {
     </button>
   );
 
+  const hideScrollbar = { scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' };
+  const hideScrollbarClass = '[&::-webkit-scrollbar]:hidden';
+
   if (loading) return <div className={`min-h-screen ${bg} flex items-center justify-center`} dir="rtl"><Loader className="w-12 h-12 text-blue-500 animate-spin" /></div>;
 
 
   if (!isLoggedIn) return (
-    <div className={`min-h-screen ${bg} flex items-center justify-center p-4 relative`} dir="rtl">
+    <div className={`min-h-screen ${bg} flex items-center justify-center p-4 relative overflow-hidden`} style={hideScrollbar} dir="rtl">
       <FinancialPattern />
       <div className={`${card} p-8 rounded-2xl shadow-2xl w-full max-w-md border relative z-10`}>
         <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-800 text-2xl font-bold">RKZ</div>
+          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center text-gray-700 text-2xl font-bold" style={{ backgroundColor: '#dcdddc' }}>RKZ</div>
           <h1 className={`text-xl font-bold ${txt}`}>نظام الإدارة المالية</h1>
           <p className={`text-sm ${txtSm}`}>ركائز الأولى للتعمير</p>
         </div>
@@ -520,13 +565,13 @@ export default function App() {
           <input type="password" name="password" placeholder="كلمة المرور" className={`w-full p-3 border rounded-xl text-sm ${inp}`} required />
           <button className={`w-full bg-gradient-to-r ${accent.gradient} text-white p-3 rounded-xl font-bold text-sm`}>دخول</button>
         </form>
-        <div className="text-center mt-6"><button onClick={() => setShowVersions(true)} className={`text-xs ${txtSm}`}>v{APP_VERSION}</button></div>
+        <div className="text-center mt-6"><button onClick={() => setShowVersions(true)} className="text-xs text-gray-400">v{APP_VERSION}</button></div>
       </div>
       {showVersions && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowVersions(false)}>
-          <div className={`${card} p-6 rounded-2xl max-w-md w-full border ${scrollbar}`} onClick={e => e.stopPropagation()}>
+          <div className={`${card} p-6 rounded-2xl max-w-md w-full border`} onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4"><h3 className={`text-lg font-bold ${txt}`}>سجل النسخ</h3><button onClick={() => setShowVersions(false)} className={txtSm}><X className="w-5 h-5" /></button></div>
-            <div className={`space-y-3 max-h-80 overflow-y-auto ${scrollbar}`}>{versionHistory.map((v, i) => (<div key={v.version} className={`p-3 rounded-xl ${i === 0 ? `${accent.color}/20` : darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}><div className="flex justify-between mb-2"><span className={`font-bold text-sm ${txt}`}>v{v.version}</span><span className={`text-xs ${txtSm}`}>{v.date}</span></div><ul className={`text-xs ${txtSm} space-y-1`}>{v.changes.map((c, j) => <li key={j}>• {c}</li>)}</ul></div>))}</div>
+            <div className={`space-y-3 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>{versionHistory.map((v, i) => (<div key={v.version} className={`p-3 rounded-xl ${i === 0 ? `${accent.color}/20` : darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}><div className="flex justify-between mb-2"><span className={`font-bold text-sm ${txt}`}>v{v.version}</span><span className={`text-xs ${txtSm}`}>{v.date}</span></div><ul className={`text-xs ${txtSm} space-y-1`}>{v.changes.map((c, j) => <li key={j}>• {c}</li>)}</ul></div>))}</div>
           </div>
         </div>
       )}
@@ -536,18 +581,19 @@ export default function App() {
   const greeting = getGreeting(currentUser.username, currentTime.getHours());
 
   return (
-    <div className={`min-h-screen ${bg} relative`} style={{ fontSize: `${fontSize}px` }} dir="rtl">
+    <div className={`min-h-screen ${bg} relative overflow-x-hidden`} style={{ fontSize: `${fontSize}px`, ...hideScrollbar }} dir="rtl">
+      <style>{`*::-webkit-scrollbar { display: none; } * { scrollbar-width: none; -ms-overflow-style: none; } input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type=number] { -moz-appearance: textfield; }`}</style>
       <FinancialPattern />
       
-      {showMapPicker && <MapPicker darkMode={darkMode} onClose={() => setShowMapPicker(false)} onChange={handleMapSelect} />}
+      {showMapPicker && <MapPicker darkMode={darkMode} onClose={() => setShowMapPicker(false)} onSelect={handleMapSelect} />}
       
       <div className={`${card} border-b px-4 py-3 flex flex-wrap items-center justify-between sticky top-0 z-50 gap-3`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-800 font-bold text-xs">RKZ</div>
+          <button onClick={() => { setCurrentView('dashboard'); setSelectedProject(null); }} className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-700 font-bold text-xs" style={{ backgroundColor: '#dcdddc' }}>RKZ</button>
           <div>
             <h1 className={`font-bold ${txt}`}>نظام الإدارة المالية</h1>
             <p className={`text-xs ${txtSm}`}>ركائز الأولى للتعمير</p>
-            <p className={`text-xs ${txtSm}`}>{currentTime.toLocaleDateString('ar-SA')} | {currentTime.toLocaleTimeString('ar-SA')} | {quote}</p>
+            <p className={`text-xs ${txtSm}`}>{currentTime.toLocaleDateString('en-US')} | {currentTime.toLocaleTimeString('en-US', { hour12: false })} | {quote}</p>
           </div>
         </div>
         
@@ -556,7 +602,7 @@ export default function App() {
           <span className={`text-xs px-2 py-0.5 rounded ${currentUser.role === 'owner' ? 'bg-amber-500' : currentUser.role === 'manager' ? 'bg-blue-500' : 'bg-gray-500'} text-white`}>
             {currentUser.role === 'owner' ? 'صلاحية: المالك' : currentUser.role === 'manager' ? 'صلاحية: مدير' : 'صلاحية: عضو'}
           </span>
-          <span className={`text-xs ${txtSm}`}>({getSessionMinutes()} د)</span>
+          <span className={`text-xs ${txtSm}`}>({formatNumber(getSessionMinutes())} د)</span>
           
           <div className="relative" ref={auditRef}>
             <button onClick={() => { setShowAuditPanel(!showAuditPanel); setShowArchivePanel(false); setShowSettingsPanel(false); setNewNotifications(0); }} className={`p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
@@ -564,7 +610,7 @@ export default function App() {
               {newNotifications > 0 && <span className={`absolute -top-1 -right-1 w-4 h-4 ${accent.color} text-white text-xs rounded-full flex items-center justify-center`}>{newNotifications}</span>}
             </button>
             {showAuditPanel && (
-              <div className={`absolute left-0 top-12 w-80 ${card} rounded-xl shadow-2xl border z-50 max-h-80 overflow-y-auto ${scrollbar}`}>
+              <div className={`absolute left-0 top-12 w-80 ${card} rounded-xl shadow-2xl border z-50 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>
                 <div className={`p-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between`}>
                   <span className={`font-bold text-sm ${txt}`}>آخر العمليات</span>
                   <button onClick={() => { setCurrentView('audit'); setShowAuditPanel(false); }} className={`text-xs ${accent.text}`}>عرض الكل</button>
@@ -572,7 +618,7 @@ export default function App() {
                 <div className="p-2">{auditLog.slice(0, 8).map(l => (
                   <div key={l.id} onClick={() => navigateToItem(l)} className={`p-2 rounded-lg mb-1 cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
                     <p className={`text-xs ${txt}`}>{l.description}</p>
-                    <span className={`text-xs ${txtSm}`}>{new Date(l.timestamp).toLocaleString('ar-SA')}</span>
+                    <span className={`text-xs ${txtSm}`}>{new Date(l.timestamp).toLocaleString('en-US')}</span>
                   </div>
                 ))}</div>
               </div>
@@ -585,7 +631,7 @@ export default function App() {
               {archiveNotifications > 0 && <span className={`absolute -top-1 -right-1 w-4 h-4 ${accent.color} text-white text-xs rounded-full flex items-center justify-center`}>{archiveNotifications}</span>}
             </button>
             {showArchivePanel && (
-              <div className={`absolute left-0 top-12 w-64 ${card} rounded-xl shadow-2xl border z-50 ${scrollbar}`}>
+              <div className={`absolute left-0 top-12 w-64 ${card} rounded-xl shadow-2xl border z-50`}>
                 <div className={`p-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between`}>
                   <span className={`font-bold text-sm ${txt}`}>الأرشيف</span>
                   <button onClick={() => { setCurrentView('archive'); setShowArchivePanel(false); }} className={`text-xs ${accent.text}`}>عرض الكل</button>
@@ -594,7 +640,7 @@ export default function App() {
                   {[{ label: 'المصروفات', count: archivedExpenses?.length || 0 },{ label: 'المهام', count: archivedTasks?.length || 0 },{ label: 'المشاريع', count: archivedProjects?.length || 0 },{ label: 'الحسابات', count: archivedAccounts?.length || 0 }].map(item => (
                     <div key={item.label} onClick={() => { setCurrentView('archive'); setShowArchivePanel(false); }} className={`p-2 rounded-lg mb-1 flex justify-between cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
                       <span className={`text-xs ${txt}`}>{item.label}</span>
-                      <span className={`text-xs px-2 rounded-full ${item.count > 0 ? accent.color + ' text-white' : darkMode ? 'bg-gray-700' : 'bg-gray-200'} ${txtSm}`}>{item.count}</span>
+                      <span className={`text-xs ${txtSm}`}>{formatNumber(item.count)}</span>
                     </div>
                   ))}
                 </div>
@@ -607,7 +653,7 @@ export default function App() {
               <Settings className={`w-5 h-5 ${txtMd}`} />
             </button>
             {showSettingsPanel && (
-              <div className={`absolute left-0 top-12 w-72 ${card} rounded-xl shadow-2xl border z-50 p-4 max-h-96 overflow-y-auto ${scrollbar}`}>
+              <div className={`absolute left-0 top-12 w-72 ${card} rounded-xl shadow-2xl border z-50 p-4 max-h-96 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>
                 <h4 className={`font-bold text-sm mb-3 ${txt}`}>الإعدادات</h4>
                 
                 <div className="mb-4">
@@ -628,7 +674,7 @@ export default function App() {
                     <button onClick={() => setFontSize(f => Math.max(12, f - 2))} className={`w-8 h-8 rounded-lg flex items-center justify-center ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200'}`}>
                       <Type className="w-3 h-3" />
                     </button>
-                    <span className={`text-sm ${txt} flex-1 text-center`}>{fontSize}px</span>
+                    <span className={`text-sm ${txt} flex-1 text-center`}>{formatNumber(fontSize)}px</span>
                     <button onClick={() => setFontSize(f => Math.min(24, f + 2))} className={`w-8 h-8 rounded-lg flex items-center justify-center ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200'}`}>
                       <Type className="w-5 h-5" />
                     </button>
@@ -664,7 +710,7 @@ export default function App() {
           </nav>
         </div>
 
-        <div className="flex-1 p-4 relative z-10">
+        <div className={`flex-1 p-4 relative z-10 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>
           
           {currentView === 'dashboard' && (
             <div>
@@ -676,7 +722,7 @@ export default function App() {
                   { label: 'الحسابات', value: accounts.length, sub: 'حساب', gradient: 'from-orange-500 to-orange-600', view: 'accounts' }].map((k, i) => (
                   <button key={i} onClick={() => setCurrentView(k.view)} className={`bg-gradient-to-br ${k.gradient} p-3 rounded-xl text-white text-right`}>
                     <p className="text-xs opacity-80">{k.label}</p>
-                    <p className="text-2xl font-bold">{k.value}</p>
+                    <p className="text-2xl font-bold">{formatNumber(k.value)}</p>
                     <p className="text-xs opacity-70">{k.sub}</p>
                   </button>
                 ))}
@@ -695,9 +741,9 @@ export default function App() {
                         <div key={e.id} className="bg-red-500/10 border border-red-500/30 p-3 rounded-lg">
                           <div className="flex justify-between items-center">
                             <span className={`text-sm font-bold ${txt}`}>{e.name}</span>
-                            <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded">{d < 0 ? `متأخر ${Math.abs(d)} يوم` : `${d} يوم`}</span>
+                            <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded">{d < 0 ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم`}</span>
                           </div>
-                          <p className={`text-lg font-bold ${txt}`}>{e.amount} {e.currency}</p>
+                          <p className={`text-lg font-bold ${txt}`}>{formatNumber(e.amount)} <SAR /></p>
                         </div>
                       );
                     })}
@@ -705,9 +751,9 @@ export default function App() {
                       <div key={t.id} className="bg-orange-500/10 border border-orange-500/30 p-3 rounded-lg">
                         <div className="flex justify-between items-center">
                           <span className={`text-sm font-bold ${txt}`}>{t.title}</span>
-                          <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded">{t.priority}</span>
+                          <Priority level={t.priority} />
                         </div>
-                        <p className={`text-xs ${txtSm}`}>{t.assignedTo || 'بدون مسؤول'}</p>
+                        <p className={`text-xs ${txtSm}`}>المسؤول: {t.assignedTo || 'غير محدد'}</p>
                       </div>
                     ))}
                   </div>
@@ -722,8 +768,8 @@ export default function App() {
                       const d = calcDays(e.dueDate);
                       return (
                         <div key={e.id} className={`p-2 rounded-lg mb-2 ${d !== null && d < 0 ? 'bg-red-500/20' : d !== null && d < 7 ? 'bg-orange-500/20' : 'bg-green-500/20'}`}>
-                          <div className="flex justify-between"><span className={`text-xs ${txt}`}>{e.name}</span><span className={`text-xs font-bold ${txt}`}>{e.amount} ر.س</span></div>
-                          {d !== null && <span className={`text-xs ${txtSm}`}>{d < 0 ? `متأخر ${Math.abs(d)} يوم` : `${d} يوم`}</span>}
+                          <div className="flex justify-between"><span className={`text-xs ${txt}`}>{e.name}</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(e.amount)} <SAR /></span></div>
+                          {d !== null && <span className={`text-xs ${txtSm}`}>{d < 0 ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم`}</span>}
                         </div>
                       );
                     })}
@@ -734,7 +780,7 @@ export default function App() {
                     projects.filter(p => p.status === 'جاري').slice(0, 4).map(p => (
                       <div key={p.id} className={`p-2 rounded-lg mb-2 border ${darkMode ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
                         <div className="flex justify-between"><span className={`text-xs ${txt}`}>{p.name}</span><span className={`text-xs ${accent.color} text-white px-2 rounded`}>{p.status}</span></div>
-                        <span className={`text-xs ${txtSm}`}>{p.client || 'بدون عميل'}</span>
+                        <span className={`text-xs ${txtSm}`}>العميل: {p.client || 'غير محدد'}</span>
                       </div>
                     ))}
                 </div>
@@ -756,7 +802,7 @@ export default function App() {
                   { label: 'مرة واحدة', value: onceExpenses, icon: CreditCard, color: 'from-orange-500 to-orange-600' }].map((s, i) => (
                   <div key={i} className={`bg-gradient-to-br ${s.color} p-3 rounded-xl text-white`}>
                     <div className="flex items-center gap-2 mb-1"><s.icon className="w-4 h-4 opacity-80" /><span className="text-xs opacity-80">{s.label}</span></div>
-                    <p className="text-lg font-bold">{s.value.toLocaleString()} ر.س</p>
+                    <p className="text-lg font-bold">{formatNumber(s.value)} <SAR /></p>
                   </div>
                 ))}
               </div>
@@ -777,23 +823,20 @@ export default function App() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <h3 className={`font-bold ${txt}`}>{e.name}</h3>
-                              {e.status === 'مدفوع' && <Chip color="bg-green-500 text-white">مدفوع</Chip>}
+                              {e.status === 'مدفوع' && <span className="text-xs px-2 py-0.5 rounded bg-green-500 text-white">مدفوع</span>}
                             </div>
-                            <p className={`text-xl font-bold ${txt} mb-2`}>{e.amount} {e.currency}</p>
+                            <p className={`text-xl font-bold ${txt} mb-2`}>{formatNumber(e.amount)} <SAR /></p>
                             {e.reason && <p className={`text-xs ${txtSm} mb-2`}>{e.reason}</p>}
                             
-                            <div className="flex flex-wrap gap-2">
-                              <Chip>{e.type}</Chip>
-                              {e.dueDate && <Chip>الاستحقاق: {e.dueDate}</Chip>}
-                              {d !== null && <Chip color={d < 0 ? 'bg-red-500 text-white' : d < 7 ? 'bg-orange-500 text-white' : 'bg-green-500 text-white'}>{d < 0 ? `متأخر ${Math.abs(d)} يوم` : `${d} يوم متبقي`}</Chip>}
-                              <Chip>أنشئ بواسطة: {e.createdBy}</Chip>
-                              <Chip>{new Date(e.createdAt).toLocaleDateString('ar-SA')}</Chip>
-                              {e.location && <Chip><MapPin className="w-3 h-3 inline ml-1" />{e.location}</Chip>}
+                            <div className={`text-xs ${txtSm} space-y-1`}>
+                              <p>النوع: {e.type} {e.dueDate && `| الاستحقاق: ${e.dueDate}`} {d !== null && `| ${d < 0 ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم متبقي`}`}</p>
+                              <p>أنشئ بواسطة: {e.createdBy} | {new Date(e.createdAt).toLocaleDateString('en-US')}</p>
+                              {e.location && <p>الموقع: {e.location}</p>}
                             </div>
 
                             {e.mapUrl && (
                               <a href={e.mapUrl} target="_blank" rel="noreferrer" className={`text-xs ${accent.text} mt-2 inline-flex items-center gap-1`}>
-                                <Globe className="w-3 h-3" />فتح في الخريطة
+                                <Map className="w-3 h-3" />فتح في الخريطة
                               </a>
                             )}
                           </div>
@@ -814,8 +857,8 @@ export default function App() {
                             <div className="space-y-2">
                               {e.paymentHistory.map((p, i) => (
                                 <div key={i} className={`text-xs p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                                  <span className={txt}>{p.amount} ر.س</span>
-                                  <span className={`mr-2 ${txtSm}`}>- {new Date(p.date).toLocaleString('ar-SA')}</span>
+                                  <span className={txt}>{formatNumber(p.amount)} <SAR /></span>
+                                  <span className={`mr-2 ${txtSm}`}>- {new Date(p.date).toLocaleString('en-US')}</span>
                                   <span className={`mr-2 ${txtSm}`}>بواسطة: {p.paidBy}</span>
                                 </div>
                               ))}
@@ -850,7 +893,7 @@ export default function App() {
                   <button onClick={() => setProjectFilter(null)} className={`px-3 py-1.5 rounded-lg text-xs ${!projectFilter ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>الكل</button>
                   {projects.map(p => (
                     <button key={p.id} onClick={() => setProjectFilter(projectFilter === p.id ? null : p.id)} className={`px-3 py-1.5 rounded-lg text-xs ${projectFilter === p.id ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-                      {p.name} ({tasks.filter(t => t.projectId === p.id).length})
+                      {p.name} ({formatNumber(tasks.filter(t => t.projectId === p.id).length)})
                     </button>
                   ))}
                 </div>
@@ -872,24 +915,23 @@ export default function App() {
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <Priority level={t.priority} />
                               <h3 className={`font-bold ${txt}`}>{t.title}</h3>
-                              <Chip color={t.priority === 'عالية' ? 'bg-red-500 text-white' : t.priority === 'متوسطة' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'}>{t.priority}</Chip>
-                              {project && <Chip color={`${accent.color} text-white`}>{project.name}</Chip>}
-                              {section && <Chip>{section.name}</Chip>}
                             </div>
                             {t.description && <p className={`text-xs ${txtSm} mb-2`}>{t.description}</p>}
                             
-                            <div className="flex flex-wrap gap-2">
-                              {t.assignedTo && <Chip>المسؤول: {t.assignedTo}</Chip>}
-                              {t.dueDate && <Chip>التسليم: {t.dueDate}</Chip>}
-                              {d !== null && <Chip color={d < 0 ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}>{d < 0 ? `متأخر ${Math.abs(d)} يوم` : `${d} يوم`}</Chip>}
-                              <Chip>أنشئ بواسطة: {t.createdBy}</Chip>
-                              {t.location && <Chip><MapPin className="w-3 h-3 inline ml-1" />{t.location}</Chip>}
+                            <div className={`text-xs ${txtSm} space-y-1`}>
+                              {project && <p>المشروع: {project.name}</p>}
+                              {section && <p>القسم: {section.name}</p>}
+                              {t.assignedTo && <p>المسؤول: {t.assignedTo}</p>}
+                              {t.dueDate && <p>التسليم: {t.dueDate} {d !== null && `| ${d < 0 ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم`}`}</p>}
+                              <p>أنشئ بواسطة: {t.createdBy}</p>
+                              {t.location && <p>الموقع: {t.location}</p>}
                             </div>
 
                             {t.mapUrl && (
                               <a href={t.mapUrl} target="_blank" rel="noreferrer" className={`text-xs ${accent.text} mt-2 inline-flex items-center gap-1`}>
-                                <Globe className="w-3 h-3" />فتح في الخريطة
+                                <Map className="w-3 h-3" />فتح في الخريطة
                               </a>
                             )}
                           </div>
@@ -926,21 +968,17 @@ export default function App() {
                       <div key={p.id} onClick={() => setSelectedProject(p)} className={`${card} p-4 rounded-xl border cursor-pointer hover:shadow-lg transition-all`}>
                         <div className="flex justify-between items-start mb-2">
                           <h3 className={`font-bold ${txt}`}>{p.name}</h3>
-                          <Chip color={p.status === 'جاري' ? `${accent.color} text-white` : p.status === 'مكتمل' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}>{p.status}</Chip>
+                          <span className={`text-xs px-2 py-0.5 rounded ${p.status === 'جاري' ? `${accent.color} text-white` : p.status === 'مكتمل' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>{p.status}</span>
                         </div>
                         {p.description && <p className={`text-xs ${txtSm} mb-3 line-clamp-2`}>{p.description}</p>}
                         
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {p.client && <Chip><User className="w-3 h-3 inline ml-1" />{p.client}</Chip>}
-                          {p.phone && <Chip><Phone className="w-3 h-3 inline ml-1" />{p.phone}</Chip>}
-                          {p.budget && <Chip>💰 {p.budget} ر.س</Chip>}
-                          <Chip><CheckSquare className="w-3 h-3 inline ml-1" />{projectTasks.length} مهمة</Chip>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          <Chip>من: {p.startDate || '-'}</Chip>
-                          <Chip>إلى: {p.endDate || '-'}</Chip>
-                          <Chip>أنشئ بواسطة: {p.createdBy}</Chip>
+                        <div className={`text-xs ${txtSm} space-y-1`}>
+                          {p.client && <p>العميل: {p.client}</p>}
+                          {p.phone && <p>الهاتف: {p.phone}</p>}
+                          {p.budget && <p>الميزانية: {formatNumber(p.budget)} <SAR /></p>}
+                          <p>المهام: {formatNumber(projectTasks.length)}</p>
+                          <p>من: {p.startDate || '-'} | إلى: {p.endDate || '-'}</p>
+                          <p>أنشئ بواسطة: {p.createdBy}</p>
                         </div>
                       </div>
                     );
@@ -958,7 +996,7 @@ export default function App() {
                 <div className="flex justify-between items-start mb-4 flex-wrap gap-2">
                   <div>
                     <h2 className={`text-lg font-bold ${txt}`}>{selectedProject.name}</h2>
-                    <Chip color={selectedProject.status === 'جاري' ? `${accent.color} text-white` : 'bg-green-500 text-white'}>{selectedProject.status}</Chip>
+                    <span className={`text-xs px-2 py-0.5 rounded ${selectedProject.status === 'جاري' ? `${accent.color} text-white` : 'bg-green-500 text-white'}`}>{selectedProject.status}</span>
                   </div>
                   <div className="flex gap-1">
                     <IconBtn onClick={() => { setEditingItem({ ...selectedProject }); setModalType('editProject'); setShowModal(true); }} icon={Pencil} title="تعديل" />
@@ -968,19 +1006,18 @@ export default function App() {
 
                 {selectedProject.description && <p className={`text-xs ${txtSm} mb-4`}>{selectedProject.description}</p>}
 
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {selectedProject.client && <Chip><User className="w-3 h-3 inline ml-1" />العميل: {selectedProject.client}</Chip>}
-                  {selectedProject.phone && <Chip><Phone className="w-3 h-3 inline ml-1" />{selectedProject.phone}</Chip>}
-                  {selectedProject.location && <Chip><MapPin className="w-3 h-3 inline ml-1" />{selectedProject.location}</Chip>}
-                  {selectedProject.budget && <Chip>💰 الميزانية: {selectedProject.budget} ر.س</Chip>}
-                  <Chip>من: {selectedProject.startDate || '-'}</Chip>
-                  <Chip>إلى: {selectedProject.endDate || '-'}</Chip>
-                  <Chip>أنشئ بواسطة: {selectedProject.createdBy}</Chip>
+                <div className={`text-xs ${txtSm} space-y-1 mb-4`}>
+                  {selectedProject.client && <p>العميل: {selectedProject.client}</p>}
+                  {selectedProject.phone && <p>الهاتف: {selectedProject.phone}</p>}
+                  {selectedProject.location && <p>الموقع: {selectedProject.location}</p>}
+                  {selectedProject.budget && <p>الميزانية: {formatNumber(selectedProject.budget)} <SAR /></p>}
+                  <p>من: {selectedProject.startDate || '-'} | إلى: {selectedProject.endDate || '-'}</p>
+                  <p>أنشئ بواسطة: {selectedProject.createdBy}</p>
                 </div>
 
                 {selectedProject.mapUrl && (
                   <a href={selectedProject.mapUrl} target="_blank" rel="noreferrer" className={`text-xs ${accent.text} inline-flex items-center gap-1`}>
-                    <Globe className="w-3 h-3" />فتح في خرائط قوقل
+                    <Map className="w-3 h-3" />فتح في خرائط قوقل
                   </a>
                 )}
               </div>
@@ -990,22 +1027,22 @@ export default function App() {
                 <div className="grid md:grid-cols-3 gap-3">
                   <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                     <div className="flex items-center gap-2 mb-2"><Image className="w-4 h-4" /><span className={`text-xs font-bold ${txt}`}>الصور</span></div>
-                    <p className={`text-xs ${txtSm}`}>{selectedProject.files?.images?.length || 0} ملف</p>
+                    <p className={`text-xs ${txtSm}`}>{formatNumber(selectedProject.files?.images?.length || 0)} ملف</p>
                   </div>
                   <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                     <div className="flex items-center gap-2 mb-2"><FileText className="w-4 h-4" /><span className={`text-xs font-bold ${txt}`}>المستندات</span></div>
-                    <p className={`text-xs ${txtSm}`}>{selectedProject.files?.documents?.length || 0} ملف</p>
+                    <p className={`text-xs ${txtSm}`}>{formatNumber(selectedProject.files?.documents?.length || 0)} ملف</p>
                   </div>
                   <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                     <div className="flex items-center gap-2 mb-2"><FolderPlus className="w-4 h-4" /><span className={`text-xs font-bold ${txt}`}>ملفات أخرى</span></div>
-                    <p className={`text-xs ${txtSm}`}>{selectedProject.files?.others?.length || 0} ملف</p>
+                    <p className={`text-xs ${txtSm}`}>{formatNumber(selectedProject.files?.others?.length || 0)} ملف</p>
                   </div>
                 </div>
               </div>
 
               <div className={`${card} p-4 rounded-xl border`}>
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className={`font-bold text-sm ${txt}`}>مهام المشروع ({tasks.filter(t => t.projectId === selectedProject.id).length})</h3>
+                  <h3 className={`font-bold text-sm ${txt}`}>مهام المشروع ({formatNumber(tasks.filter(t => t.projectId === selectedProject.id).length)})</h3>
                   <button onClick={() => { setNewTask({ ...emptyTask, projectId: selectedProject.id }); setModalType('addTask'); setShowModal(true); }} className={`text-xs ${accent.text}`}><Plus className="w-4 h-4 inline" />إضافة مهمة</button>
                 </div>
                 {tasks.filter(t => t.projectId === selectedProject.id).length === 0 ? (
@@ -1015,8 +1052,10 @@ export default function App() {
                     {tasks.filter(t => t.projectId === selectedProject.id).map(t => (
                       <div key={t.id} className={`p-3 rounded-lg border ${darkMode ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-50 border-gray-200'} flex justify-between items-center`}>
                         <div>
-                          <span className={`text-xs ${txt}`}>{t.title}</span>
-                          <Chip color={t.priority === 'عالية' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}>{t.priority}</Chip>
+                          <div className="flex items-center gap-2">
+                            <Priority level={t.priority} />
+                            <span className={`text-xs ${txt}`}>{t.title}</span>
+                          </div>
                         </div>
                         <span className={`text-xs ${txtSm}`}>{t.dueDate}</span>
                       </div>
@@ -1043,13 +1082,13 @@ export default function App() {
                       <div className="flex-1">
                         <h3 className={`font-bold ${txt} mb-2`}>{a.name}</h3>
                         {a.description && <p className={`text-xs ${txtSm} mb-2`}>{a.description}</p>}
-                        <div className="flex flex-wrap gap-2">
-                          {a.loginUrl && <Chip><a href={a.loginUrl} target="_blank" rel="noreferrer" className={accent.text}>{a.loginUrl}</a></Chip>}
-                          <Chip>المستخدم: {a.username}</Chip>
-                          <Chip>كلمة المرور: {a.password}</Chip>
-                          {a.subscriptionDate && <Chip>الاشتراك: {a.subscriptionDate}</Chip>}
-                          <Chip color="bg-green-500 text-white">{a.daysRemaining} يوم</Chip>
-                          <Chip>أنشئ بواسطة: {a.createdBy}</Chip>
+                        <div className={`text-xs ${txtSm} space-y-1`}>
+                          {a.loginUrl && <p>الرابط: <a href={a.loginUrl} target="_blank" rel="noreferrer" className={accent.text}>{a.loginUrl}</a></p>}
+                          <p>المستخدم: {a.username}</p>
+                          <p>كلمة المرور: {a.password}</p>
+                          {a.subscriptionDate && <p>الاشتراك: {a.subscriptionDate}</p>}
+                          <p>الأيام المتبقية: {formatNumber(a.daysRemaining)} يوم</p>
+                          <p>أنشئ بواسطة: {a.createdBy}</p>
                         </div>
                       </div>
                       <div className="flex gap-1">
@@ -1069,25 +1108,19 @@ export default function App() {
                 <h2 className={`text-lg font-bold ${txt}`}>المستخدمين</h2>
                 <button onClick={() => { setNewUser(emptyUser); setModalType('addUser'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}><Plus className="w-4 h-4" />إضافة</button>
               </div>
-              <div className="space-y-3">{users.map(u => (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">{users.map(u => (
                 <div key={u.id} className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex items-center justify-between flex-wrap gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-800 font-bold text-sm">{u.username.charAt(0)}</div>
-                      <div>
-                        <h3 className={`font-bold text-sm ${txt}`}>{u.username}</h3>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Chip color={u.role === 'owner' ? 'bg-amber-500 text-white' : u.role === 'manager' ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white'}>
-                            {u.role === 'owner' ? 'صلاحية: المالك' : u.role === 'manager' ? 'صلاحية: مدير' : 'صلاحية: عضو'}
-                          </Chip>
-                          <Chip color={u.active !== false ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}>{u.active !== false ? 'نشط' : 'معطل'}</Chip>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className={`font-bold ${txt}`}>{u.username}</h3>
                     <div className="flex gap-1">
                       <IconBtn onClick={() => { setEditingItem({ ...u }); setModalType('editUser'); setShowModal(true); }} icon={Pencil} title="تعديل" />
                       {u.role !== 'owner' && <IconBtn onClick={() => { setSelectedItem(u); setModalType('delUser'); setShowModal(true); }} icon={Trash2} title="حذف" />}
                     </div>
+                  </div>
+                  <div className={`text-xs ${txtSm} space-y-2`}>
+                    <p>الصلاحية: <span className={`px-2 py-0.5 rounded ${u.role === 'owner' ? 'bg-amber-500 text-white' : u.role === 'manager' ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white'}`}>{u.role === 'owner' ? 'المالك' : u.role === 'manager' ? 'مدير' : 'عضو'}</span></p>
+                    <p>الحالة: <span className={`px-2 py-0.5 rounded ${u.active !== false ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>{u.active !== false ? 'نشط' : 'معطل'}</span></p>
+                    {u.createdBy && <p>أنشئ بواسطة: {u.createdBy}</p>}
                   </div>
                 </div>
               ))}</div>
@@ -1101,10 +1134,10 @@ export default function App() {
                 <div className={`${card} p-8 rounded-xl border text-center`}><Archive className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} /><p className={txtSm}>الأرشيف فارغ</p></div>
               ) : (
                 <div className="space-y-4">
-                  {archivedExpenses?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>المصروفات ({archivedExpenses.length})</h3>{archivedExpenses.map(e => (<div key={e.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{e.name}</span><span className={`mr-2 ${txt}`}>{e.amount} ر.س</span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {e.archivedBy}</p></div><IconBtn onClick={() => restoreExpense(e)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
-                  {archivedTasks?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>المهام ({archivedTasks.length})</h3>{archivedTasks.map(t => (<div key={t.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{t.title}</span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {t.archivedBy}</p></div><IconBtn onClick={() => restoreTask(t)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
-                  {archivedProjects?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>المشاريع ({archivedProjects.length})</h3>{archivedProjects.map(p => (<div key={p.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{p.name}</span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {p.archivedBy}</p></div><IconBtn onClick={() => restoreProject(p)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
-                  {archivedAccounts?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>الحسابات ({archivedAccounts.length})</h3>{archivedAccounts.map(a => (<div key={a.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{a.name}</span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {a.archivedBy}</p></div><IconBtn onClick={() => restoreAccount(a)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
+                  {archivedExpenses?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>المصروفات ({formatNumber(archivedExpenses.length)})</h3>{archivedExpenses.map(e => (<div key={e.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{e.name}</span><span className={`mr-2 ${txt}`}>{formatNumber(e.amount)} <SAR /></span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {e.archivedBy}</p></div><IconBtn onClick={() => restoreExpense(e)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
+                  {archivedTasks?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>المهام ({formatNumber(archivedTasks.length)})</h3>{archivedTasks.map(t => (<div key={t.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{t.title}</span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {t.archivedBy}</p></div><IconBtn onClick={() => restoreTask(t)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
+                  {archivedProjects?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>المشاريع ({formatNumber(archivedProjects.length)})</h3>{archivedProjects.map(p => (<div key={p.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{p.name}</span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {p.archivedBy}</p></div><IconBtn onClick={() => restoreProject(p)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
+                  {archivedAccounts?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>الحسابات ({formatNumber(archivedAccounts.length)})</h3>{archivedAccounts.map(a => (<div key={a.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{a.name}</span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {a.archivedBy}</p></div><IconBtn onClick={() => restoreAccount(a)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
                 </div>
               )}
             </div>
@@ -1118,7 +1151,7 @@ export default function App() {
                 <button onClick={() => setAuditFilter('login')} className={`px-3 py-1.5 rounded-lg text-xs ${auditFilter === 'login' ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>تسجيل الدخول</button>
                 <button onClick={() => setAuditFilter('operations')} className={`px-3 py-1.5 rounded-lg text-xs ${auditFilter === 'operations' ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>العمليات</button>
               </div>
-              <div className={`${card} rounded-xl border overflow-x-auto ${scrollbar}`}>
+              <div className={`${card} rounded-xl border overflow-x-auto ${hideScrollbarClass}`} style={hideScrollbar}>
                 <table className="w-full text-xs">
                   <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-100'}>
                     <tr><th className={`p-3 text-right ${txt}`}>الوقت</th><th className={`p-3 text-right ${txt}`}>المستخدم</th><th className={`p-3 text-right ${txt}`}>النوع</th><th className={`p-3 text-right ${txt}`}>الوصف</th></tr>
@@ -1126,7 +1159,7 @@ export default function App() {
                   <tbody>
                     {(auditFilter === 'login' ? loginLog : auditFilter === 'operations' ? auditLog : [...auditLog, ...loginLog.map(l => ({ ...l, isLogin: true }))].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))).slice(0, 50).map((l, i) => (
                       <tr key={l.id} onClick={() => !l.isLogin && navigateToItem(l)} className={`${i % 2 === 0 ? (darkMode ? 'bg-gray-800/50' : 'bg-gray-50') : ''} ${!l.isLogin ? 'cursor-pointer' : ''} ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
-                        <td className={`p-3 ${txtSm}`}>{new Date(l.timestamp).toLocaleString('ar-SA')}</td>
+                        <td className={`p-3 ${txtSm}`}>{new Date(l.timestamp).toLocaleString('en-US')}</td>
                         <td className={`p-3 ${txt}`}>{l.user}</td>
                         <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs ${l.isLogin ? (l.action === 'دخول' ? 'bg-green-500' : 'bg-red-500') : accent.color} text-white`}>{l.isLogin ? l.action : l.action === 'add' ? 'إضافة' : l.action === 'edit' ? 'تعديل' : l.action === 'delete' ? 'حذف' : l.action === 'restore' ? 'إستعادة' : 'دفع'}</span></td>
                         <td className={`p-3 ${txtSm}`}>{l.description || `${l.user} قام بـ${l.action}`}</td>
@@ -1138,9 +1171,9 @@ export default function App() {
             </div>
           )}
 
-          <div className={`text-center py-4 ${txtSm}`}>
+          <div className="text-center py-4 text-xs text-gray-400" style={{ fontSize: '12px' }}>
             <span>ركائز الأولى للتعمير | </span>
-            <button onClick={() => setShowVersions(true)} className={`hover:${accent.text}`}>v{APP_VERSION}</button>
+            <button onClick={() => setShowVersions(true)} className="hover:text-gray-300">v{APP_VERSION}</button>
           </div>
         </div>
       </div>
@@ -1150,14 +1183,14 @@ export default function App() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowVersions(false)}>
           <div className={`${card} p-6 rounded-2xl max-w-md w-full border`} onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4"><h3 className={`text-lg font-bold ${txt}`}>سجل النسخ</h3><button onClick={() => setShowVersions(false)} className={txtSm}><X className="w-5 h-5" /></button></div>
-            <div className={`space-y-3 max-h-80 overflow-y-auto ${scrollbar}`}>{versionHistory.map((v, i) => (<div key={v.version} className={`p-3 rounded-xl ${i === 0 ? `${accent.color}/20` : darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}><div className="flex justify-between mb-2"><span className={`font-bold text-sm ${txt}`}>v{v.version}</span><span className={`text-xs ${txtSm}`}>{v.date}</span></div><ul className={`text-xs ${txtSm} space-y-1`}>{v.changes.map((c, j) => <li key={j}>• {c}</li>)}</ul></div>))}</div>
+            <div className={`space-y-3 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>{versionHistory.map((v, i) => (<div key={v.version} className={`p-3 rounded-xl ${i === 0 ? `${accent.color}/20` : darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}><div className="flex justify-between mb-2"><span className={`font-bold text-sm ${txt}`}>v{v.version}</span><span className={`text-xs ${txtSm}`}>{v.date}</span></div><ul className={`text-xs ${txtSm} space-y-1`}>{v.changes.map((c, j) => <li key={j}>• {c}</li>)}</ul></div>))}</div>
           </div>
         </div>
       )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className={`${card} p-6 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border ${scrollbar}`}>
+          <div className={`${card} p-6 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border ${hideScrollbarClass}`} style={hideScrollbar}>
             
             {modalType === 'delExp' && <><h3 className={`text-lg font-bold mb-4 ${txt}`}>حذف مصروف</h3><p className={`mb-6 text-sm ${txtSm}`}>هل تريد حذف "{selectedItem?.name}"؟</p><div className="flex gap-3 justify-end"><button onClick={() => setShowModal(false)} className={`px-4 py-2 rounded-xl text-sm ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}>إلغاء</button><button onClick={() => delExpense(selectedItem)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm">حذف</button></div></>}
             {modalType === 'delTask' && <><h3 className={`text-lg font-bold mb-4 ${txt}`}>حذف مهمة</h3><p className={`mb-6 text-sm ${txtSm}`}>هل تريد حذف "{selectedItem?.title}"؟</p><div className="flex gap-3 justify-end"><button onClick={() => setShowModal(false)} className={`px-4 py-2 rounded-xl text-sm ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}>إلغاء</button><button onClick={() => delTask(selectedItem)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm">حذف</button></div></>}
@@ -1180,14 +1213,14 @@ export default function App() {
                 <h3 className={`text-lg font-bold mb-4 ${txt}`}>{modalType === 'addExp' ? 'إضافة مصروف' : 'تعديل مصروف'}</h3>
                 <div className="space-y-4">
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>اسم المصروف *</label><input value={modalType === 'addExp' ? newExpense.name : editingItem?.name || ''} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, name: e.target.value }) : setEditingItem({ ...editingItem, name: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
-                  <div><label className={`block text-xs mb-1 ${txtSm}`}>المبلغ *</label><input type="number" value={modalType === 'addExp' ? newExpense.amount : editingItem?.amount || ''} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, amount: e.target.value }) : setEditingItem({ ...editingItem, amount: parseFloat(e.target.value) })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
+                  <div><label className={`block text-xs mb-1 ${txtSm}`}>المبلغ *</label><input type="number" inputMode="decimal" value={modalType === 'addExp' ? newExpense.amount : editingItem?.amount || ''} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, amount: e.target.value }) : setEditingItem({ ...editingItem, amount: parseFloat(e.target.value) })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>النوع</label><select value={modalType === 'addExp' ? newExpense.type : editingItem?.type || 'شهري'} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, type: e.target.value }) : setEditingItem({ ...editingItem, type: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`}><option value="شهري">شهري</option><option value="سنوي">سنوي</option><option value="مرة واحدة">مرة واحدة</option></select></div>
-                  {(modalType === 'addExp' ? newExpense.type : editingItem?.type) !== 'مرة واحدة' && <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ الاستحقاق *</label><input type="date" placeholder="أدخل التاريخ" value={modalType === 'addExp' ? newExpense.dueDate : editingItem?.dueDate || ''} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, dueDate: e.target.value }) : setEditingItem({ ...editingItem, dueDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>}
+                  {(modalType === 'addExp' ? newExpense.type : editingItem?.type) !== 'مرة واحدة' && <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ الاستحقاق *</label><input type="date" value={modalType === 'addExp' ? newExpense.dueDate : editingItem?.dueDate || ''} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, dueDate: e.target.value }) : setEditingItem({ ...editingItem, dueDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>}
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الوصف</label><textarea value={modalType === 'addExp' ? newExpense.reason : editingItem?.reason || ''} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, reason: e.target.value }) : setEditingItem({ ...editingItem, reason: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} rows="2" /></div>
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الموقع</label>
                     <div className="flex gap-2">
                       <input placeholder="مثال: جدة - حي النزهة" value={modalType === 'addExp' ? newExpense.location : editingItem?.location || ''} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, location: e.target.value }) : setEditingItem({ ...editingItem, location: e.target.value })} className={`flex-1 p-3 border rounded-xl text-sm ${inp}`} />
-                      <button onClick={() => openMapPicker(modalType === 'addExp' ? 'newExpense' : 'editExpense')} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Globe className="w-5 h-5" /></button>
+                      <button onClick={() => openMapPicker(modalType === 'addExp' ? 'newExpense' : 'editExpense')} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Map className="w-5 h-5" /></button>
                     </div>
                   </div>
                 </div>
@@ -1200,16 +1233,16 @@ export default function App() {
                 <h3 className={`text-lg font-bold mb-4 ${txt}`}>{modalType === 'addTask' ? 'إضافة مهمة' : 'تعديل مهمة'}</h3>
                 <div className="space-y-4">
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>عنوان المهمة *</label><input value={modalType === 'addTask' ? newTask.title : editingItem?.title || ''} onChange={e => modalType === 'addTask' ? setNewTask({ ...newTask, title: e.target.value }) : setEditingItem({ ...editingItem, title: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
+                  <div><label className={`block text-xs mb-1 ${txtSm}`}>الأولوية</label><select value={modalType === 'addTask' ? newTask.priority : editingItem?.priority || 'متوسطة'} onChange={e => modalType === 'addTask' ? setNewTask({ ...newTask, priority: e.target.value }) : setEditingItem({ ...editingItem, priority: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`}><option value="عالية">عالية</option><option value="متوسطة">متوسطة</option><option value="منخفضة">منخفضة</option></select></div>
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>المشروع</label><select value={modalType === 'addTask' ? newTask.projectId : editingItem?.projectId || ''} onChange={e => modalType === 'addTask' ? setNewTask({ ...newTask, projectId: e.target.value }) : setEditingItem({ ...editingItem, projectId: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`}><option value="">بدون مشروع</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
                   {taskSections.length > 0 && <div><label className={`block text-xs mb-1 ${txtSm}`}>القسم</label><select value={modalType === 'addTask' ? newTask.sectionId : editingItem?.sectionId || ''} onChange={e => modalType === 'addTask' ? setNewTask({ ...newTask, sectionId: e.target.value }) : setEditingItem({ ...editingItem, sectionId: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`}><option value="">بدون قسم</option>{taskSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>}
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الوصف</label><textarea value={modalType === 'addTask' ? newTask.description : editingItem?.description || ''} onChange={e => modalType === 'addTask' ? setNewTask({ ...newTask, description: e.target.value }) : setEditingItem({ ...editingItem, description: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} rows="2" /></div>
-                  <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ التسليم</label><input type="date" placeholder="أدخل التاريخ" value={modalType === 'addTask' ? newTask.dueDate : editingItem?.dueDate || ''} onChange={e => modalType === 'addTask' ? setNewTask({ ...newTask, dueDate: e.target.value }) : setEditingItem({ ...editingItem, dueDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
+                  <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ التسليم</label><input type="date" value={modalType === 'addTask' ? newTask.dueDate : editingItem?.dueDate || ''} onChange={e => modalType === 'addTask' ? setNewTask({ ...newTask, dueDate: e.target.value }) : setEditingItem({ ...editingItem, dueDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>المسؤول</label><select value={modalType === 'addTask' ? newTask.assignedTo : editingItem?.assignedTo || ''} onChange={e => modalType === 'addTask' ? setNewTask({ ...newTask, assignedTo: e.target.value }) : setEditingItem({ ...editingItem, assignedTo: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`}><option value="">اختر</option>{users.map(u => <option key={u.id} value={u.username}>{u.username}</option>)}</select></div>
-                  <div><label className={`block text-xs mb-1 ${txtSm}`}>الأولوية</label><select value={modalType === 'addTask' ? newTask.priority : editingItem?.priority || 'متوسطة'} onChange={e => modalType === 'addTask' ? setNewTask({ ...newTask, priority: e.target.value }) : setEditingItem({ ...editingItem, priority: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`}><option value="عالية">عالية</option><option value="متوسطة">متوسطة</option><option value="منخفضة">منخفضة</option></select></div>
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الموقع</label>
                     <div className="flex gap-2">
                       <input placeholder="مثال: جدة" value={modalType === 'addTask' ? newTask.location : editingItem?.location || ''} onChange={e => modalType === 'addTask' ? setNewTask({ ...newTask, location: e.target.value }) : setEditingItem({ ...editingItem, location: e.target.value })} className={`flex-1 p-3 border rounded-xl text-sm ${inp}`} />
-                      <button onClick={() => openMapPicker(modalType === 'addTask' ? 'newTask' : 'editTask')} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Globe className="w-5 h-5" /></button>
+                      <button onClick={() => openMapPicker(modalType === 'addTask' ? 'newTask' : 'editTask')} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Map className="w-5 h-5" /></button>
                     </div>
                   </div>
                 </div>
@@ -1228,14 +1261,14 @@ export default function App() {
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الموقع</label>
                     <div className="flex gap-2">
                       <input value={modalType === 'addProject' ? newProject.location : editingItem?.location || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, location: e.target.value }) : setEditingItem({ ...editingItem, location: e.target.value })} className={`flex-1 p-3 border rounded-xl text-sm ${inp}`} />
-                      <button onClick={() => openMapPicker(modalType === 'addProject' ? 'newProject' : 'editProject')} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Globe className="w-5 h-5" /></button>
+                      <button onClick={() => openMapPicker(modalType === 'addProject' ? 'newProject' : 'editProject')} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Map className="w-5 h-5" /></button>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ البدء</label><input type="date" placeholder="أدخل التاريخ" value={modalType === 'addProject' ? newProject.startDate : editingItem?.startDate || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, startDate: e.target.value }) : setEditingItem({ ...editingItem, startDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
-                    <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ الانتهاء</label><input type="date" placeholder="أدخل التاريخ" value={modalType === 'addProject' ? newProject.endDate : editingItem?.endDate || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, endDate: e.target.value }) : setEditingItem({ ...editingItem, endDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
+                    <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ البدء</label><input type="date" value={modalType === 'addProject' ? newProject.startDate : editingItem?.startDate || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, startDate: e.target.value }) : setEditingItem({ ...editingItem, startDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
+                    <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ الانتهاء</label><input type="date" value={modalType === 'addProject' ? newProject.endDate : editingItem?.endDate || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, endDate: e.target.value }) : setEditingItem({ ...editingItem, endDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
                   </div>
-                  <div><label className={`block text-xs mb-1 ${txtSm}`}>الميزانية (ر.س)</label><input type="number" value={modalType === 'addProject' ? newProject.budget : editingItem?.budget || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, budget: e.target.value }) : setEditingItem({ ...editingItem, budget: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
+                  <div><label className={`block text-xs mb-1 ${txtSm}`}>الميزانية</label><input type="number" inputMode="decimal" value={modalType === 'addProject' ? newProject.budget : editingItem?.budget || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, budget: e.target.value }) : setEditingItem({ ...editingItem, budget: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الحالة</label><select value={modalType === 'addProject' ? newProject.status : editingItem?.status || 'جاري'} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, status: e.target.value }) : setEditingItem({ ...editingItem, status: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`}><option value="جاري">جاري</option><option value="متوقف">متوقف</option><option value="مكتمل">مكتمل</option></select></div>
                 </div>
                 <div className="flex gap-3 justify-end mt-6"><button onClick={() => { setShowModal(false); setEditingItem(null); }} className={`px-4 py-2 rounded-xl text-sm ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}>إلغاء</button><button onClick={modalType === 'addProject' ? addProject : editProject} className={`px-4 py-2 bg-gradient-to-r ${accent.gradient} text-white rounded-xl text-sm`}>{modalType === 'addProject' ? 'إضافة' : 'حفظ'}</button></div>
@@ -1251,8 +1284,8 @@ export default function App() {
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>رابط الدخول</label><input value={modalType === 'addAcc' ? newAccount.loginUrl : editingItem?.loginUrl || ''} onChange={e => modalType === 'addAcc' ? setNewAccount({ ...newAccount, loginUrl: e.target.value }) : setEditingItem({ ...editingItem, loginUrl: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>اسم المستخدم *</label><input value={modalType === 'addAcc' ? newAccount.username : editingItem?.username || ''} onChange={e => modalType === 'addAcc' ? setNewAccount({ ...newAccount, username: e.target.value }) : setEditingItem({ ...editingItem, username: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>كلمة المرور</label><input value={modalType === 'addAcc' ? newAccount.password : editingItem?.password || ''} onChange={e => modalType === 'addAcc' ? setNewAccount({ ...newAccount, password: e.target.value }) : setEditingItem({ ...editingItem, password: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
-                  <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ الاشتراك</label><input type="date" placeholder="أدخل التاريخ" value={modalType === 'addAcc' ? newAccount.subscriptionDate : editingItem?.subscriptionDate || ''} onChange={e => modalType === 'addAcc' ? setNewAccount({ ...newAccount, subscriptionDate: e.target.value }) : setEditingItem({ ...editingItem, subscriptionDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
-                  <div><label className={`block text-xs mb-1 ${txtSm}`}>الأيام المتبقية</label><input type="number" value={modalType === 'addAcc' ? newAccount.daysRemaining : editingItem?.daysRemaining || ''} onChange={e => modalType === 'addAcc' ? setNewAccount({ ...newAccount, daysRemaining: parseInt(e.target.value) }) : setEditingItem({ ...editingItem, daysRemaining: parseInt(e.target.value) })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
+                  <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ الاشتراك</label><input type="date" value={modalType === 'addAcc' ? newAccount.subscriptionDate : editingItem?.subscriptionDate || ''} onChange={e => modalType === 'addAcc' ? setNewAccount({ ...newAccount, subscriptionDate: e.target.value }) : setEditingItem({ ...editingItem, subscriptionDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
+                  <div><label className={`block text-xs mb-1 ${txtSm}`}>الأيام المتبقية</label><input type="number" inputMode="numeric" value={modalType === 'addAcc' ? newAccount.daysRemaining : editingItem?.daysRemaining || ''} onChange={e => modalType === 'addAcc' ? setNewAccount({ ...newAccount, daysRemaining: parseInt(e.target.value) }) : setEditingItem({ ...editingItem, daysRemaining: parseInt(e.target.value) })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
                 </div>
                 <div className="flex gap-3 justify-end mt-6"><button onClick={() => { setShowModal(false); setEditingItem(null); }} className={`px-4 py-2 rounded-xl text-sm ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}>إلغاء</button><button onClick={modalType === 'addAcc' ? addAccount : editAccount} className={`px-4 py-2 bg-gradient-to-r ${accent.gradient} text-white rounded-xl text-sm`}>{modalType === 'addAcc' ? 'إضافة' : 'حفظ'}</button></div>
               </>
