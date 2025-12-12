@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
-import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, ChevronLeft, ChevronDown, ChevronUp, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, CreditCard, TrendingUp, DollarSign, Wallet, FolderPlus, AlertTriangle, Image, Map, Type, Search } from 'lucide-react';
+import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, ChevronLeft, ChevronDown, ChevronUp, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, CreditCard, DollarSign, Wallet, FolderPlus, AlertTriangle, Image, Map, Type, Search } from 'lucide-react';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDpzPCma5c4Tuxd5htRHOvm4aYLRbj8Qkg",
@@ -14,18 +14,22 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const APP_VERSION = "4.3.0";
+const APP_VERSION = "4.3.1";
 
 const formatNumber = (num) => {
   return new Intl.NumberFormat('en-US').format(num);
 };
 
-const SAR = () => <span style={{ fontFamily: 'Arial' }}>&#x0631;&#x002E;&#x0633;</span>;
+const SAR = () => (
+  <svg viewBox="0 0 1124 1256" className="inline-block w-4 h-4 mr-1" fill="currentColor">
+    <path d="M699.7 1160.3c-2.5 0-4.6-.8-6.4-2.5-1.8-1.8-2.6-3.9-2.6-6.4v-108.6c0-24.8-8.8-46-26.3-63.5s-38.7-26.3-63.5-26.3H217.4c-2.5 0-4.6-.8-6.4-2.6-1.8-1.7-2.6-3.9-2.6-6.4V836.1c0-2.5.9-4.6 2.6-6.4 1.8-1.7 3.9-2.6 6.4-2.6h383.5c71.5 0 132.5 25.3 183.2 75.9 50.6 50.6 75.9 111.7 75.9 183.2v64.9c0 2.5-.9 4.6-2.6 6.4-1.8 1.7-3.9 2.5-6.4 2.5H699.7v.3zM519.4 720.5c-2.5 0-4.6-.8-6.4-2.6-1.7-1.7-2.6-3.9-2.6-6.4V602.9c0-24.8-8.8-46-26.3-63.5-17.5-17.5-38.7-26.3-63.5-26.3H217.4c-2.5 0-4.6-.9-6.4-2.6-1.8-1.8-2.6-3.9-2.6-6.4V396.2c0-2.5.9-4.6 2.6-6.4 1.8-1.7 3.9-2.6 6.4-2.6h203.2c71.5 0 132.5 25.3 183.2 75.9 50.6 50.6 75.9 111.7 75.9 183.2v64.9c0 2.5-.8 4.6-2.6 6.4-1.7 1.7-3.9 2.6-6.4 2.6H519.4v.3zM308.6 280.6c-2.5 0-4.6-.9-6.4-2.6-1.7-1.8-2.6-3.9-2.6-6.4V162.9c0-24.8-8.8-46-26.3-63.5-17.5-17.5-38.7-26.3-63.5-26.3H107.4c-2.5 0-4.6-.8-6.4-2.6-1.8-1.7-2.6-3.9-2.6-6.4V-43.8c0-2.5.9-4.6 2.6-6.4 1.8-1.7 3.9-2.6 6.4-2.6h102.4c71.5 0 132.5 25.3 183.2 75.9 50.6 50.6 75.9 111.7 75.9 183.2v64.9c0 2.5-.8 4.6-2.6 6.4-1.7 1.7-3.9 2.6-6.4 2.6H308.6v.4z"/>
+  </svg>
+);
 
 const versionHistory = [
-  { version: "4.3.0", date: "2024-12-14", changes: ["خريطة تفاعلية مع بحث", "تحسين عرض البيانات", "إزالة الفقاعات", "بطاقات المستخدمين"] },
+  { version: "4.3.1", date: "2024-12-14", changes: ["رمز ريال جديد", "تصميم خريطة حديث", "إزالة الفقاعات", "بطاقات المستخدمين", "إخفاء شريط التمرير"] },
+  { version: "4.3.0", date: "2024-12-14", changes: ["خريطة تفاعلية مع بحث", "تحسين عرض البيانات"] },
   { version: "4.2.0", date: "2024-12-14", changes: ["إصلاح الوقت والعبارات", "تحكم بأحجام الخط"] },
-  { version: "4.1.0", date: "2024-12-14", changes: ["ترحيب ديناميكي", "سجل الدفعات"] },
 ];
 
 const quotes = [
@@ -798,7 +802,7 @@ export default function App() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                 {[{ label: 'الإجمالي', value: totalExpenses, icon: DollarSign, color: 'from-blue-500 to-blue-600' },
                   { label: 'الشهري', value: monthlyExpenses, icon: Calendar, color: 'from-green-500 to-green-600' },
-                  { label: 'السنوي', value: yearlyExpenses, icon: TrendingUp, color: 'from-purple-500 to-purple-600' },
+                  { label: 'السنوي', value: yearlyExpenses, icon: Wallet, color: 'from-purple-500 to-purple-600' },
                   { label: 'مرة واحدة', value: onceExpenses, icon: CreditCard, color: 'from-orange-500 to-orange-600' }].map((s, i) => (
                   <div key={i} className={`bg-gradient-to-br ${s.color} p-3 rounded-xl text-white`}>
                     <div className="flex items-center gap-2 mb-1"><s.icon className="w-4 h-4 opacity-80" /><span className="text-xs opacity-80">{s.label}</span></div>
@@ -914,10 +918,8 @@ export default function App() {
                       <div key={t.id} className={`${card} p-4 rounded-xl border`}>
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <Priority level={t.priority} />
-                              <h3 className={`font-bold ${txt}`}>{t.title}</h3>
-                            </div>
+                            <h3 className={`font-bold ${txt} mb-1`}>{t.title}</h3>
+                            <div className="mb-2"><Priority level={t.priority} /></div>
                             {t.description && <p className={`text-xs ${txtSm} mb-2`}>{t.description}</p>}
                             
                             <div className={`text-xs ${txtSm} space-y-1`}>
