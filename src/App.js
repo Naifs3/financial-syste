@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
-import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, ChevronLeft, ChevronDown, ChevronUp, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, CreditCard, DollarSign, Wallet, FolderPlus, AlertTriangle, Image, Map, Type, Search, RefreshCw, Shield, CheckCircle, XCircle, Copy, ExternalLink, Eye, EyeOff } from 'lucide-react';
+import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, ChevronLeft, ChevronDown, ChevronUp, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, CreditCard, DollarSign, Wallet, FolderPlus, AlertTriangle, Image, Map, Type, Search, RefreshCw, Shield, CheckCircle, XCircle, Copy, ExternalLink, Eye, EyeOff, Folder } from 'lucide-react';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDpzPCma5c4Tuxd5htRHOvm4aYLRbj8Qkg",
@@ -130,11 +130,12 @@ const accentColors = [
 ];
 
 const headerColors = [
-  { id: 0, name: 'شفاف', dark: 'bg-gray-800/80 backdrop-blur-sm border-gray-700/50', light: 'bg-white/90 backdrop-blur-sm border-gray-200' },
-  { id: 1, name: 'أسود', dark: 'bg-black/90 backdrop-blur-sm border-gray-800', light: 'bg-gray-900/90 backdrop-blur-sm border-gray-700' },
-  { id: 2, name: 'أزرق داكن', dark: 'bg-blue-950/90 backdrop-blur-sm border-blue-900', light: 'bg-blue-900/90 backdrop-blur-sm border-blue-800' },
-  { id: 3, name: 'بنفسجي داكن', dark: 'bg-purple-950/90 backdrop-blur-sm border-purple-900', light: 'bg-purple-900/90 backdrop-blur-sm border-purple-800' },
-  { id: 4, name: 'رمادي داكن', dark: 'bg-gray-900/95 backdrop-blur-sm border-gray-800', light: 'bg-gray-800/95 backdrop-blur-sm border-gray-700' },
+  { id: 0, name: 'شفاف', sample: 'bg-gray-500/30', dark: 'bg-gray-800/80 backdrop-blur-sm border-gray-700/50', light: 'bg-white/90 backdrop-blur-sm border-gray-200' },
+  { id: 1, name: 'أسود', sample: 'bg-black', dark: 'bg-black/90 backdrop-blur-sm border-gray-800', light: 'bg-gray-900/90 backdrop-blur-sm border-gray-700' },
+  { id: 2, name: 'أزرق', sample: 'bg-blue-900', dark: 'bg-blue-950/90 backdrop-blur-sm border-blue-900', light: 'bg-blue-900/90 backdrop-blur-sm border-blue-800' },
+  { id: 3, name: 'بنفسجي', sample: 'bg-purple-900', dark: 'bg-purple-950/90 backdrop-blur-sm border-purple-900', light: 'bg-purple-900/90 backdrop-blur-sm border-purple-800' },
+  { id: 4, name: 'رمادي', sample: 'bg-gray-800', dark: 'bg-gray-900/95 backdrop-blur-sm border-gray-800', light: 'bg-gray-800/95 backdrop-blur-sm border-gray-700' },
+  { id: 5, name: 'أخضر', sample: 'bg-emerald-900', dark: 'bg-emerald-950/90 backdrop-blur-sm border-emerald-900', light: 'bg-emerald-900/90 backdrop-blur-sm border-emerald-800' },
 ];
 
 const FinancialPattern = () => (
@@ -337,10 +338,15 @@ export default function App() {
   const [loginLog, setLoginLog] = useState([]);
   const [showPasswordId, setShowPasswordId] = useState(null);
   const [showExpenseHistory, setShowExpenseHistory] = useState(null);
+  const [openFolder, setOpenFolder] = useState(null);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [showNewFolderModal, setShowNewFolderModal] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [taskFilter, setTaskFilter] = useState('all');
 
   const emptyExpense = { name: '', amount: '', currency: 'ر.س', dueDate: '', type: 'شهري', reason: '', status: 'لم يتم الدفع', location: '', mapUrl: '', coordinates: '', totalSpent: 0 };
   const emptyTask = { title: '', description: '', dueDate: '', assignedTo: '', priority: 'متوسط الأهمية', status: 'قيد الانتظار', projectId: '', sectionId: '', location: '', mapUrl: '', coordinates: '' };
-  const emptyProject = { name: '', description: '', client: '', location: '', phone: '', startDate: '', endDate: '', budget: '', status: 'جاري العمل', mapUrl: '', coordinates: '', files: { images: [], documents: [], others: [] } };
+  const emptyProject = { name: '', description: '', client: '', location: '', phone: '', startDate: '', endDate: '', budget: '', status: 'جاري العمل', mapUrl: '', coordinates: '', folders: [] };
   const emptyAccount = { name: '', description: '', loginUrl: '', username: '', password: '', subscriptionDate: '', daysRemaining: 365 };
   const emptyUser = { username: '', password: '', role: 'member', active: true };
   const emptySection = { name: '', color: 'blue' };
@@ -965,7 +971,7 @@ export default function App() {
 
                 <div className="mb-4">
                   <p className={`text-xs mb-2 ${txtSm}`}>لون الشريط العلوي</p>
-                  <div className="flex gap-2 flex-wrap">{headerColors.map((c, i) => (<button key={c.id} onClick={() => setHeaderColorIndex(i)} className={`px-2 py-1 rounded-lg text-xs ${headerColorIndex === i ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>{c.name}</button>))}</div>
+                  <div className="flex gap-2 flex-wrap">{headerColors.map((c, i) => (<button key={c.id} onClick={() => setHeaderColorIndex(i)} className={`w-8 h-8 rounded-lg ${c.sample} ${headerColorIndex === i ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`} title={c.name} />))}</div>
                 </div>
 
                 <div className="mb-4">
@@ -1096,43 +1102,49 @@ export default function App() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {expenses.map(e => {
+                  {[...expenses].sort((a, b) => {
+                    const dA = a.type !== 'مرة واحدة' ? calcDaysRemaining(a.dueDate, a.type) : 999;
+                    const dB = b.type !== 'مرة واحدة' ? calcDaysRemaining(b.dueDate, b.type) : 999;
+                    return (dA || 999) - (dB || 999);
+                  }).map(e => {
                     const d = e.type !== 'مرة واحدة' ? calcDaysRemaining(e.dueDate, e.type) : null;
-                    const expStatus = getExpenseStatus(e);
                     const isUrgent = (e.type === 'شهري' && d !== null && d <= 7) || (e.type === 'سنوي' && d !== null && d <= 15);
+                    const isOverdue = d !== null && d < 0;
+                    const daysText = d !== null ? (d < 0 ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم`) : null;
+                    const badgeColor = isOverdue ? 'bg-red-500/20 border-red-500/50 text-red-400' : 
+                                       isUrgent ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' : 
+                                       d !== null && d <= 30 ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400' : 
+                                       'bg-green-500/20 border-green-500/50 text-green-400';
                     return (
-                      <div key={e.id} className={`${card} p-4 rounded-xl border ${isUrgent && e.status !== 'مدفوع' ? 'bg-red-500/10 border-red-500/30' : ''}`}>
+                      <div key={e.id} className={`${card} p-4 rounded-xl border ${isUrgent || isOverdue ? 'border-red-500/30' : ''}`}>
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <h3 className={`font-bold ${txt}`}>{e.name}</h3>
-                              <Badge status={expStatus} />
+                              {d !== null && e.type !== 'مرة واحدة' && <span className={`px-2 py-0.5 rounded-lg text-xs border ${badgeColor}`}>{daysText}</span>}
                             </div>
                             <p className={`text-xl font-bold ${txt} mb-2`}>{formatNumber(e.amount)} ريال</p>
-                            {e.reason && <p className={`text-xs ${txtSm} mb-2`}>{e.reason}</p>}
+                            {e.reason && <p className={`${txtSm} mb-2`}>{e.reason}</p>}
                             
-                            <div className={`text-xs ${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mb-2`}>
+                            <div className={`${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mb-2`}>
                               <InfoItem icon={RefreshCw}>{e.type}</InfoItem>
                               {e.dueDate && <InfoItem icon={Calendar}>{e.dueDate}</InfoItem>}
-                              {d !== null && <InfoItem icon={Clock}>{d < 0 ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم متبقي`}</InfoItem>}
                               <InfoItem icon={User}>{e.createdBy}</InfoItem>
                               {e.location && <InfoItem icon={MapPin} href={e.mapUrl}>{e.location}</InfoItem>}
                             </div>
                             
-                            <div className={`text-xs ${txt} mb-2`}>
+                            <div className={`${txt} mb-2`}>
                               <DollarSign className="w-3.5 h-3.5 inline ml-1" />
-                              إجمالي المنفق: <span className="font-bold">{formatNumber(e.totalSpent || e.amount)} ريال</span>
+                              إجمالي المنفق: <span className="font-bold">{formatNumber(e.totalSpent || 0)} ريال</span>
                             </div>
                             
-                            {e.paymentHistory?.length > 0 && (
-                              <button onClick={() => setShowExpenseHistory(showExpenseHistory === e.id ? null : e.id)} className={`text-xs ${accent.text} hover:underline`}>
-                                <History className="w-3.5 h-3.5 inline ml-1" />العمليات السابقة ({e.paymentHistory.length})
-                              </button>
-                            )}
+                            <button onClick={() => setShowExpenseHistory(showExpenseHistory === e.id ? null : e.id)} className={`${accent.text} hover:underline`}>
+                              <History className="w-3.5 h-3.5 inline ml-1" />العمليات السابقة ({e.paymentHistory?.length || 0})
+                            </button>
                           </div>
                           
                           <div className="flex gap-1">
-                            {e.status !== 'مدفوع' && e.type !== 'مرة واحدة' && (
+                            {e.type !== 'مرة واحدة' && (
                               <IconBtn onClick={() => {
                                 const newDueDate = new Date(e.dueDate);
                                 newDueDate.setDate(newDueDate.getDate() + (e.type === 'شهري' ? 30 : 365));
@@ -1140,33 +1152,36 @@ export default function App() {
                                 const ne = expenses.map(ex => ex.id === e.id ? { 
                                   ...ex, 
                                   dueDate: newDueDate.toISOString().split('T')[0],
-                                  totalSpent: (ex.totalSpent || ex.amount) + ex.amount,
+                                  totalSpent: (ex.totalSpent || 0) + parseFloat(ex.amount),
                                   paymentHistory: [...(ex.paymentHistory || []), payment]
                                 } : ex);
                                 const al = addLog('refresh', 'مصروف', e.name, e.id);
                                 setExpenses(ne); save({ expenses: ne, auditLog: al });
                               }} icon={RefreshCw} title="تحديث" />
                             )}
-                            {e.status !== 'مدفوع' && <IconBtn onClick={() => markPaid(e.id)} icon={CheckSquare} title="تعليم كمدفوع" />}
                             <IconBtn onClick={() => { setEditingItem({ ...e }); setModalType('editExp'); setShowModal(true); }} icon={Pencil} title="تعديل" />
                             <IconBtn onClick={() => { setSelectedItem(e); setModalType('delExp'); setShowModal(true); }} icon={Trash2} title="حذف" />
                           </div>
                         </div>
 
-                        {showExpenseHistory === e.id && e.paymentHistory?.length > 0 && (
+                        {showExpenseHistory === e.id && (
                           <div className={`mt-3 pt-3 border-t ${darkMode ? 'border-white/20' : 'border-gray-200'}`}>
-                            <p className={`text-xs font-bold mb-2 ${txt}`}>العمليات السابقة:</p>
-                            <div className="space-y-2">
-                              {e.paymentHistory.map((p, i) => (
-                                <div key={i} className={`text-xs p-2 rounded-lg flex flex-wrap gap-3 ${darkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
-                                  <InfoItem icon={DollarSign}>{formatNumber(p.amount)} ريال</InfoItem>
-                                  <InfoItem icon={Calendar}>{new Date(p.date).toLocaleDateString('en-US')}</InfoItem>
-                                  <InfoItem icon={Clock}>{formatTime12(new Date(p.date))}</InfoItem>
-                                  {p.note && <span className={txtSm}>{p.note}</span>}
-                                  <InfoItem icon={User}>{p.by || p.paidBy}</InfoItem>
-                                </div>
-                              ))}
-                            </div>
+                            <p className={`font-bold mb-2 ${txt}`}>العمليات السابقة:</p>
+                            {e.paymentHistory?.length > 0 ? (
+                              <div className="space-y-2">
+                                {e.paymentHistory.map((p, i) => (
+                                  <div key={i} className={`p-2 rounded-lg flex flex-wrap gap-3 ${darkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+                                    <InfoItem icon={DollarSign}>{formatNumber(p.amount)} ريال</InfoItem>
+                                    <InfoItem icon={Calendar}>{new Date(p.date).toLocaleDateString('en-US')}</InfoItem>
+                                    <InfoItem icon={Clock}>{formatTime12(new Date(p.date))}</InfoItem>
+                                    {p.note && <span className={txtSm}>{p.note}</span>}
+                                    <InfoItem icon={User}>{p.by || p.paidBy}</InfoItem>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className={txtSm}>لا توجد عمليات سابقة</p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1192,9 +1207,14 @@ export default function App() {
                 </div>
               </div>
 
+              <div className="flex gap-2 mb-4 flex-wrap">
+                <button onClick={() => setTaskFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs ${taskFilter === 'all' ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>الكل</button>
+                <button onClick={() => setTaskFilter('priority')} className={`px-3 py-1.5 rounded-lg text-xs ${taskFilter === 'priority' ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>حسب الأولوية</button>
+              </div>
+
               {projects.length > 0 && (
                 <div className="flex gap-2 mb-4 flex-wrap">
-                  <button onClick={() => setProjectFilter(null)} className={`px-3 py-1.5 rounded-lg text-xs ${!projectFilter ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>الكل</button>
+                  <button onClick={() => setProjectFilter(null)} className={`px-3 py-1.5 rounded-lg text-xs ${!projectFilter ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>كل المشاريع</button>
                   {projects.map(p => (
                     <button key={p.id} onClick={() => setProjectFilter(projectFilter === p.id ? null : p.id)} className={`px-3 py-1.5 rounded-lg text-xs ${projectFilter === p.id ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
                       {p.name} ({formatNumber(tasks.filter(t => t.projectId === p.id).length)})
@@ -1210,26 +1230,36 @@ export default function App() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {(projectFilter ? tasks.filter(t => t.projectId === projectFilter) : tasks).map(t => {
+                  {[...(projectFilter ? tasks.filter(t => t.projectId === projectFilter) : tasks)]
+                    .sort((a, b) => {
+                      if (taskFilter === 'priority') {
+                        const priorityOrder = { 'عالي الأهمية': 0, 'مستعجل': 1, 'متوسط الأهمية': 2, 'منخفض الأهمية': 3 };
+                        return (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3);
+                      }
+                      return 0;
+                    })
+                    .map(t => {
                     const d = calcDays(t.dueDate);
                     const project = projects.find(p => p.id === t.projectId);
                     const section = taskSections.find(s => s.id === t.sectionId);
+                    const isOverdue = d !== null && d < 0;
+                    const daysText = d !== null ? (d < 0 ? `مضى ${formatNumber(Math.abs(d))} يوم` : `متبقي ${formatNumber(d)} يوم`) : null;
                     return (
-                      <div key={t.id} className={`${card} p-4 rounded-xl border`}>
+                      <div key={t.id} className={`${card} p-4 rounded-xl border ${isOverdue ? 'border-red-500/30' : ''}`}>
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <h3 className={`font-bold ${txt}`}>{t.title}</h3>
                               <Badge status={t.priority} />
+                              {daysText && <span className={`px-2 py-0.5 rounded-lg text-xs border ${isOverdue ? 'bg-red-500/20 border-red-500/50 text-red-400' : 'bg-green-500/20 border-green-500/50 text-green-400'}`}>{daysText}</span>}
                             </div>
-                            {t.description && <p className={`text-xs ${txtSm} mb-2`}>{t.description}</p>}
+                            {t.description && <p className={`${txtSm} mb-2`}>{t.description}</p>}
                             
-                            <div className={`text-xs ${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1`}>
-                              {project && <InfoItem icon={FolderOpen}>{project.name}</InfoItem>}
+                            <div className={`${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1`}>
+                              {project && <button onClick={() => { setSelectedProject(project); setCurrentView('projects'); }} className={`inline-flex items-center gap-1 hover:underline ${accent.text}`}><FolderOpen className="w-3.5 h-3.5" />{project.name}</button>}
                               {section && <InfoItem icon={Layers}>{section.name}</InfoItem>}
                               {t.assignedTo && <InfoItem icon={User}>{t.assignedTo}</InfoItem>}
                               {t.dueDate && <InfoItem icon={Calendar}>{t.dueDate}</InfoItem>}
-                              {d !== null && <InfoItem icon={Clock}>{d < 0 ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم`}</InfoItem>}
                               <InfoItem icon={User}>{t.createdBy}</InfoItem>
                               {t.location && <InfoItem icon={MapPin} href={t.mapUrl}>{t.location}</InfoItem>}
                             </div>
@@ -1263,7 +1293,7 @@ export default function App() {
                 <div className="grid md:grid-cols-2 gap-4">
                   {projects.map(p => {
                     const projectTasks = tasks.filter(t => t.projectId === p.id);
-                    const totalFiles = (p.files?.images?.length || 0) + (p.files?.documents?.length || 0) + (p.files?.others?.length || 0);
+                    const totalFiles = p.folders?.reduce((sum, f) => sum + (f.files?.length || 0), 0) || 0;
                     return (
                       <div key={p.id} onClick={() => setSelectedProject(p)} className={`${card} p-4 rounded-xl border cursor-pointer hover:shadow-lg transition-all`}>
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -1292,7 +1322,7 @@ export default function App() {
 
           {currentView === 'projects' && selectedProject && (
             <div>
-              <button onClick={() => setSelectedProject(null)} className={`flex items-center gap-1 mb-4 text-xs ${accent.text}`}><ChevronLeft className="w-4 h-4" />العودة</button>
+              <button onClick={() => setSelectedProject(null)} className={`flex items-center gap-1 mb-4 ${accent.text}`}><ChevronLeft className="w-4 h-4" />العودة</button>
               
               <div className={`${card} p-4 rounded-xl border mb-4`}>
                 <div className="flex justify-between items-start mb-4 flex-wrap gap-2">
@@ -1321,71 +1351,75 @@ export default function App() {
 
               <div className={`${card} p-4 rounded-xl border mb-4`}>
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className={`font-bold text-sm ${txt}`}>ملفات المشروع ({formatNumber((selectedProject.files?.images?.length || 0) + (selectedProject.files?.documents?.length || 0) + (selectedProject.files?.others?.length || 0))})</h3>
-                  <label className={`flex items-center gap-1 text-xs ${accent.text} cursor-pointer`}>
-                    <Plus className="w-4 h-4" />إضافة ملف
-                    <input type="file" className="hidden" multiple onChange={(e) => {
-                      const files = Array.from(e.target.files);
-                      const newFiles = { ...selectedProject.files };
-                      files.forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          const fileData = { name: file.name, url: ev.target.result, type: file.type, size: file.size, uploadedAt: new Date().toISOString(), uploadedBy: currentUser.username };
-                          if (file.type.startsWith('image/')) newFiles.images = [...(newFiles.images || []), fileData];
-                          else if (file.type.includes('pdf') || file.type.includes('document') || file.type.includes('word') || file.type.includes('excel') || file.type.includes('sheet')) newFiles.documents = [...(newFiles.documents || []), fileData];
-                          else newFiles.others = [...(newFiles.others || []), fileData];
-                          const np = projects.map(p => p.id === selectedProject.id ? { ...p, files: newFiles } : p);
-                          setProjects(np); setSelectedProject({ ...selectedProject, files: newFiles }); save({ projects: np });
-                        };
-                        reader.readAsDataURL(file);
-                      });
-                    }} />
-                  </label>
+                  <h3 className={`font-bold text-sm ${txt}`}>ملفات المشروع ({formatNumber(selectedProject.folders?.reduce((sum, f) => sum + (f.files?.length || 0), 0) || 0)})</h3>
+                  <button onClick={() => setShowNewFolderModal(true)} className={`flex items-center gap-1 ${accent.text}`}>
+                    <FolderPlus className="w-4 h-4" />إضافة مجلد
+                  </button>
                 </div>
                 
-                {(selectedProject.files?.images?.length || 0) + (selectedProject.files?.documents?.length || 0) + (selectedProject.files?.others?.length || 0) === 0 ? (
-                  <p className={`text-center py-4 ${txtSm}`}>لا توجد ملفات</p>
+                {(!selectedProject.folders || selectedProject.folders.length === 0) ? (
+                  <p className={`text-center py-4 ${txtSm}`}>لا توجد مجلدات</p>
                 ) : (
                   <div className="space-y-3">
-                    {selectedProject.files?.images?.length > 0 && (
-                      <div>
-                        <p className={`${txtSm} mb-2`}><Image className="w-4 h-4 inline ml-1" />الصور ({selectedProject.files.images.length})</p>
-                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                          {selectedProject.files.images.map((f, i) => (
-                            <div key={i} className="relative group">
-                              <img src={f.url} alt={f.name} className="w-full h-20 object-cover rounded-lg" />
-                              <div className={`absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all rounded-lg flex items-center justify-center gap-2`}>
-                                <a href={f.url} download={f.name} className="text-white text-xs">تحميل</a>
+                    {selectedProject.folders.map((folder, fi) => (
+                      <div key={fi} className={`p-3 rounded-lg border ${darkMode ? 'bg-gray-700/30 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                        <div className="flex justify-between items-center mb-2">
+                          <button onClick={() => setOpenFolder(openFolder === fi ? null : fi)} className={`flex items-center gap-2 ${txt} font-bold`}>
+                            {openFolder === fi ? <FolderOpen className="w-5 h-5" /> : <Folder className="w-5 h-5" />}
+                            {folder.name} ({folder.files?.length || 0})
+                          </button>
+                          <div className="flex gap-1">
+                            <label className={`cursor-pointer p-1.5 rounded ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}>
+                              <Plus className="w-4 h-4" />
+                              <input type="file" className="hidden" multiple onChange={(e) => {
+                                const files = Array.from(e.target.files);
+                                const newFolders = [...selectedProject.folders];
+                                files.forEach(file => {
+                                  const reader = new FileReader();
+                                  reader.onload = (ev) => {
+                                    const fileData = { name: file.name, url: ev.target.result, type: file.type, size: file.size, uploadedAt: new Date().toISOString(), uploadedBy: currentUser.username };
+                                    newFolders[fi].files = [...(newFolders[fi].files || []), fileData];
+                                    const np = projects.map(p => p.id === selectedProject.id ? { ...p, folders: newFolders } : p);
+                                    setProjects(np); setSelectedProject({ ...selectedProject, folders: newFolders }); save({ projects: np });
+                                  };
+                                  reader.readAsDataURL(file);
+                                });
+                              }} />
+                            </label>
+                            <button onClick={() => {
+                              if (confirm('هل تريد حذف هذا المجلد؟')) {
+                                const newFolders = selectedProject.folders.filter((_, i) => i !== fi);
+                                const np = projects.map(p => p.id === selectedProject.id ? { ...p, folders: newFolders } : p);
+                                setProjects(np); setSelectedProject({ ...selectedProject, folders: newFolders }); save({ projects: np });
+                              }
+                            }} className={`p-1.5 rounded ${darkMode ? 'hover:bg-gray-600 text-red-400' : 'hover:bg-gray-200 text-red-500'}`}>
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {openFolder === fi && folder.files?.length > 0 && (
+                          <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mt-3">
+                            {folder.files.map((f, ffi) => (
+                              <div key={ffi} className="relative group">
+                                {f.type?.startsWith('image/') ? (
+                                  <img src={f.url} alt={f.name} onClick={() => setPreviewImage(f.url)} className="w-full h-20 object-cover rounded-lg cursor-pointer" />
+                                ) : (
+                                  <div className={`w-full h-20 rounded-lg flex flex-col items-center justify-center ${darkMode ? 'bg-gray-600' : 'bg-gray-200'}`}>
+                                    <FileText className="w-6 h-6 mb-1" />
+                                    <span className={`text-xs ${txtSm} truncate px-1 w-full text-center`}>{f.name}</span>
+                                  </div>
+                                )}
+                                <div className={`absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all rounded-lg flex items-center justify-center gap-2`}>
+                                  {f.type?.startsWith('image/') && <button onClick={() => setPreviewImage(f.url)} className="text-white text-xs">عرض</button>}
+                                  <a href={f.url} download={f.name} className="text-white text-xs">تحميل</a>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {selectedProject.files?.documents?.length > 0 && (
-                      <div>
-                        <p className={`${txtSm} mb-2`}><FileText className="w-4 h-4 inline ml-1" />المستندات ({selectedProject.files.documents.length})</p>
-                        <div className="space-y-1">
-                          {selectedProject.files.documents.map((f, i) => (
-                            <a key={i} href={f.url} download={f.name} className={`block p-2 rounded-lg ${darkMode ? 'bg-gray-700/50 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} ${txtSm}`}>
-                              <FileText className="w-4 h-4 inline ml-1" />{f.name}
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {selectedProject.files?.others?.length > 0 && (
-                      <div>
-                        <p className={`${txtSm} mb-2`}><FolderPlus className="w-4 h-4 inline ml-1" />ملفات أخرى ({selectedProject.files.others.length})</p>
-                        <div className="space-y-1">
-                          {selectedProject.files.others.map((f, i) => (
-                            <a key={i} href={f.url} download={f.name} className={`block p-2 rounded-lg ${darkMode ? 'bg-gray-700/50 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} ${txtSm}`}>
-                              <FolderPlus className="w-4 h-4 inline ml-1" />{f.name}
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
@@ -1393,7 +1427,7 @@ export default function App() {
               <div className={`${card} p-4 rounded-xl border`}>
                 <div className="flex justify-between items-center mb-3">
                   <h3 className={`font-bold text-sm ${txt}`}>مهام المشروع ({formatNumber(tasks.filter(t => t.projectId === selectedProject.id).length)})</h3>
-                  <button onClick={() => { setNewTask({ ...emptyTask, projectId: selectedProject.id }); setModalType('addTask'); setShowModal(true); }} className={`text-xs ${accent.text}`}><Plus className="w-4 h-4 inline" />إضافة مهمة</button>
+                  <button onClick={() => { setNewTask({ ...emptyTask, projectId: selectedProject.id }); setModalType('addTask'); setShowModal(true); }} className={`${accent.text}`}><Plus className="w-4 h-4 inline" />إضافة مهمة</button>
                 </div>
                 {tasks.filter(t => t.projectId === selectedProject.id).length === 0 ? (
                   <p className={`text-center py-4 ${txtSm}`}>لا توجد مهام</p>
@@ -1671,6 +1705,33 @@ export default function App() {
             )}
 
           </div>
+        </div>
+      )}
+
+      {showNewFolderModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowNewFolderModal(false)}>
+          <div className={`${cardPopup} p-6 rounded-2xl max-w-sm w-full border`} onClick={e => e.stopPropagation()}>
+            <h3 className={`text-lg font-bold mb-4 ${txt}`}>إضافة مجلد جديد</h3>
+            <input placeholder="اسم المجلد" value={newFolderName} onChange={e => setNewFolderName(e.target.value)} className={`w-full p-3 border rounded-xl mb-4 ${inp}`} />
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => { setShowNewFolderModal(false); setNewFolderName(''); }} className={`px-4 py-2 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}>إلغاء</button>
+              <button onClick={() => {
+                if (!newFolderName.trim()) { alert('أدخل اسم المجلد'); return; }
+                const newFolder = { name: newFolderName, files: [], createdAt: new Date().toISOString(), createdBy: currentUser.username };
+                const newFolders = [...(selectedProject.folders || []), newFolder];
+                const np = projects.map(p => p.id === selectedProject.id ? { ...p, folders: newFolders } : p);
+                setProjects(np); setSelectedProject({ ...selectedProject, folders: newFolders }); save({ projects: np });
+                setShowNewFolderModal(false); setNewFolderName('');
+              }} className={`px-4 py-2 bg-gradient-to-r ${accent.gradient} text-white rounded-xl`}>إضافة</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {previewImage && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4" onClick={() => setPreviewImage(null)}>
+          <button onClick={() => setPreviewImage(null)} className="absolute top-4 left-4 text-white p-2 hover:bg-white/10 rounded-lg"><X className="w-8 h-8" /></button>
+          <img src={previewImage} alt="preview" className="max-w-full max-h-full object-contain rounded-lg" />
         </div>
       )}
     </div>
