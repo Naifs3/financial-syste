@@ -113,11 +113,12 @@ const getRandomGreeting = (username) => {
 
 
 const backgrounds = [
-  { id: 0, name: 'كلاسيكي', dark: 'from-gray-900 via-purple-900 to-gray-900', light: 'from-blue-50 via-indigo-50 to-purple-50' },
-  { id: 1, name: 'أزرق ملكي', dark: 'from-blue-950 via-blue-900 to-indigo-950', light: 'from-blue-100 via-sky-50 to-indigo-100' },
-  { id: 2, name: 'ذهبي فاخر', dark: 'from-yellow-950 via-amber-900 to-orange-950', light: 'from-yellow-50 via-amber-50 to-orange-50' },
-  { id: 3, name: 'أخضر النجاح', dark: 'from-emerald-950 via-green-900 to-teal-950', light: 'from-emerald-50 via-green-50 to-teal-50' },
-  { id: 4, name: 'بنفسجي راقي', dark: 'from-purple-950 via-violet-900 to-indigo-950', light: 'from-purple-50 via-violet-50 to-indigo-50' },
+  { id: 0, name: 'أسود', dark: 'from-gray-950 via-black to-gray-950', light: 'from-gray-100 via-gray-50 to-gray-100' },
+  { id: 1, name: 'كلاسيكي', dark: 'from-gray-900 via-purple-900 to-gray-900', light: 'from-blue-50 via-indigo-50 to-purple-50' },
+  { id: 2, name: 'أزرق ملكي', dark: 'from-blue-950 via-blue-900 to-indigo-950', light: 'from-blue-100 via-sky-50 to-indigo-100' },
+  { id: 3, name: 'ذهبي فاخر', dark: 'from-yellow-950 via-amber-900 to-orange-950', light: 'from-yellow-50 via-amber-50 to-orange-50' },
+  { id: 4, name: 'أخضر النجاح', dark: 'from-emerald-950 via-green-900 to-teal-950', light: 'from-emerald-50 via-green-50 to-teal-50' },
+  { id: 5, name: 'بنفسجي راقي', dark: 'from-purple-950 via-violet-900 to-indigo-950', light: 'from-purple-50 via-violet-50 to-indigo-50' },
 ];
 
 const accentColors = [
@@ -709,9 +710,10 @@ export default function App() {
   const currentBg = backgrounds[bgIndex];
   const currentFont = fonts[fontIndex];
   const bg = `bg-gradient-to-br ${darkMode ? currentBg.dark : currentBg.light}`;
-  // التصميم الزجاجي
-  const card = darkMode ? 'bg-white/10 backdrop-blur-sm border-white/20' : 'bg-white/70 backdrop-blur-sm border-gray-200';
-  const inp = darkMode ? 'bg-gray-700/50 border-gray-600 text-white placeholder-gray-400' : 'bg-white/80 border-gray-300 text-gray-900 placeholder-gray-400';
+  // التصميم الزجاجي - شفافية أقل
+  const card = darkMode ? 'bg-gray-800/80 backdrop-blur-sm border-gray-700/50' : 'bg-white/90 backdrop-blur-sm border-gray-200';
+  const cardPopup = darkMode ? 'bg-gray-800/95 backdrop-blur-md border-gray-700' : 'bg-white/95 backdrop-blur-md border-gray-200';
+  const inp = darkMode ? 'bg-gray-700/80 border-gray-600 text-white placeholder-gray-400' : 'bg-white/90 border-gray-300 text-gray-900 placeholder-gray-400';
   const txt = darkMode ? 'text-white' : 'text-gray-900';
   const txtMd = darkMode ? 'text-gray-200' : 'text-gray-700';
   const txtSm = darkMode ? 'text-gray-400' : 'text-gray-500';
@@ -860,7 +862,7 @@ export default function App() {
               {newNotifications > 0 && <span className={`absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center`}>{newNotifications}</span>}
             </button>
             {showAuditPanel && (
-              <div className={`absolute left-0 top-12 w-80 ${card} rounded-xl shadow-2xl border z-50 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>
+              <div className={`absolute left-0 top-12 w-80 ${cardPopup} rounded-xl shadow-2xl border z-50 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>
                 <div className={`p-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between`}>
                   <span className={`font-bold text-sm ${txt}`}>آخر العمليات</span>
                   <button onClick={() => { setCurrentView('audit'); setShowAuditPanel(false); }} className={`text-xs ${accent.text}`}>عرض الكل</button>
@@ -881,7 +883,7 @@ export default function App() {
               {archiveNotifications > 0 && <span className={`absolute -top-1 -right-1 w-4 h-4 ${accent.color} text-white text-xs rounded-full flex items-center justify-center`}>{archiveNotifications}</span>}
             </button>
             {showArchivePanel && (
-              <div className={`absolute left-0 top-12 w-64 ${card} rounded-xl shadow-2xl border z-50`}>
+              <div className={`absolute left-0 top-12 w-64 ${cardPopup} rounded-xl shadow-2xl border z-50`}>
                 <div className={`p-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between`}>
                   <span className={`font-bold text-sm ${txt}`}>الأرشيف</span>
                   <button onClick={() => { setCurrentView('archive'); setShowArchivePanel(false); }} className={`text-xs ${accent.text}`}>عرض الكل</button>
@@ -903,7 +905,7 @@ export default function App() {
               <Settings className={`w-5 h-5 ${txtMd}`} />
             </button>
             {showSettingsPanel && (
-              <div className={`absolute left-0 top-12 w-80 ${card} rounded-xl shadow-2xl border z-50 p-4 max-h-[80vh] overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>
+              <div className={`absolute left-0 top-12 w-80 ${cardPopup} rounded-xl shadow-2xl border z-50 p-4 max-h-[80vh] overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>
                 <h4 className={`font-bold text-sm mb-3 ${txt}`}>الإعدادات</h4>
                 
                 <div className="mb-4">
@@ -961,11 +963,11 @@ export default function App() {
 
 
       <div className="flex flex-col md:flex-row">
-        <div className={`w-full md:w-44 ${card} border-b md:border-l p-2`}>
+        <div className={`w-full md:w-48 ${card} border-b md:border-l p-2`}>
           <nav className="flex md:flex-col gap-1 flex-wrap">
             {[{ id: 'dashboard', icon: Activity, label: 'الرئيسية' },{ id: 'expenses', icon: Wallet, label: 'المصروفات' },{ id: 'tasks', icon: CheckSquare, label: 'المهام' },{ id: 'projects', icon: FolderOpen, label: 'المشاريع' },{ id: 'accounts', icon: Users, label: 'الحسابات' },{ id: 'users', icon: UserCog, label: 'المستخدمين' },{ id: 'archive', icon: Archive, label: 'الأرشيف' },{ id: 'audit', icon: History, label: 'السجل' }].map(item => (
               <button key={item.id} onClick={() => { setCurrentView(item.id); setSelectedProject(null); setProjectFilter(null); }} className={`flex items-center gap-2 p-2 rounded-xl transition-all ${currentView === item.id ? `bg-gradient-to-r ${accent.gradient} text-white` : darkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`}>
-                <item.icon className="w-4 h-4" /><span className="text-xs">{item.label}</span>
+                <item.icon className="w-4 h-4" /><span>{item.label}</span>
               </button>
             ))}
           </nav>
@@ -1244,9 +1246,9 @@ export default function App() {
                     const projectTasks = tasks.filter(t => t.projectId === p.id);
                     return (
                       <div key={p.id} onClick={() => setSelectedProject(p)} className={`${card} p-4 rounded-xl border cursor-pointer hover:shadow-lg transition-all`}>
-                        <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <h3 className={`font-bold ${txt}`}>{p.name}</h3>
-                          <span className={`text-xs ${txtSm}`}><Activity className="w-3 h-3 inline ml-1" />{p.status}</span>
+                          <Badge status={p.status} />
                         </div>
                         {p.description && <p className={`text-xs ${txtSm} mb-3 line-clamp-2`}>{p.description}</p>}
                         
@@ -1256,6 +1258,7 @@ export default function App() {
                           {p.budget && <InfoItem icon={DollarSign}>{formatNumber(p.budget)} ريال</InfoItem>}
                           <InfoItem icon={CheckSquare}>{formatNumber(projectTasks.length)} مهمة</InfoItem>
                           {p.startDate && <InfoItem icon={Calendar}>{p.startDate}</InfoItem>}
+                          {p.location && <InfoItem icon={MapPin} href={p.mapUrl}>{p.location}</InfoItem>}
                           <InfoItem icon={User}>{p.createdBy}</InfoItem>
                         </div>
                       </div>
@@ -1272,9 +1275,9 @@ export default function App() {
               
               <div className={`${card} p-4 rounded-xl border mb-4`}>
                 <div className="flex justify-between items-start mb-4 flex-wrap gap-2">
-                  <div>
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h2 className={`text-lg font-bold ${txt}`}>{selectedProject.name}</h2>
-                    <span className={`text-xs ${txtSm}`}><Activity className="w-3 h-3 inline ml-1" />{selectedProject.status}</span>
+                    <Badge status={selectedProject.status} />
                   </div>
                   <div className="flex gap-1">
                     <IconBtn onClick={() => { setEditingItem({ ...selectedProject }); setModalType('editProject'); setShowModal(true); }} icon={Pencil} title="تعديل" />
@@ -1554,8 +1557,8 @@ export default function App() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ البدء</label><input type="date" value={modalType === 'addProject' ? newProject.startDate : editingItem?.startDate || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, startDate: e.target.value }) : setEditingItem({ ...editingItem, startDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
-                    <div><label className={`block text-xs mb-1 ${txtSm}`}>تاريخ الانتهاء</label><input type="date" value={modalType === 'addProject' ? newProject.endDate : editingItem?.endDate || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, endDate: e.target.value }) : setEditingItem({ ...editingItem, endDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
+                    <div><input type="date" placeholder="تاريخ البدء" value={modalType === 'addProject' ? newProject.startDate : editingItem?.startDate || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, startDate: e.target.value }) : setEditingItem({ ...editingItem, startDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
+                    <div><input type="date" placeholder="تاريخ الانتهاء" value={modalType === 'addProject' ? newProject.endDate : editingItem?.endDate || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, endDate: e.target.value }) : setEditingItem({ ...editingItem, endDate: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
                   </div>
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الميزانية</label><input type="number" inputMode="decimal" value={modalType === 'addProject' ? newProject.budget : editingItem?.budget || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, budget: e.target.value }) : setEditingItem({ ...editingItem, budget: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} /></div>
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الحالة</label><select value={modalType === 'addProject' ? newProject.status : editingItem?.status || 'جاري'} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, status: e.target.value }) : setEditingItem({ ...editingItem, status: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`}><option value="جاري العمل">جاري العمل</option><option value="متوقف">متوقف</option><option value="منتهي">منتهي</option></select></div>
