@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot, query, orderBy, runTransaction } from 'firebase/firestore';
 import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, ChevronLeft, ChevronDown, ChevronUp, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, CreditCard, DollarSign, Wallet, FolderPlus, AlertTriangle, Image, Map, Type, Search, RefreshCw, Shield, CheckCircle, XCircle, Copy, ExternalLink, Eye, EyeOff, Folder, BookOpen } from 'lucide-react';
 
 const firebaseConfig = {
@@ -14,7 +14,25 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const APP_VERSION = "5.0.0";
+const APP_VERSION = "5.2.0-MultiUser";
+  // Helper to increment counters
+  const incrementCounter = async (key) => {
+    await runTransaction(db, async (t) => {
+      const ref = doc(db, 'system', 'counters');
+      const docVal = await t.get(ref);
+      t.set(ref, { ...docVal.data(), [key]: (docVal.data()?.[key] || 0) + 1 }, { merge: true });
+    });
+  };
+  
+  // Helper to add log
+  const addLog = async (action, type, name, itemId) => {
+    await addDoc(collection(db, 'audit'), {
+      user: currentUser?.username || 'النظام', action, itemType: type, itemName: name, itemId,
+      description: `${currentUser?.username} قام ${action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : 'بحذف'} ${type}: ${name}`,
+      timestamp: new Date().toISOString()
+    });
+  };
+
 
 // نظام الأرقام التسلسلية
 const generateRefNumber = (prefix, counter) => {
@@ -474,6 +492,48 @@ export default function App() {
   const [newProject, setNewProject] = useState(emptyProject);
   const [newAccount, setNewAccount] = useState(emptyAccount);
   const [newUser, setNewUser] = useState(emptyUser);
+
+  const handleDeleteNew = async (coll, id, name, type) => {
+    if(confirm('هل أنت متأكد من الحذف؟')) {
+       await deleteDoc(doc(db, coll, id));
+       await addLog('delete', type, name, id);
+       setShowModal(false);
+    }
+  };
+
+
+  const handleAddExpenseNew = async () => {
+    if (!newExpense.name || !newExpense.amount) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('E', counters.E + 1);
+    await addDoc(collection(db, 'expenses'), { ...newExpense, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('E'); await addLog('add', 'مصروف', newExpense.name, refNum);
+    setNewExpense(emptyExpense); setShowModal(false);
+  };
+
+  const handleAddTaskNew = async () => {
+    if (!newTask.title) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('T', counters.T + 1);
+    await addDoc(collection(db, 'tasks'), { ...newTask, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('T'); await addLog('add', 'مهمة', newTask.title, refNum);
+    setNewTask(emptyTask); setShowModal(false);
+  };
+
+   const handleAddProjectNew = async () => {
+    if (!newProject.name) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('P', counters.P + 1);
+    await addDoc(collection(db, 'projects'), { ...newProject, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('P'); await addLog('add', 'مشروع', newProject.name, refNum);
+    setNewProject(emptyProject); setShowModal(false);
+  };
+
+  const handleAddAccountNew = async () => {
+    if (!newAccount.name) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('A', counters.A + 1);
+    await addDoc(collection(db, 'accounts'), { ...newAccount, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('A'); await addLog('add', 'حساب', newAccount.name, refNum);
+    setNewAccount(emptyAccount); setShowModal(false);
+  };
+
   const [newSection, setNewSection] = useState(emptySection);
 
   // دالة النسخ
@@ -513,26 +573,18 @@ export default function App() {
   useEffect(() => { if (currentUser) setGreeting(getRandomGreeting(currentUser.username)); }, [currentUser]);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'data', 'main'), (snap) => {
-      if (snap.exists()) {
-        const d = snap.data();
-        setUsers(d.users || defaultUsers);
-        setExpenses(d.expenses || []);
-        setTasks(d.tasks || []);
-        setProjects(d.projects || []);
-        setTaskSections(d.taskSections || []);
-        setAccounts(d.accounts || []);
-        setAuditLog(d.auditLog || []);
-        setArchivedExpenses(d.archivedExpenses || []);
-        setArchivedTasks(d.archivedTasks || []);
-        setArchivedAccounts(d.archivedAccounts || []);
-        setArchivedProjects(d.archivedProjects || []);
-        setLoginLog(d.loginLog || []);
-        setCounters(d.counters || { E: 0, T: 0, P: 0, A: 0 });
-      }
-      setLoading(false);
-    });
-    return () => unsub();
+    setLoading(true);
+    const unsubs = [
+      onSnapshot(query(collection(db, 'expenses'), orderBy('createdAt', 'desc')), s => setExpenses(s.docs.map(d => ({id:d.id, ...d.data()})))),
+      onSnapshot(query(collection(db, 'tasks'), orderBy('createdAt', 'desc')), s => setTasks(s.docs.map(d => ({id:d.id, ...d.data()})))),
+      onSnapshot(query(collection(db, 'projects'), orderBy('createdAt', 'desc')), s => setProjects(s.docs.map(d => ({id:d.id, ...d.data()})))),
+      onSnapshot(query(collection(db, 'accounts'), orderBy('createdAt', 'desc')), s => setAccounts(s.docs.map(d => ({id:d.id, ...d.data()})))),
+      onSnapshot(collection(db, 'users'), s => { const u = s.docs.map(d => ({id:d.id, ...d.data()})); setUsers(u.length ? u : [{username:'نايف', password:'@Lion12345', role:'owner', active:true}]); }),
+      onSnapshot(doc(db, 'system', 'counters'), s => setCounters(s.exists() ? s.data() : { E:0, T:0, P:0, A:0 })),
+      onSnapshot(query(collection(db, 'audit'), orderBy('timestamp', 'desc')), s => setAuditLog(s.docs.map(d => ({id:d.id, ...d.data()})).slice(0, 50)))
+    ];
+    setLoading(false);
+    return () => unsubs.forEach(u => u());
   }, []);
 
   useEffect(() => { const t = setInterval(() => setCurrentTime(new Date()), 1000); return () => clearInterval(t); }, []);
@@ -2195,3 +2247,36 @@ export default function App() {
     </div>
   );
 }
+// --- NEW HANDLERS ---
+
+  const handleAddExpense = async () => {
+    if (!newExpense.name || !newExpense.amount) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('E', counters.E + 1);
+    await addDoc(collection(db, 'expenses'), { ...newExpense, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('E'); await addLog('add', 'مصروف', newExpense.name, refNum);
+    setNewExpense(emptyExpense); setShowModal(false);
+  };
+
+  const handleAddTask = async () => {
+    if (!newTask.title) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('T', counters.T + 1);
+    await addDoc(collection(db, 'tasks'), { ...newTask, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('T'); await addLog('add', 'مهمة', newTask.title, refNum);
+    setNewTask(emptyTask); setShowModal(false);
+  };
+
+   const handleAddProject = async () => {
+    if (!newProject.name) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('P', counters.P + 1);
+    await addDoc(collection(db, 'projects'), { ...newProject, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('P'); await addLog('add', 'مشروع', newProject.name, refNum);
+    setNewProject(emptyProject); setShowModal(false);
+  };
+
+  const handleAddAccount = async () => {
+    if (!newAccount.name) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('A', counters.A + 1);
+    await addDoc(collection(db, 'accounts'), { ...newAccount, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('A'); await addLog('add', 'حساب', newAccount.name, refNum);
+    setNewAccount(emptyAccount); setShowModal(false);
+  };
