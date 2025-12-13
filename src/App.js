@@ -104,7 +104,58 @@ const greetings = [
   (name) => `عساك بخير ${name} 💪`,
   (name) => `هلا بالغالي ${name} ❤️`,
   (name) => `مرحبتين ${name} 🙌`,
+  (name) => `يومك سعيد ${name} 🌈`,
+  (name) => `عساك طيب ${name} 🍀`,
+  (name) => `الله يسعدك ${name} 😊`,
+  (name) => `هلا بالنشيط ${name} 🚀`,
+  (name) => `يا هلا بالبطل ${name} 🏆`,
 ];
+
+// عبارات تشجيعية للصفحات المختلفة
+const encouragements = {
+  expenses: [
+    'إدارة المصروفات بذكاء = نجاح مضمون! 💰',
+    'التخطيط المالي الجيد بداية النجاح 📊',
+    'راقب مصروفاتك، تحكم بمستقبلك! 🎯',
+    'كل ريال مُدار بذكاء يصنع الفرق 💎',
+    'المتابعة الدقيقة سر التوفير 🔍',
+    'أنت على الطريق الصحيح! 🌟',
+  ],
+  tasks: [
+    'كل مهمة منجزة خطوة نحو القمة! 🏔️',
+    'النجاح يبدأ بمهمة واحدة 🚀',
+    'أنت قادر على إنجاز المزيد! 💪',
+    'التنظيم مفتاح الإنتاجية 🔑',
+    'خطوة بخطوة نحو الهدف 👣',
+    'استمر، أنت تبلي بلاءً حسناً! ⭐',
+  ],
+  projects: [
+    'كل مشروع ناجح يبدأ بخطة! 📋',
+    'الإنجازات الكبيرة تبدأ هنا 🎯',
+    'مشاريعك تعكس طموحك! 🌟',
+    'النجاح يحتاج صبراً ومتابعة 🏆',
+    'كل مشروع فرصة جديدة للتميز 💫',
+    'أنت مبدع في إدارة مشاريعك! 🚀',
+  ],
+  accounts: [
+    'حساباتك منظمة، أمورك ميسّرة! ✨',
+    'التنظيم سر النجاح 📁',
+    'إدارة ذكية = نتائج مبهرة 🎯',
+    'كل حساب في مكانه الصحيح 👌',
+    'المتابعة الدقيقة تصنع الفرق 🔍',
+  ],
+  empty: [
+    'ابدأ الآن وأضف أول عنصر! 🌱',
+    'الخطوة الأولى هي الأهم 👣',
+    'لا تتردد، ابدأ رحلتك! 🚀',
+    'كل إنجاز عظيم بدأ من هنا ⭐',
+  ]
+};
+
+const getRandomEncouragement = (type) => {
+  const msgs = encouragements[type] || encouragements.empty;
+  return msgs[Math.floor(Math.random() * msgs.length)];
+};
 
 const getRandomGreeting = (username) => {
   const randomIndex = Math.floor(Math.random() * greetings.length);
@@ -1203,27 +1254,53 @@ export default function App() {
 
           {currentView === 'expenses' && (
             <div>
-              <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+              <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
                 <h2 className={`text-lg font-bold ${txt}`}>المصروفات</h2>
                 <button onClick={() => { setNewExpense(emptyExpense); setModalType('addExp'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}><Plus className="w-4 h-4" />إضافة</button>
               </div>
+              <p className={`text-xs ${txtSm} mb-4`}>{getRandomEncouragement('expenses')}</p>
 
+              {/* بطاقات الإحصائيات - تصميم موحد */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                {[{ label: 'الإجمالي', value: totalExpenses, icon: DollarSign, color: 'from-blue-500 to-blue-600' },
-                  { label: 'الشهري', value: monthlyExpenses, icon: Calendar, color: 'from-green-500 to-green-600' },
-                  { label: 'السنوي', value: yearlyExpenses, icon: Wallet, color: 'from-purple-500 to-purple-600' },
-                  { label: 'مرة واحدة', value: onceExpenses, icon: CreditCard, color: 'from-orange-500 to-orange-600' }].map((s, i) => (
-                  <div key={i} className={`bg-gradient-to-br ${s.color} p-3 rounded-xl text-white`}>
-                    <div className="flex items-center gap-2 mb-1"><s.icon className="w-4 h-4 opacity-80" /><span className="text-xs opacity-80">{s.label}</span></div>
-                    <p className="text-lg font-bold">{formatNumber(s.value)} ريال</p>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>الإجمالي</span>
+                    <DollarSign className={`w-4 h-4 ${txtSm}`} />
                   </div>
-                ))}
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(totalExpenses)} <span className={`text-xs ${txtSm}`}>ريال</span></p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-blue-500/20"><span className="text-xs text-blue-400">{formatNumber(expenses.length)} مصروف</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>الشهري</span>
+                    <Calendar className={`w-4 h-4 ${txtSm}`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(monthlyExpenses)} <span className={`text-xs ${txtSm}`}>ريال</span></p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-green-500/20"><span className="text-xs text-green-400">{formatNumber(expenses.filter(e => e.type === 'شهري').length)} مصروف</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>السنوي</span>
+                    <Wallet className={`w-4 h-4 ${txtSm}`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(yearlyExpenses)} <span className={`text-xs ${txtSm}`}>ريال</span></p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-purple-500/20"><span className="text-xs text-purple-400">{formatNumber(expenses.filter(e => e.type === 'سنوي').length)} مصروف</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>مرة واحدة</span>
+                    <CreditCard className={`w-4 h-4 ${txtSm}`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(onceExpenses)} <span className={`text-xs ${txtSm}`}>ريال</span></p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-orange-500/20"><span className="text-xs text-orange-400">{formatNumber(expenses.filter(e => e.type === 'مرة واحدة').length)} مصروف</span></div>
+                </div>
               </div>
 
               {expenses.length === 0 ? (
                 <div className={`${card} p-8 rounded-xl border text-center`}>
                   <Wallet className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
                   <p className={txtSm}>لا توجد مصروفات</p>
+                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1312,7 +1389,7 @@ export default function App() {
 
           {currentView === 'tasks' && (
             <div>
-              <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+              <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
                 <h2 className={`text-lg font-bold ${txt}`}>المهام</h2>
                 <div className="flex gap-2">
                   <button onClick={() => { setNewSection(emptySection); setModalType('addSection'); setShowModal(true); }} className={`flex items-center gap-1 ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'} px-3 py-2 rounded-xl text-xs`}>
@@ -1321,6 +1398,43 @@ export default function App() {
                   <button onClick={() => { setNewTask(emptyTask); setModalType('addTask'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}>
                     <Plus className="w-4 h-4" />إضافة مهمة
                   </button>
+                </div>
+              </div>
+              <p className={`text-xs ${txtSm} mb-4`}>{getRandomEncouragement('tasks')}</p>
+
+              {/* بطاقات إحصائيات المهام - تصميم موحد */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>الإجمالي</span>
+                    <CheckSquare className={`w-4 h-4 ${txtSm}`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(tasks.length)}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-blue-500/20"><span className="text-xs text-blue-400">مهمة</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>عالي الأهمية</span>
+                    <AlertTriangle className={`w-4 h-4 text-red-400`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(tasks.filter(t => t.priority === 'عالي الأهمية').length)}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-red-500/20"><span className="text-xs text-red-400">مهمة</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>مستعجل</span>
+                    <Clock className={`w-4 h-4 text-orange-400`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(tasks.filter(t => t.priority === 'مستعجل').length)}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-orange-500/20"><span className="text-xs text-orange-400">مهمة</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>متوسط + منخفض</span>
+                    <Activity className={`w-4 h-4 text-green-400`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(tasks.filter(t => t.priority === 'متوسط الأهمية' || t.priority === 'منخفض الأهمية').length)}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-green-500/20"><span className="text-xs text-green-400">مهمة</span></div>
                 </div>
               </div>
 
@@ -1344,6 +1458,7 @@ export default function App() {
                 <div className={`${card} p-8 rounded-xl border text-center`}>
                   <CheckSquare className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
                   <p className={txtSm}>لا توجد مهام</p>
+                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1397,15 +1512,53 @@ export default function App() {
 
           {currentView === 'projects' && !selectedProject && (
             <div>
-              <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+              <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
                 <h2 className={`text-lg font-bold ${txt}`}>المشاريع</h2>
                 <button onClick={() => { setNewProject(emptyProject); setModalType('addProject'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}><Plus className="w-4 h-4" />إضافة مشروع</button>
+              </div>
+              <p className={`text-xs ${txtSm} mb-4`}>{getRandomEncouragement('projects')}</p>
+
+              {/* بطاقات إحصائيات المشاريع - تصميم موحد */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>الإجمالي</span>
+                    <FolderOpen className={`w-4 h-4 ${txtSm}`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(projects.length)}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-blue-500/20"><span className="text-xs text-blue-400">مشروع</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>جاري العمل</span>
+                    <Activity className={`w-4 h-4 text-blue-400`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(projects.filter(p => p.status === 'جاري العمل').length)}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-blue-500/20"><span className="text-xs text-blue-400">مشروع</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>مكتمل</span>
+                    <CheckSquare className={`w-4 h-4 text-green-400`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(projects.filter(p => p.status === 'مكتمل').length)}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-green-500/20"><span className="text-xs text-green-400">مشروع</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>القيمة الإجمالية</span>
+                    <DollarSign className={`w-4 h-4 text-purple-400`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(projects.reduce((s, p) => s + (parseFloat(p.budget) || 0), 0))}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-purple-500/20"><span className="text-xs text-purple-400">ريال</span></div>
+                </div>
               </div>
 
               {projects.length === 0 ? (
                 <div className={`${card} p-8 rounded-xl border text-center`}>
                   <FolderOpen className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
                   <p className={txtSm}>لا توجد مشاريع</p>
+                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-4">
@@ -1571,12 +1724,54 @@ export default function App() {
 
           {currentView === 'accounts' && (
             <div>
-              <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+              <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
                 <h2 className={`text-lg font-bold ${txt}`}>الحسابات</h2>
                 <button onClick={() => { setNewAccount(emptyAccount); setModalType('addAcc'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}><Plus className="w-4 h-4" />إضافة</button>
               </div>
+              <p className={`text-xs ${txtSm} mb-4`}>{getRandomEncouragement('accounts')}</p>
+
+              {/* بطاقات إحصائيات الحسابات - تصميم موحد */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>الإجمالي</span>
+                    <Users className={`w-4 h-4 ${txtSm}`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(accounts.length)}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-blue-500/20"><span className="text-xs text-blue-400">حساب</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>نشط</span>
+                    <CheckCircle className={`w-4 h-4 text-green-400`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d === null || d > 30; }).length)}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-green-500/20"><span className="text-xs text-green-400">حساب</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>ينتهي قريباً</span>
+                    <AlertTriangle className={`w-4 h-4 text-yellow-400`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 30 && d > 0; }).length)}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-yellow-500/20"><span className="text-xs text-yellow-400">حساب</span></div>
+                </div>
+                <div className={`${card} p-3 rounded-xl border`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-xs ${txtSm}`}>منتهي</span>
+                    <XCircle className={`w-4 h-4 text-red-400`} />
+                  </div>
+                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 0; }).length)}</p>
+                  <div className="mt-2 p-1.5 rounded-lg bg-red-500/20"><span className="text-xs text-red-400">حساب</span></div>
+                </div>
+              </div>
+
               {accounts.length === 0 ? (
-                <div className={`${card} p-8 rounded-xl border text-center`}><Users className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} /><p className={txtSm}>لا توجد حسابات</p></div>
+                <div className={`${card} p-8 rounded-xl border text-center`}>
+                  <Users className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
+                  <p className={txtSm}>لا توجد حسابات</p>
+                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
+                </div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">{accounts.map(a => (
                   <div key={a.id} className={`${card} p-4 rounded-xl border`}>
