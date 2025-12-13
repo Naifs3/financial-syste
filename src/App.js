@@ -994,7 +994,42 @@ export default function App() {
   if (loading) return <div className={`min-h-screen ${bg} flex items-center justify-center`} dir="rtl"><Loader className="w-12 h-12 text-blue-500 animate-spin" /></div>;
 
 
-  if (!isLoggedIn) return (
+  // --- NEW HANDLERS ---
+
+  const handleAddExpense = async () => {
+    if (!newExpense.name || !newExpense.amount) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('E', counters.E + 1);
+    await addDoc(collection(db, 'expenses'), { ...newExpense, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('E'); await addLog('add', 'مصروف', newExpense.name, refNum);
+    setNewExpense(emptyExpense); setShowModal(false);
+  };
+
+  const handleAddTask = async () => {
+    if (!newTask.title) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('T', counters.T + 1);
+    await addDoc(collection(db, 'tasks'), { ...newTask, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('T'); await addLog('add', 'مهمة', newTask.title, refNum);
+    setNewTask(emptyTask); setShowModal(false);
+  };
+
+   const handleAddProject = async () => {
+    if (!newProject.name) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('P', counters.P + 1);
+    await addDoc(collection(db, 'projects'), { ...newProject, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('P'); await addLog('add', 'مشروع', newProject.name, refNum);
+    setNewProject(emptyProject); setShowModal(false);
+  };
+
+  const handleAddAccount = async () => {
+    if (!newAccount.name) return alert('أكمل البيانات');
+    const refNum = generateRefNumber('A', counters.A + 1);
+    await addDoc(collection(db, 'accounts'), { ...newAccount, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await incrementCounter('A'); await addLog('add', 'حساب', newAccount.name, refNum);
+    setNewAccount(emptyAccount); setShowModal(false);
+  };
+
+
+if (!isLoggedIn) return (
     <div className={`min-h-screen ${bg} flex items-center justify-center p-4 relative overflow-hidden`} style={hideScrollbar} dir="rtl">
       <FinancialPattern />
       <div className={`${card} p-8 rounded-2xl shadow-2xl w-full max-w-md border relative z-10`}>
@@ -2247,36 +2282,3 @@ export default function App() {
     </div>
   );
 }
-// --- NEW HANDLERS ---
-
-  const handleAddExpense = async () => {
-    if (!newExpense.name || !newExpense.amount) return alert('أكمل البيانات');
-    const refNum = generateRefNumber('E', counters.E + 1);
-    await addDoc(collection(db, 'expenses'), { ...newExpense, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
-    await incrementCounter('E'); await addLog('add', 'مصروف', newExpense.name, refNum);
-    setNewExpense(emptyExpense); setShowModal(false);
-  };
-
-  const handleAddTask = async () => {
-    if (!newTask.title) return alert('أكمل البيانات');
-    const refNum = generateRefNumber('T', counters.T + 1);
-    await addDoc(collection(db, 'tasks'), { ...newTask, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
-    await incrementCounter('T'); await addLog('add', 'مهمة', newTask.title, refNum);
-    setNewTask(emptyTask); setShowModal(false);
-  };
-
-   const handleAddProject = async () => {
-    if (!newProject.name) return alert('أكمل البيانات');
-    const refNum = generateRefNumber('P', counters.P + 1);
-    await addDoc(collection(db, 'projects'), { ...newProject, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
-    await incrementCounter('P'); await addLog('add', 'مشروع', newProject.name, refNum);
-    setNewProject(emptyProject); setShowModal(false);
-  };
-
-  const handleAddAccount = async () => {
-    if (!newAccount.name) return alert('أكمل البيانات');
-    const refNum = generateRefNumber('A', counters.A + 1);
-    await addDoc(collection(db, 'accounts'), { ...newAccount, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
-    await incrementCounter('A'); await addLog('add', 'حساب', newAccount.name, refNum);
-    setNewAccount(emptyAccount); setShowModal(false);
-  };
