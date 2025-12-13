@@ -164,52 +164,6 @@ const greetings = [
   (name) => `يا هلا بالبطل ${name} 🏆`,
 ];
 
-// عبارات تشجيعية للصفحات المختلفة
-const encouragements = {
-  expenses: [
-    'إدارة المصروفات بذكاء = نجاح مضمون! 💰',
-    'التخطيط المالي الجيد بداية النجاح 📊',
-    'راقب مصروفاتك، تحكم بمستقبلك! 🎯',
-    'كل ريال مُدار بذكاء يصنع الفرق 💎',
-    'المتابعة الدقيقة سر التوفير 🔍',
-    'أنت على الطريق الصحيح! 🌟',
-  ],
-  tasks: [
-    'كل مهمة منجزة خطوة نحو القمة! 🏔️',
-    'النجاح يبدأ بمهمة واحدة 🚀',
-    'أنت قادر على إنجاز المزيد! 💪',
-    'التنظيم مفتاح الإنتاجية 🔑',
-    'خطوة بخطوة نحو الهدف 👣',
-    'استمر، أنت تبلي بلاءً حسناً! ⭐',
-  ],
-  projects: [
-    'كل مشروع ناجح يبدأ بخطة! 📋',
-    'الإنجازات الكبيرة تبدأ هنا 🎯',
-    'مشاريعك تعكس طموحك! 🌟',
-    'النجاح يحتاج صبراً ومتابعة 🏆',
-    'كل مشروع فرصة جديدة للتميز 💫',
-    'أنت مبدع في إدارة مشاريعك! 🚀',
-  ],
-  accounts: [
-    'حساباتك منظمة، أمورك ميسّرة! ✨',
-    'التنظيم سر النجاح 📁',
-    'إدارة ذكية = نتائج مبهرة 🎯',
-    'كل حساب في مكانه الصحيح 👌',
-    'المتابعة الدقيقة تصنع الفرق 🔍',
-  ],
-  empty: [
-    'ابدأ الآن وأضف أول عنصر! 🌱',
-    'الخطوة الأولى هي الأهم 👣',
-    'لا تتردد، ابدأ رحلتك! 🚀',
-    'كل إنجاز عظيم بدأ من هنا ⭐',
-  ]
-};
-
-const getRandomEncouragement = (type) => {
-  const msgs = encouragements[type] || encouragements.empty;
-  return msgs[Math.floor(Math.random() * msgs.length)];
-};
-
 const getRandomGreeting = (username) => {
   const randomIndex = Math.floor(Math.random() * greetings.length);
   return greetings[randomIndex](username);
@@ -1272,7 +1226,6 @@ export default function App() {
                 <h2 className={`text-lg font-bold ${txt}`}>المصروفات</h2>
                 <button onClick={() => { setNewExpense(emptyExpense); setModalType('addExp'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}><Plus className="w-4 h-4" />إضافة</button>
               </div>
-              <p className={`text-xs ${txtSm} mb-4`}>{getRandomEncouragement('expenses')}</p>
 
               {/* بطاقات الإحصائيات - تصميم موحد */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -1326,7 +1279,6 @@ export default function App() {
                 <div className={`${card} p-8 rounded-xl border text-center`}>
                   <Wallet className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
                   <p className={txtSm}>لا توجد مصروفات</p>
-                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
                 </div>
               ) : (
                 <div className={`${card} p-4 rounded-xl border`}>
@@ -1417,7 +1369,6 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              <p className={`text-xs ${txtSm} mb-4`}>{getRandomEncouragement('tasks')}</p>
 
               {/* بطاقات إحصائيات المهام - تصميم موحد */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -1475,7 +1426,6 @@ export default function App() {
                 <div className={`${card} p-8 rounded-xl border text-center`}>
                   <CheckSquare className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
                   <p className={txtSm}>لا توجد مهام</p>
-                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
                 </div>
               ) : (
                 <div className={`${card} p-4 rounded-xl border`}>
@@ -1534,7 +1484,6 @@ export default function App() {
                 <h2 className={`text-lg font-bold ${txt}`}>المشاريع</h2>
                 <button onClick={() => { setNewProject(emptyProject); setModalType('addProject'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}><Plus className="w-4 h-4" />إضافة مشروع</button>
               </div>
-              <p className={`text-xs ${txtSm} mb-4`}>{getRandomEncouragement('projects')}</p>
 
               {/* بطاقات إحصائيات المشاريع - تصميم موحد */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -1576,7 +1525,6 @@ export default function App() {
                 <div className={`${card} p-8 rounded-xl border text-center`}>
                   <FolderOpen className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
                   <p className={txtSm}>لا توجد مشاريع</p>
-                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
                 </div>
               ) : (
                 <div className={`${card} p-4 rounded-xl border`}>
@@ -1753,7 +1701,6 @@ export default function App() {
                 <h2 className={`text-lg font-bold ${txt}`}>الحسابات</h2>
                 <button onClick={() => { setNewAccount(emptyAccount); setModalType('addAcc'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}><Plus className="w-4 h-4" />إضافة</button>
               </div>
-              <p className={`text-xs ${txtSm} mb-4`}>{getRandomEncouragement('accounts')}</p>
 
               {/* بطاقات إحصائيات الحسابات - تصميم موحد */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -1795,7 +1742,6 @@ export default function App() {
                 <div className={`${card} p-8 rounded-xl border text-center`}>
                   <Users className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
                   <p className={txtSm}>لا توجد حسابات</p>
-                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
                 </div>
               ) : (
                 <div className={`${card} p-4 rounded-xl border`}>
