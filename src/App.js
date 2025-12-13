@@ -1012,48 +1012,169 @@ export default function App() {
           {currentView === 'dashboard' && (
             <div>
               <h2 className={`text-lg font-bold mb-4 ${txt}`}>لوحة التحكم</h2>
+              
+              {/* بطاقات الإحصائيات الجديدة */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                {[{ label: 'المصروفات', value: expenses.length, sub: `${expenses.filter(e => e.status !== 'مدفوع').length} قيد الانتظار`, gradient: 'from-blue-500 to-blue-600', view: 'expenses' },
-                  { label: 'المهام', value: tasks.length, sub: `${tasks.filter(t => t.priority === 'عالي الأهمية').length} عالية`, gradient: 'from-green-500 to-green-600', view: 'tasks' },
-                  { label: 'المشاريع', value: projects.length, sub: `${projects.filter(p => p.status === 'جاري العمل').length} جاري`, gradient: 'from-purple-500 to-purple-600', view: 'projects' },
-                  { label: 'الحسابات', value: accounts.length, sub: 'حساب', gradient: 'from-orange-500 to-orange-600', view: 'accounts' }].map((k, i) => (
-                  <button key={i} onClick={() => setCurrentView(k.view)} className={`bg-gradient-to-br ${k.gradient} p-3 rounded-xl text-white text-right`}>
-                    <p className="text-xs opacity-80">{k.label}</p>
-                    <p className="text-2xl font-bold">{formatNumber(k.value)}</p>
-                    <p className="text-xs opacity-70">{k.sub}</p>
-                  </button>
-                ))}
+                {/* بطاقة المصروفات */}
+                <button onClick={() => setCurrentView('expenses')} className="bg-gradient-to-br from-rose-500 to-pink-600 p-4 rounded-2xl text-white text-right relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-full opacity-10">
+                    <Wallet className="w-24 h-24 absolute -top-4 -left-4" />
+                  </div>
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <Wallet className="w-7 h-7 opacity-80" />
+                      <span className="text-3xl font-bold">{formatNumber(expenses.length)}</span>
+                    </div>
+                    <p className="text-sm font-bold mb-2">المصروفات</p>
+                    <div className="space-y-1 text-xs opacity-90">
+                      <div className="flex justify-between"><span>شهري</span><span className="font-bold">{formatNumber(expenses.filter(e => e.type === 'شهري').length)}</span></div>
+                      <div className="flex justify-between"><span>سنوي</span><span className="font-bold">{formatNumber(expenses.filter(e => e.type === 'سنوي').length)}</span></div>
+                      <div className="flex justify-between"><span>مرة واحدة</span><span className="font-bold">{formatNumber(expenses.filter(e => e.type === 'مرة واحدة').length)}</span></div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-white/20">
+                      <div className="flex justify-between text-xs"><span>الإجمالي</span><span className="font-bold">{formatNumber(expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0))} ر.س</span></div>
+                    </div>
+                  </div>
+                </button>
+
+                {/* بطاقة المهام */}
+                <button onClick={() => setCurrentView('tasks')} className="bg-gradient-to-br from-violet-500 to-purple-600 p-4 rounded-2xl text-white text-right relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-full opacity-10">
+                    <CheckSquare className="w-24 h-24 absolute -top-4 -left-4" />
+                  </div>
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <CheckSquare className="w-7 h-7 opacity-80" />
+                      <span className="text-3xl font-bold">{formatNumber(tasks.length)}</span>
+                    </div>
+                    <p className="text-sm font-bold mb-2">المهام</p>
+                    <div className="space-y-1 text-xs opacity-90">
+                      <div className="flex justify-between"><span className="flex items-center gap-1"><span className="w-2 h-2 bg-red-400 rounded-full"></span>عالي</span><span className="font-bold">{formatNumber(tasks.filter(t => t.priority === 'عالي الأهمية').length)}</span></div>
+                      <div className="flex justify-between"><span className="flex items-center gap-1"><span className="w-2 h-2 bg-orange-400 rounded-full"></span>مستعجل</span><span className="font-bold">{formatNumber(tasks.filter(t => t.priority === 'مستعجل').length)}</span></div>
+                      <div className="flex justify-between"><span className="flex items-center gap-1"><span className="w-2 h-2 bg-yellow-400 rounded-full"></span>متوسط</span><span className="font-bold">{formatNumber(tasks.filter(t => t.priority === 'متوسط الأهمية').length)}</span></div>
+                      <div className="flex justify-between"><span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-400 rounded-full"></span>منخفض</span><span className="font-bold">{formatNumber(tasks.filter(t => t.priority === 'منخفض الأهمية').length)}</span></div>
+                    </div>
+                  </div>
+                </button>
+
+                {/* بطاقة المشاريع */}
+                <button onClick={() => setCurrentView('projects')} className="bg-gradient-to-br from-emerald-500 to-teal-600 p-4 rounded-2xl text-white text-right relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-full opacity-10">
+                    <FolderOpen className="w-24 h-24 absolute -top-4 -left-4" />
+                  </div>
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <FolderOpen className="w-7 h-7 opacity-80" />
+                      <span className="text-3xl font-bold">{formatNumber(projects.length)}</span>
+                    </div>
+                    <p className="text-sm font-bold mb-2">المشاريع</p>
+                    <div className="space-y-1 text-xs opacity-90">
+                      <div className="flex justify-between"><span className="flex items-center gap-1"><span className="w-2 h-2 bg-blue-400 rounded-full"></span>جاري</span><span className="font-bold">{formatNumber(projects.filter(p => p.status === 'جاري العمل').length)}</span></div>
+                      <div className="flex justify-between"><span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-400 rounded-full"></span>مكتمل</span><span className="font-bold">{formatNumber(projects.filter(p => p.status === 'مكتمل').length)}</span></div>
+                      <div className="flex justify-between"><span className="flex items-center gap-1"><span className="w-2 h-2 bg-gray-400 rounded-full"></span>متوقف</span><span className="font-bold">{formatNumber(projects.filter(p => p.status === 'متوقف').length)}</span></div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-white/20">
+                      <div className="flex justify-between text-xs"><span>القيمة</span><span className="font-bold">{formatNumber(projects.reduce((s, p) => s + (parseFloat(p.budget) || 0), 0))} ر.س</span></div>
+                    </div>
+                  </div>
+                </button>
+
+                {/* بطاقة الحسابات */}
+                <button onClick={() => setCurrentView('accounts')} className="bg-gradient-to-br from-amber-500 to-orange-600 p-4 rounded-2xl text-white text-right relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-full opacity-10">
+                    <Users className="w-24 h-24 absolute -top-4 -left-4" />
+                  </div>
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <Users className="w-7 h-7 opacity-80" />
+                      <span className="text-3xl font-bold">{formatNumber(accounts.length)}</span>
+                    </div>
+                    <p className="text-sm font-bold mb-2">الحسابات</p>
+                    <div className="space-y-1 text-xs opacity-90">
+                      <div className="flex justify-between"><span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-400 rounded-full"></span>نشط</span><span className="font-bold">{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d === null || d > 30; }).length)}</span></div>
+                      <div className="flex justify-between"><span className="flex items-center gap-1"><span className="w-2 h-2 bg-yellow-400 rounded-full"></span>ينتهي قريباً</span><span className="font-bold">{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 30 && d > 0; }).length)}</span></div>
+                      <div className="flex justify-between"><span className="flex items-center gap-1"><span className="w-2 h-2 bg-red-400 rounded-full"></span>منتهي</span><span className="font-bold">{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 0; }).length)}</span></div>
+                    </div>
+                  </div>
+                </button>
               </div>
 
+              {/* بطاقات البنود العاجلة الجديدة */}
               {(urgentExpenses.length > 0 || urgentTasks.length > 0) && (
-                <div className={`${card} p-4 rounded-xl border mb-4`}>
+                <div className="mb-4">
                   <div className="flex items-center gap-2 mb-3">
                     <AlertTriangle className="w-5 h-5 text-red-500" />
-                    <h3 className={`font-bold ${txt}`}>عالية الأهمية</h3>
+                    <h3 className={`font-bold ${txt}`}>بنود تحتاج اهتمام</h3>
                   </div>
-                  <div className="grid md:grid-cols-2 gap-3">
-                    {urgentExpenses.slice(0, 3).map(e => {
-                      const d = calcDays(e.dueDate);
-                      return (
-                        <div key={e.id} className="bg-red-500/10 border border-red-500/30 p-3 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <span className={`text-sm font-bold ${txt}`}>{e.name}</span>
-                            <span className={`text-xs ${txtSm}`}><Clock className="w-3 h-3 inline ml-1" />{d < 0 ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم`}</span>
-                          </div>
-                          <p className={`text-lg font-bold ${txt}`}>{formatNumber(e.amount)} ريال</p>
-                        </div>
-                      );
-                    })}
-                    {urgentTasks.slice(0, 3).map(t => (
-                      <div key={t.id} className="bg-orange-500/10 border border-orange-500/30 p-3 rounded-lg">
-                        <div className="flex justify-between items-center">
-                          <span className={`text-sm font-bold ${txt}`}>{t.title}</span>
-                          <Badge status={t.priority} />
-                        </div>
-                        <span className={`text-xs ${txtSm}`}><User className="w-3 h-3 inline ml-1" />{t.assignedTo || 'غير محدد'}</span>
+                  
+                  {/* مصروفات قريبة */}
+                  {urgentExpenses.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-1 h-4 bg-red-500 rounded-full"></div>
+                        <span className={`text-sm font-bold ${txt}`}>مصروفات قريبة</span>
+                        <span className="bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full text-xs">{urgentExpenses.length}</span>
                       </div>
-                    ))}
-                  </div>
+                      <div className="grid md:grid-cols-3 gap-3">
+                        {urgentExpenses.slice(0, 3).map(e => {
+                          const d = calcDays(e.dueDate);
+                          const isOverdue = d !== null && d < 0;
+                          const isUrgent = d !== null && d <= 7;
+                          const bgColor = isOverdue ? 'from-red-500/20 to-red-600/10 border-red-500/30' : isUrgent ? 'from-orange-500/20 to-orange-600/10 border-orange-500/30' : 'from-yellow-500/20 to-yellow-600/10 border-yellow-500/30';
+                          const lineColor = isOverdue ? 'bg-red-500' : isUrgent ? 'bg-orange-500' : 'bg-yellow-500';
+                          const badgeColor = isOverdue ? 'bg-red-500 text-white' : isUrgent ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-black';
+                          return (
+                            <div key={e.id} className={`bg-gradient-to-br ${bgColor} border p-3 rounded-xl relative overflow-hidden`}>
+                              <div className={`absolute top-0 left-0 w-full h-1 ${lineColor}`}></div>
+                              <div className="flex items-start justify-between mb-2">
+                                <span className={`font-bold text-sm ${txt}`}>{e.name}</span>
+                                <span className={`${badgeColor} px-2 py-0.5 rounded-lg text-xs`}>{isOverdue ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم`}</span>
+                              </div>
+                              <p className={`text-xl font-bold mb-2 ${txt}`}>{formatNumber(e.amount)} <span className={`text-xs ${txtSm}`}>ريال</span></p>
+                              <div className={`flex items-center gap-2 text-xs ${txtSm}`}>
+                                <Clock className="w-3 h-3" />استحقاق: {e.dueDate}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* مهام عالية الأهمية */}
+                  {urgentTasks.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-1 h-4 bg-purple-500 rounded-full"></div>
+                        <span className={`text-sm font-bold ${txt}`}>مهام عالية الأهمية</span>
+                        <span className="bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full text-xs">{urgentTasks.length}</span>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {urgentTasks.slice(0, 4).map(t => {
+                          const d = calcDays(t.dueDate);
+                          const project = projects.find(p => p.id === t.projectId);
+                          const isHigh = t.priority === 'عالي الأهمية';
+                          const bgColor = isHigh ? 'from-purple-500/20 to-purple-600/10 border-purple-500/30' : 'from-orange-500/20 to-orange-600/10 border-orange-500/30';
+                          const lineColor = isHigh ? 'bg-purple-500' : 'bg-orange-500';
+                          return (
+                            <div key={t.id} className={`bg-gradient-to-br ${bgColor} border p-3 rounded-xl relative overflow-hidden`}>
+                              <div className={`absolute top-0 left-0 w-full h-1 ${lineColor}`}></div>
+                              <div className="flex items-start justify-between mb-2">
+                                <span className={`font-bold text-sm ${txt}`}>{t.title}</span>
+                                <Badge status={t.priority} />
+                              </div>
+                              {t.description && <p className={`text-xs mb-2 ${txtSm}`}>{t.description.substring(0, 50)}{t.description.length > 50 ? '...' : ''}</p>}
+                              <div className={`flex items-center gap-3 text-xs flex-wrap ${txtSm}`}>
+                                {t.assignedTo && <span className="inline-flex items-center gap-1"><User className="w-3 h-3" />المنفذ: {t.assignedTo}</span>}
+                                {d !== null && <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{d < 0 ? `مضى ${formatNumber(Math.abs(d))} يوم` : `متبقي ${formatNumber(d)} يوم`}</span>}
+                                {project && <span className={`inline-flex items-center gap-1 ${accent.text}`}><FolderOpen className="w-3 h-3" />{project.name}</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1536,10 +1657,81 @@ export default function App() {
                 <div className={`${card} p-8 rounded-xl border text-center`}><Archive className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} /><p className={txtSm}>الأرشيف فارغ</p></div>
               ) : (
                 <div className="space-y-4">
-                  {archivedExpenses?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>المصروفات ({formatNumber(archivedExpenses.length)})</h3>{archivedExpenses.map(e => (<div key={e.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{e.name}</span><span className={`mr-2 ${txt}`}>{formatNumber(e.amount)} ريال</span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {e.archivedBy}</p></div><IconBtn onClick={() => restoreExpense(e)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
-                  {archivedTasks?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>المهام ({formatNumber(archivedTasks.length)})</h3>{archivedTasks.map(t => (<div key={t.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{t.title}</span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {t.archivedBy}</p></div><IconBtn onClick={() => restoreTask(t)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
-                  {archivedProjects?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>المشاريع ({formatNumber(archivedProjects.length)})</h3>{archivedProjects.map(p => (<div key={p.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{p.name}</span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {p.archivedBy}</p></div><IconBtn onClick={() => restoreProject(p)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
-                  {archivedAccounts?.length > 0 && <div><h3 className={`font-bold text-sm mb-2 ${txt}`}>الحسابات ({formatNumber(archivedAccounts.length)})</h3>{archivedAccounts.map(a => (<div key={a.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}><div><span className={`font-bold text-sm ${txt}`}>{a.name}</span><p className={`text-xs ${txtSm}`}>حذف بواسطة: {a.archivedBy}</p></div><IconBtn onClick={() => restoreAccount(a)} icon={RotateCcw} title="إستعادة" /></div>))}</div>}
+                  {archivedExpenses?.length > 0 && (
+                    <div>
+                      <h3 className={`font-bold text-sm mb-2 ${txt}`}>المصروفات ({formatNumber(archivedExpenses.length)})</h3>
+                      {archivedExpenses.map(e => (
+                        <div key={e.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`font-bold text-sm ${txt}`}>{e.name}</span>
+                              <span className={`${txt}`}>{formatNumber(e.amount)} ريال</span>
+                            </div>
+                            <div className={`text-xs ${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mt-1`}>
+                              <span className="inline-flex items-center gap-1"><User className="w-3 h-3" />حذف بواسطة: {e.archivedBy}</span>
+                              {e.archivedAt && <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(e.archivedAt).toLocaleDateString('en-GB')}</span>}
+                              {e.archivedAt && <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime12(new Date(e.archivedAt))}</span>}
+                            </div>
+                          </div>
+                          <IconBtn onClick={() => restoreExpense(e)} icon={RotateCcw} title="إستعادة" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {archivedTasks?.length > 0 && (
+                    <div>
+                      <h3 className={`font-bold text-sm mb-2 ${txt}`}>المهام ({formatNumber(archivedTasks.length)})</h3>
+                      {archivedTasks.map(t => (
+                        <div key={t.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}>
+                          <div className="flex-1">
+                            <span className={`font-bold text-sm ${txt}`}>{t.title}</span>
+                            <div className={`text-xs ${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mt-1`}>
+                              <span className="inline-flex items-center gap-1"><User className="w-3 h-3" />حذف بواسطة: {t.archivedBy}</span>
+                              {t.archivedAt && <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(t.archivedAt).toLocaleDateString('en-GB')}</span>}
+                              {t.archivedAt && <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime12(new Date(t.archivedAt))}</span>}
+                            </div>
+                          </div>
+                          <IconBtn onClick={() => restoreTask(t)} icon={RotateCcw} title="إستعادة" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {archivedProjects?.length > 0 && (
+                    <div>
+                      <h3 className={`font-bold text-sm mb-2 ${txt}`}>المشاريع ({formatNumber(archivedProjects.length)})</h3>
+                      {archivedProjects.map(p => (
+                        <div key={p.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}>
+                          <div className="flex-1">
+                            <span className={`font-bold text-sm ${txt}`}>{p.name}</span>
+                            <div className={`text-xs ${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mt-1`}>
+                              <span className="inline-flex items-center gap-1"><User className="w-3 h-3" />حذف بواسطة: {p.archivedBy}</span>
+                              {p.archivedAt && <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(p.archivedAt).toLocaleDateString('en-GB')}</span>}
+                              {p.archivedAt && <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime12(new Date(p.archivedAt))}</span>}
+                            </div>
+                          </div>
+                          <IconBtn onClick={() => restoreProject(p)} icon={RotateCcw} title="إستعادة" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {archivedAccounts?.length > 0 && (
+                    <div>
+                      <h3 className={`font-bold text-sm mb-2 ${txt}`}>الحسابات ({formatNumber(archivedAccounts.length)})</h3>
+                      {archivedAccounts.map(a => (
+                        <div key={a.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}>
+                          <div className="flex-1">
+                            <span className={`font-bold text-sm ${txt}`}>{a.name}</span>
+                            <div className={`text-xs ${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mt-1`}>
+                              <span className="inline-flex items-center gap-1"><User className="w-3 h-3" />حذف بواسطة: {a.archivedBy}</span>
+                              {a.archivedAt && <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(a.archivedAt).toLocaleDateString('en-GB')}</span>}
+                              {a.archivedAt && <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime12(new Date(a.archivedAt))}</span>}
+                            </div>
+                          </div>
+                          <IconBtn onClick={() => restoreAccount(a)} icon={RotateCcw} title="إستعادة" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
