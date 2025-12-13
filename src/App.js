@@ -593,7 +593,7 @@ export default function App() {
     } catch (e) { console.error(e); } 
   };
 
-  const addLog = (action, itemType, itemName, itemId) => { 
+  // REMOVED DUPLICATE const addLog = (action, itemType, itemName, itemId) => { 
     const actionText = action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : action === 'delete' ? 'بحذف' : action === 'restore' ? 'بإستعادة' : action === 'pay' ? 'بدفع' : action;
     const desc = `${currentUser?.username || 'النظام'} قام ${actionText} ${itemType}: ${itemName}`;
     const l = { id: `LOG${Date.now()}`, user: currentUser?.username || 'النظام', action, itemType, itemName, itemId, description: desc, timestamp: new Date().toISOString() }; 
