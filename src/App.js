@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
-import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, DollarSign, Wallet, FolderPlus, AlertTriangle, Map, Search, RefreshCw, Shield, CheckCircle, XCircle, Copy, ExternalLink, Eye, EyeOff, Folder, BookOpen } from 'lucide-react';
+import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, ChevronLeft, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, DollarSign, Wallet, FolderPlus, AlertTriangle, Map, Type, Search, RefreshCw, Shield, CheckCircle, XCircle, Copy, ExternalLink, Eye, EyeOff, Folder, BookOpen } from 'lucide-react';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDpzPCma5c4Tuxd5htRHOvm4aYLRbj8Qkg",
@@ -465,6 +465,11 @@ export default function App() {
   const [newAccount, setNewAccount] = useState(emptyAccount);
   const [newUser, setNewUser] = useState(emptyUser);
   const [newSection, setNewSection] = useState(emptySection);
+
+  // دالة النسخ
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+  };
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
