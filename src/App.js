@@ -461,8 +461,7 @@ export default function App() {
   
   // عدادات الأرقام التسلسلية
   const [counters, setCounters] = useState({ E: 0, T: 0, P: 0, A: 0 });
-
-  // --- NEW MULTI-USER LOGIC ---
+  // --- FINAL CLEAN HELPERS ---
   const incrementCounter = async (key) => {
     await runTransaction(db, async (t) => {
       const ref = doc(db, 'system', 'counters');
@@ -472,6 +471,25 @@ export default function App() {
   };
   
   const addLog = async (action, type, name, itemId) => {
+    await addDoc(collection(db, 'audit'), {
+      user: currentUser?.username || 'النظام', action, itemType: type, itemName: name, itemId,
+      description: ${currentUser?.username} قام  : ,
+      timestamp: new Date().toISOString()
+    });
+  };
+  // ---------------------------
+
+
+  // --- NEW MULTI-USER LOGIC ---
+  // REMOVED DUPLICATE const incrementCounter = async (key) => {
+    await runTransaction(db, async (t) => {
+      const ref = doc(db, 'system', 'counters');
+      const docVal = await t.get(ref);
+      t.set(ref, { ...docVal.data(), [key]: (docVal.data()?.[key] || 0) + 1 }, { merge: true });
+    });
+  };
+  
+  // REMOVED DUPLICATE const addLog = async (action, type, name, itemId) => {
     await addDoc(collection(db, 'audit'), {
       user: currentUser?.username || 'النظام', action, itemType: type, itemName: name, itemId,
       description: `${currentUser?.username} قام ${action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : 'بحذف'} ${type}: ${name}`,
@@ -596,7 +614,7 @@ export default function App() {
     } catch (e) { console.error(e); } 
   };
 
-  const addLog = (action, itemType, itemName, itemId) => { 
+  // REMOVED DUPLICATE const addLog = (action, itemType, itemName, itemId) => { 
     const actionText = action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : action === 'delete' ? 'بحذف' : action === 'restore' ? 'بإستعادة' : action === 'pay' ? 'بدفع' : action;
     const desc = `${currentUser?.username || 'النظام'} قام ${actionText} ${itemType}: ${itemName}`;
     const l = { id: `LOG${Date.now()}`, user: currentUser?.username || 'النظام', action, itemType, itemName, itemId, description: desc, timestamp: new Date().toISOString() }; 
