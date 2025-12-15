@@ -484,7 +484,7 @@ export default function App() {
   const addLog = async (action, type, name, itemId) => {
     await addDoc(collection(db, 'audit'), {
       user: currentUser?.username || 'النظام', action, itemType: type, itemName: name, itemId,
-      description: ${currentUser?.username} قام  : ,
+      description: `${currentUser?.username} قام ${action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : 'بحذف'} ${type}: ${name}`,
       timestamp: new Date().toISOString()
     });
   };
