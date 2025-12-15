@@ -394,9 +394,9 @@ const MapPicker = ({ onSelect, onClose, darkMode }) => {
 // Tokyo Night Background Component
 const TokyoNightBg = () => (
   <>
-    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0,boxShadow:"742px 1123px #7aa2f7,1803px 608px #bb9af7,1582px 1726px #7dcfff,1676px 994px #7aa2f7,615px 537px #9ece6a,1311px 1363px #7aa2f7,1137px 1085px #bb9af7,1995px 1975px #7dcfff,1381px 1381px #7aa2f7,1280px 407px #bb9af7,435px 1003px #7dcfff,1636px 1146px #7aa2f7,91px 1699px #9ece6a,1588px 1717px #7aa2f7,1582px 537px #bb9af7,524px 1480px #7dcfff,1447px 1279px #7aa2f7,1831px 1663px #bb9af7,1047px 1576px #7dcfff,1668px 1376px #7aa2f7,1149px 1768px #9ece6a,502px 863px #7aa2f7,1330px 1460px #bb9af7,1989px 1016px #7dcfff,1024px 1659px #7aa2f7,1913px 1088px #bb9af7,1454px 918px #7dcfff,615px 1651px #7aa2f7,1415px 1667px #9ece6a,1349px 1404px #7aa2f7,1147px 1737px #bb9af7,1683px 297px #7dcfff,1880px 1650px #7aa2f7,851px 1017px #bb9af7,1123px 561px #7dcfff,488px 1834px #7aa2f7,296px 252px #9ece6a",width:"1px",height:"1px",animation:"twinkle 3s ease-in-out infinite"}}/>
-    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0,boxShadow:"1433px 1850px #7aa2f7,671px 1791px #bb9af7,1865px 1019px #7dcfff,1383px 1811px #7aa2f7,1542px 1575px #9ece6a,965px 1479px #7aa2f7,1924px 1212px #bb9af7,327px 1766px #7dcfff,1677px 1675px #7aa2f7,1919px 1164px #bb9af7,1708px 1393px #7dcfff,1686px 1529px #7aa2f7",width:"2px",height:"2px",animation:"twinkle 5s ease-in-out infinite 1s"}}/>
-    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0,boxShadow:"1018px 1233px #7aa2f7,1786px 1710px #bb9af7,725px 1448px #7dcfff,1850px 1430px #7aa2f7,1626px 469px #9ece6a",width:"3px",height:"3px",animation:"twinkle 7s ease-in-out infinite 2s"}}/>
+    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0,boxShadow:"742px 1123px #7aa2f7,1803px 608px #bb9af7,1582px 1726px #7dcfff,1676px 994px #7aa2f7,615px 537px #9ece6a,1311px 1363px #7aa2f7,1137px 1085px #bb9af7,1995px 1975px #7dcfff,1381px 1381px #7aa2f7,1280px 407px #bb9af7,435px 1003px #7dcfff,1636px 1146px #7aa2f7",width:"1px",height:"1px",animation:"twinkle 3s ease-in-out infinite"}}/>
+    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0,boxShadow:"1433px 1850px #7aa2f7,671px 1791px #bb9af7,1865px 1019px #7dcfff,1383px 1811px #7aa2f7,1542px 1575px #9ece6a",width:"2px",height:"2px",animation:"twinkle 5s ease-in-out infinite 1s"}}/>
+    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0,boxShadow:"1018px 1233px #7aa2f7,1786px 1710px #bb9af7,725px 1448px #7dcfff",width:"3px",height:"3px",animation:"twinkle 7s ease-in-out infinite 2s"}}/>
     <div style={{position:"fixed",top:"-50%",left:"-50%",width:"200%",height:"200%",pointerEvents:"none",zIndex:0,opacity:0.15,background:"radial-gradient(ellipse at 20% 30%,rgba(122,162,247,0.3) 0%,transparent 50%),radial-gradient(ellipse at 80% 70%,rgba(187,154,247,0.3) 0%,transparent 50%)",animation:"aurora 20s ease-in-out infinite"}}/>
     {[...Array(10)].map((_,i)=><div key={i} style={{position:"fixed",width:"4px",height:"4px",background:"radial-gradient(circle,rgba(122,162,247,0.8) 0%,transparent 70%)",borderRadius:"50%",pointerEvents:"none",zIndex:0,left:`${(i+1)*10}%`,animation:"float 15s ease-in-out infinite",animationDelay:`${i*2}s`}}/>)}
   </>
@@ -492,7 +492,7 @@ export default function App() {
 
 
   // --- NEW MULTI-USER LOGIC ---
-  // REMOVED DUPLICATE const incrementCounter = async (key) => {
+  const incrementCounter = async (key) => {
     await runTransaction(db, async (t) => {
       const ref = doc(db, 'system', 'counters');
       const docVal = await t.get(ref);
@@ -500,7 +500,7 @@ export default function App() {
     });
   };
   
-  // REMOVED DUPLICATE const addLog = async (action, type, name, itemId) => {
+  const addLog = async (action, type, name, itemId) => {
     await addDoc(collection(db, 'audit'), {
       user: currentUser?.username || 'النظام', action, itemType: type, itemName: name, itemId,
       description: `${currentUser?.username} قام ${action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : 'بحذف'} ${type}: ${name}`,
@@ -1034,7 +1034,7 @@ export default function App() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowVersions(false)}>
           <div className={`${card} p-6 rounded-2xl max-w-md w-full border`} onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4"><h3 className={`text-lg font-bold ${txt}`}>سجل النسخ</h3><button onClick={() => setShowVersions(false)} className={txtSm}><X className="w-5 h-5" /></button></div>
-            <div className={`space-y-3 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>{versionHistory.map((v, i) => (<div key={v.version} className={`tokyo-card p-3 rounded-xl ${i === 0 ? `${accent.color}/20` : darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}><div className="flex justify-between mb-2"><span className={`font-bold text-sm ${txt}`}>v{v.version}</span><span className={`text-xs ${txtSm}`}>{v.date}</span></div><ul className={`text-xs ${txtSm} space-y-1`}>{v.changes.map((c, j) => <li key={j}>• {c}</li>)}</ul></div>))}</div>
+            <div className={`space-y-3 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>{versionHistory.map((v, i) => (<div key={v.version} className={`p-3 rounded-xl ${i === 0 ? `${accent.color}/20` : darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}><div className="flex justify-between mb-2"><span className={`font-bold text-sm ${txt}`}>v{v.version}</span><span className={`text-xs ${txtSm}`}>{v.date}</span></div><ul className={`text-xs ${txtSm} space-y-1`}>{v.changes.map((c, j) => <li key={j}>• {c}</li>)}</ul></div>))}</div>
           </div>
         </div>
       )}
@@ -1042,10 +1042,7 @@ export default function App() {
   );
 
   return (
-    <>
-      <TokyoNightBg />
-      <div style={{position:"relative",zIndex:1}}>
-        <div className={`min-h-screen relative overflow-x-hidden pb-16`} style={{ fontSize: `${fontSize}px`, fontFamily: currentFont.value, background: darkMode ? 'linear-gradient(135deg, #1a1b26 0%, #16161e 100%)' : 'linear-gradient(135deg, #c0caf5 0%, #a9b1d6 100%)', ...hideScrollbar }} dir="rtl">
+    <div className={`min-h-screen ${bg} relative overflow-x-hidden pb-16`} style={{ fontSize: `${fontSize}px`, fontFamily: currentFont.value, ...hideScrollbar }} dir="rtl">
       <style>{`
           @keyframes twinkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
           @keyframes aurora{0%,100%{transform:translate(0,0) rotate(0deg)}33%{transform:translate(5%,5%) rotate(10deg)}66%{transform:translate(-5%,5%) rotate(-10deg)}}
@@ -2123,7 +2120,7 @@ export default function App() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowVersions(false)}>
           <div className={`${card} p-6 rounded-2xl max-w-md w-full border`} onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4"><h3 className={`text-lg font-bold ${txt}`}>سجل النسخ</h3><button onClick={() => setShowVersions(false)} className={txtSm}><X className="w-5 h-5" /></button></div>
-            <div className={`space-y-3 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>{versionHistory.map((v, i) => (<div key={v.version} className={`tokyo-card p-3 rounded-xl ${i === 0 ? `${accent.color}/20` : darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}><div className="flex justify-between mb-2"><span className={`font-bold text-sm ${txt}`}>v{v.version}</span><span className={`text-xs ${txtSm}`}>{v.date}</span></div><ul className={`text-xs ${txtSm} space-y-1`}>{v.changes.map((c, j) => <li key={j}>• {c}</li>)}</ul></div>))}</div>
+            <div className={`space-y-3 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>{versionHistory.map((v, i) => (<div key={v.version} className={`p-3 rounded-xl ${i === 0 ? `${accent.color}/20` : darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}><div className="flex justify-between mb-2"><span className={`font-bold text-sm ${txt}`}>v{v.version}</span><span className={`text-xs ${txtSm}`}>{v.date}</span></div><ul className={`text-xs ${txtSm} space-y-1`}>{v.changes.map((c, j) => <li key={j}>• {c}</li>)}</ul></div>))}</div>
           </div>
         </div>
       )}
@@ -2160,7 +2157,7 @@ export default function App() {
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الموقع</label>
                     <div className="flex gap-2">
                       <input placeholder="مثال: جدة - حي النزهة" value={modalType === 'addExp' ? newExpense.location : editingItem?.location || ''} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, location: e.target.value }) : setEditingItem({ ...editingItem, location: e.target.value })} className={`flex-1 p-3 border rounded-xl text-sm ${inp}`} />
-                      <button onClick={() => openMapPicker(modalType === 'addExp' ? 'newExpense' : 'editExpense')} className={`tokyo-card p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Map className="w-5 h-5" /></button>
+                      <button onClick={() => openMapPicker(modalType === 'addExp' ? 'newExpense' : 'editExpense')} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Map className="w-5 h-5" /></button>
                     </div>
                   </div>
                 </div>
@@ -2182,7 +2179,7 @@ export default function App() {
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الموقع</label>
                     <div className="flex gap-2">
                       <input placeholder="مثال: جدة" value={modalType === 'addTask' ? newTask.location : editingItem?.location || ''} onChange={e => modalType === 'addTask' ? setNewTask({ ...newTask, location: e.target.value }) : setEditingItem({ ...editingItem, location: e.target.value })} className={`flex-1 p-3 border rounded-xl text-sm ${inp}`} />
-                      <button onClick={() => openMapPicker(modalType === 'addTask' ? 'newTask' : 'editTask')} className={`tokyo-card p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Map className="w-5 h-5" /></button>
+                      <button onClick={() => openMapPicker(modalType === 'addTask' ? 'newTask' : 'editTask')} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Map className="w-5 h-5" /></button>
                     </div>
                   </div>
                 </div>
@@ -2201,7 +2198,7 @@ export default function App() {
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الموقع</label>
                     <div className="flex gap-2">
                       <input value={modalType === 'addProject' ? newProject.location : editingItem?.location || ''} onChange={e => modalType === 'addProject' ? setNewProject({ ...newProject, location: e.target.value }) : setEditingItem({ ...editingItem, location: e.target.value })} className={`flex-1 p-3 border rounded-xl text-sm ${inp}`} />
-                      <button onClick={() => openMapPicker(modalType === 'addProject' ? 'newProject' : 'editProject')} className={`tokyo-card p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Map className="w-5 h-5" /></button>
+                      <button onClick={() => openMapPicker(modalType === 'addProject' ? 'newProject' : 'editProject')} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Map className="w-5 h-5" /></button>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
