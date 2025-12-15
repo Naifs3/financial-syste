@@ -417,6 +417,7 @@ export default function App() {
   const [bgIndex, setBgIndex] = useState(() => parseInt(localStorage.getItem('bgIndex')) || 0);
   const [accentIndex, setAccentIndex] = useState(() => parseInt(localStorage.getItem('accentIndex')) || 0);
   const [headerColorIndex, setHeaderColorIndex] = useState(() => parseInt(localStorage.getItem('headerColorIndex')) || 0);
+  const [tokyoNightEnabled, setTokyoNightEnabled] = useState(() => localStorage.getItem('tokyoNightEnabled') === 'true');
   const [currentView, setCurrentView] = useState('dashboard');
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
@@ -642,6 +643,12 @@ export default function App() {
     const ll = [{ id: `L${Date.now()}`, user: currentUser.username, timestamp: new Date().toISOString(), action: 'خروج', duration }, ...loginLog];
     setLoginLog(ll); save({ loginLog: ll }); setIsLoggedIn(false); setCurrentUser(null); setSessionStart(null);
     localStorage.removeItem('isLoggedIn'); localStorage.removeItem('currentUser');
+  };
+
+  const toggleTokyoNight = () => {
+    const newValue = !tokyoNightEnabled;
+    setTokyoNightEnabled(newValue);
+    localStorage.setItem('tokyoNightEnabled', newValue);
   };
 
   const addExpense = () => {
@@ -1016,9 +1023,9 @@ export default function App() {
 
   return (
     <>
-      <TokyoNightBg />
+      {tokyoNightEnabled && <TokyoNightBg />}
       <div style={{position:"relative",zIndex:1}}>
-        <div className={`min-h-screen relative overflow-x-hidden pb-16`} style={{ fontSize: `${fontSize}px`, fontFamily: currentFont.value, background: darkMode ? 'linear-gradient(135deg, #1a1b26 0%, #16161e 100%)' : 'linear-gradient(135deg, #c0caf5 0%, #a9b1d6 100%)', ...hideScrollbar }} dir="rtl">
+        <div className={`min-h-screen relative overflow-x-hidden pb-16`} style={{ fontSize: `${fontSize}px`, fontFamily: currentFont.value, background: tokyoNightEnabled ? (darkMode ? 'linear-gradient(135deg, #1a1b26 0%, #16161e 100%)' : 'linear-gradient(135deg, #c0caf5 0%, #a9b1d6 100%)') : `linear-gradient(to bottom right, ${darkMode ? currentBg.dark : currentBg.light})`, ...hideScrollbar }} dir="rtl">
       <style>{`
           @keyframes twinkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
           @keyframes aurora{0%,100%{transform:translate(0,0) rotate(0deg)}33%{transform:translate(5%,5%) rotate(10deg)}66%{transform:translate(-5%,5%) rotate(-10deg)}}
@@ -1111,6 +1118,26 @@ export default function App() {
               <div className={`absolute left-0 top-12 w-80 ${cardPopup} rounded-xl shadow-2xl border z-50 p-4 max-h-[80vh] overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>
                 <h4 className={`font-bold text-sm mb-3 ${txt}`}>الإعدادات</h4>
                 
+                <div className="mb-4">
+                  <p className={`text-xs mb-2 ${txtSm}`}>نمط الواجهة</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={toggleTokyoNight} className={`p-3 rounded-xl border-2 transition-all ${tokyoNightEnabled ? 'border-blue-500 bg-blue-500/20' : (darkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-100')}`}>
+                      <div className="text-center">
+                        <div className="text-2xl mb-1">🌃</div>
+                        <div className={`text-xs font-bold ${txt}`}>Tokyo Night</div>
+                        <div className={`text-[10px] ${txtSm}`}>نجوم متلألئة</div>
+                      </div>
+                    </button>
+                    <button onClick={toggleTokyoNight} className={`p-3 rounded-xl border-2 transition-all ${!tokyoNightEnabled ? 'border-blue-500 bg-blue-500/20' : (darkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-100')}`}>
+                      <div className="text-center">
+                        <div className="text-2xl mb-1">🎨</div>
+                        <div className={`text-xs font-bold ${txt}`}>كلاسيكي</div>
+                        <div className={`text-[10px] ${txtSm}`}>الثيم الأصلي</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="mb-4">
                   <p className={`text-xs mb-2 ${txtSm}`}>المظهر</p>
                   <div className="flex gap-2">
