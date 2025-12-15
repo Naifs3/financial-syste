@@ -2158,7 +2158,7 @@ export default function App() {
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الوصف</label><textarea value={modalType === 'addExp' ? newExpense.reason : editingItem?.reason || ''} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, reason: e.target.value }) : setEditingItem({ ...editingItem, reason: e.target.value })} className={`w-full p-3 border rounded-xl text-sm ${inp}`} rows="2" /></div>
                   <div><label className={`block text-xs mb-1 ${txtSm}`}>الموقع</label>
                     <div className="flex gap-2">
-                      <input placeholder="مثال: الأحساء- عين نجم - حي النزهة" value={modalType === 'addExp' ? newExpense.location : editingItem?.location || ''} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, location: e.target.value }) : setEditingItem({ ...editingItem, location: e.target.value })} className={`flex-1 p-3 border rounded-xl text-sm ${inp}`} />
+                      <input placeholder="مثال: الأحساء- عين نجم - حي الهفوف" value={modalType === 'addExp' ? newExpense.location : editingItem?.location || ''} onChange={e => modalType === 'addExp' ? setNewExpense({ ...newExpense, location: e.target.value }) : setEditingItem({ ...editingItem, location: e.target.value })} className={`flex-1 p-3 border rounded-xl text-sm ${inp}`} />
                       <button onClick={() => openMapPicker(modalType === 'addExp' ? 'newExpense' : 'editExpense')} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}`}><Map className="w-5 h-5" /></button>
                     </div>
                   </div>
