@@ -393,7 +393,7 @@ const MapPicker = ({ onSelect, onClose, darkMode }) => {
 
 const TokyoNightBg = () => (
   <>
-    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0,boxShadow:"742px 1123px #7aa2f7,1803px 608px #bb9af7,1582px 1726px #7dcfff,1676px 994px #7aa2f7,615px 537px #9ece6a,1311px 1363px #7aa2f7",width:"1px",height:"1px",animation:"twinkle 3s ease-in-out infinite"}}/>
+    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0,boxShadow:"742px 1123px #7aa2f7,1803px 608px #bb9af7,1582px 1726px #7dcfff,1676px 994px #7aa2f7,615px 537px #9ece6a",width:"1px",height:"1px",animation:"twinkle 3s ease-in-out infinite"}}/>
     <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0,boxShadow:"1433px 1850px #7aa2f7,671px 1791px #bb9af7,1865px 1019px #7dcfff",width:"2px",height:"2px",animation:"twinkle 5s ease-in-out infinite 1s"}}/>
     <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0,boxShadow:"1018px 1233px #7aa2f7,1786px 1710px #bb9af7,725px 1448px #7dcfff",width:"3px",height:"3px",animation:"twinkle 7s ease-in-out infinite 2s"}}/>
     <div style={{position:"fixed",top:"-50%",left:"-50%",width:"200%",height:"200%",pointerEvents:"none",zIndex:0,opacity:0.15,background:"radial-gradient(ellipse at 20% 30%,rgba(122,162,247,0.3) 0%,transparent 50%),radial-gradient(ellipse at 80% 70%,rgba(187,154,247,0.3) 0%,transparent 50%)",animation:"aurora 20s ease-in-out infinite"}}/>
@@ -483,7 +483,7 @@ export default function App() {
   const addLog = async (action, type, name, itemId) => {
     await addDoc(collection(db, 'audit'), {
       user: currentUser?.username || 'النظام', action, itemType: type, itemName: name, itemId,
-      description: ${currentUser?.username} قام  : ,
+      description: `${currentUser?.username} قام ${action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : 'بحذف'} ${type}: ${name}`,
       timestamp: new Date().toISOString()
     });
   };
@@ -491,22 +491,6 @@ export default function App() {
 
 
   // --- NEW MULTI-USER LOGIC ---
-  const incrementCounter = async (key) => {
-    await runTransaction(db, async (t) => {
-      const ref = doc(db, 'system', 'counters');
-      const docVal = await t.get(ref);
-      t.set(ref, { ...docVal.data(), [key]: (docVal.data()?.[key] || 0) + 1 }, { merge: true });
-    });
-  };
-  
-  const addLog = async (action, type, name, itemId) => {
-    await addDoc(collection(db, 'audit'), {
-      user: currentUser?.username || 'النظام', action, itemType: type, itemName: name, itemId,
-      description: `${currentUser?.username} قام ${action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : 'بحذف'} ${type}: ${name}`,
-      timestamp: new Date().toISOString()
-    });
-  };
-
   const handleAddExpenseNew = async () => {
     if (!newExpense.name || !newExpense.amount) return alert('أكمل البيانات');
     const refNum = generateRefNumber('E', counters.E + 1);
@@ -624,14 +608,6 @@ export default function App() {
     } catch (e) { console.error(e); } 
   };
 
-  // REMOVED DUPLICATE const addLog = (action, itemType, itemName, itemId) => { 
-    const actionText = action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : action === 'delete' ? 'بحذف' : action === 'restore' ? 'بإستعادة' : action === 'pay' ? 'بدفع' : action;
-    const desc = `${currentUser?.username || 'النظام'} قام ${actionText} ${itemType}: ${itemName}`;
-    const l = { id: `LOG${Date.now()}`, user: currentUser?.username || 'النظام', action, itemType, itemName, itemId, description: desc, timestamp: new Date().toISOString() }; 
-    const nl = [l, ...auditLog]; 
-    setAuditLog(nl); 
-    setNewNotifications(p => p + 1); 
-    if (action === 'delete') setArchiveNotifications(p => p + 1);
     return nl; 
   };
 
@@ -1041,7 +1017,10 @@ export default function App() {
   );
 
   return (
-    <div className={`min-h-screen ${bg} relative overflow-x-hidden pb-16`} style={{ fontSize: `${fontSize}px`, fontFamily: currentFont.value, ...hideScrollbar }} dir="rtl">
+    <>
+      <TokyoNightBg />
+      <div style={{position:"relative",zIndex:1}}>
+        <div className={`min-h-screen relative overflow-x-hidden pb-16`} style={{ fontSize: `${fontSize}px`, fontFamily: currentFont.value, background: darkMode ? 'linear-gradient(135deg, #1a1b26 0%, #16161e 100%)' : 'linear-gradient(135deg, #c0caf5 0%, #a9b1d6 100%)', ...hideScrollbar }} dir="rtl">
       <style>{`
           @keyframes twinkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
           @keyframes aurora{0%,100%{transform:translate(0,0) rotate(0deg)}33%{transform:translate(5%,5%) rotate(10deg)}66%{transform:translate(-5%,5%) rotate(-10deg)}}
