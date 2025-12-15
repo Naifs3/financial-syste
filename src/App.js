@@ -2243,7 +2243,6 @@ export default function App() {
           <img src={previewImage} alt="preview" className="max-w-full max-h-full object-contain rounded-lg" />
         </div>
       )}
-    </div>
       </div>
     </div>
   </>
