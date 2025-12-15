@@ -479,33 +479,7 @@ export default function App() {
       t.set(ref, { ...docVal.data(), [key]: (docVal.data()?.[key] || 0) + 1 }, { merge: true });
     });
   };
-  
-  const addLog = async (action, type, name, itemId) => {
-    await addDoc(collection(db, 'audit'), {
-      user: currentUser?.username || 'النظام', action, itemType: type, itemName: name, itemId,
-      description: `${currentUser?.username || 'النظام'} قام ${action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : 'بحذف'} ${type}: ${name}`,
-      timestamp: new Date().toISOString()
-    });
-  };
   // ---------------------------
-
-
-  // --- NEW MULTI-USER LOGIC ---
-  const incrementCounter = async (key) => {
-    await runTransaction(db, async (t) => {
-      const ref = doc(db, 'system', 'counters');
-      const docVal = await t.get(ref);
-      t.set(ref, { ...docVal.data(), [key]: (docVal.data()?.[key] || 0) + 1 }, { merge: true });
-    });
-  };
-  
-  const addLog = async (action, type, name, itemId) => {
-    await addDoc(collection(db, 'audit'), {
-      user: currentUser?.username || 'النظام', action, itemType: type, itemName: name, itemId,
-      description: `${currentUser?.username} قام ${action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : 'بحذف'} ${type}: ${name}`,
-      timestamp: new Date().toISOString()
-    });
-  };
 
   const handleAddExpenseNew = async () => {
     if (!newExpense.name || !newExpense.amount) return alert('أكمل البيانات');
