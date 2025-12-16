@@ -1,8 +1,12 @@
+// ================================================================
+// الجزء الأول - الإعدادات والاستيراد والدوال المساعدة
+// ================================================================
+
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot, query, orderBy, runTransaction } from 'firebase/firestore';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, ChevronLeft, ChevronDown, ChevronUp, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, CreditCard, DollarSign, Wallet, FolderPlus, AlertTriangle, Image, Map, Type, Search, RefreshCw, Shield, CheckCircle, XCircle, Copy, ExternalLink, Eye, EyeOff, Folder, BookOpen } from 'lucide-react';
+import { getAuth, signOut, onAuthStateChanged } from 'firebase/auth';
+import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, ChevronLeft, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, DollarSign, Wallet, FolderPlus, AlertTriangle, Type, Search, RefreshCw, Shield, CheckCircle, XCircle, Copy, ExternalLink, Eye, EyeOff, Folder, BookOpen } from 'lucide-react';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDpzPCma5c4Tuxd5htRHOvm4aYLRbj8Qkg",
@@ -16,44 +20,32 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const APP_VERSION = "5.3.0-FirebaseAuth";
+const APP_VERSION = "5.4.0-SecureAuth";
 
-// نظام الأرقام التسلسلية
-const generateRefNumber = (prefix, counter) => {
-  return `${prefix}-${String(counter).padStart(4, '0')}`;
-};
+const generateRefNumber = (prefix, counter) => `${prefix}-${String(counter).padStart(4, '0')}`;
 
-// ألوان موحدة للحالات
 const getStatusColor = (status, days = null) => {
-  // متأخر / منتهي / عالي الأهمية
   if (status === 'overdue' || status === 'expired' || status === 'عالي الأهمية' || status === 'delete' || (days !== null && days < 0)) {
     return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', badge: 'bg-red-500/30 text-red-300' };
   }
-  // عاجل / مستعجل / ينتهي قريباً
   if (status === 'urgent' || status === 'مستعجل' || (days !== null && days <= 7)) {
     return { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30', badge: 'bg-orange-500/30 text-orange-300' };
   }
-  // قريب / متوسط
   if (status === 'soon' || status === 'متوسط الأهمية' || (days !== null && days <= 14)) {
     return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30', badge: 'bg-yellow-500/30 text-yellow-300' };
   }
-  // آمن / مكتمل / منخفض / نشط / إضافة
   if (status === 'safe' || status === 'مكتمل' || status === 'منخفض الأهمية' || status === 'active' || status === 'add') {
     return { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/30', badge: 'bg-green-500/30 text-green-300' };
   }
-  // جاري العمل / مرة واحدة / تعديل
   if (status === 'جاري العمل' || status === 'مرة واحدة' || status === 'edit') {
     return { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30', badge: 'bg-blue-500/30 text-blue-300' };
   }
-  // متوقف / سنوي / دفع
   if (status === 'متوقف' || status === 'سنوي' || status === 'refresh') {
     return { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/30', badge: 'bg-purple-500/30 text-purple-300' };
   }
-  // افتراضي
   return { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500/30', badge: 'bg-gray-500/30 text-gray-300' };
 };
 
-// تحديد لون المصروف حسب الأيام والنوع
 const getExpenseColor = (days, type) => {
   if (type === 'مرة واحدة') return getStatusColor('مرة واحدة');
   if (days === null) return getStatusColor('safe');
@@ -63,17 +55,8 @@ const getExpenseColor = (days, type) => {
   return getStatusColor('safe');
 };
 
-// تحديد لون المهمة حسب الأولوية
-const getTaskColor = (priority) => {
-  return getStatusColor(priority);
-};
-
-// تحديد لون المشروع حسب الحالة
-const getProjectColor = (status) => {
-  return getStatusColor(status);
-};
-
-// تحديد لون الحساب حسب الأيام المتبقية
+const getTaskColor = (priority) => getStatusColor(priority);
+const getProjectColor = (status) => getStatusColor(status);
 const getAccountColor = (days) => {
   if (days === null || days > 30) return getStatusColor('active');
   if (days <= 0) return getStatusColor('expired');
@@ -87,47 +70,26 @@ const formatNumber = (num) => {
   return Number(num).toLocaleString('en-US');
 };
 
-// حساب تاريخ الاستحقاق التالي
 const calcNextDueDate = (startDate, type) => {
   if (!startDate) return null;
   const start = new Date(startDate);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
-  if (type === 'مرة واحدة') {
-    return start;
-  }
-  
+  if (type === 'مرة واحدة') return start;
   let nextDue = new Date(start);
   const daysToAdd = type === 'شهري' ? 30 : 365;
-  
   while (nextDue <= today) {
     nextDue.setDate(nextDue.getDate() + daysToAdd);
   }
-  
   return nextDue;
 };
 
-// حساب الأيام المتبقية
 const calcDaysRemaining = (startDate, type) => {
   const nextDue = calcNextDueDate(startDate, type);
   if (!nextDue) return null;
-  
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const diff = Math.ceil((nextDue - today) / (1000 * 60 * 60 * 24));
-  return diff;
-};
-
-// تحديد حالة المصروف
-const getExpenseStatus = (expense) => {
-  if (expense.status === 'مدفوع') return 'مدفوع';
-  const days = calcDaysRemaining(expense.dueDate, expense.type);
-  if (days === null) return 'لم يتم الدفع';
-  if (expense.type === 'شهري' && days <= 7) return 'قريباً الدفع';
-  if (expense.type === 'سنوي' && days <= 15) return 'قريباً الدفع';
-  if (days < 0) return 'متأخر';
-  return 'لم يتم الدفع';
+  return Math.ceil((nextDue - today) / (1000 * 60 * 60 * 24));
 };
 
 const fonts = [
@@ -138,84 +100,24 @@ const fonts = [
   { id: 'rubik', name: 'Rubik', value: "'Rubik', sans-serif", url: 'https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap' },
 ];
 
-const versionHistory = [
-  { version: "4.6.0", date: "2024-12-14", changes: ["تصميم زجاجي", "فقاعات ملونة", "20 تحية", "تحديث المصروفات"] },
-  { version: "4.5.0", date: "2024-12-14", changes: ["نظام استحقاق ذكي", "تتبع المنفق", "حالات جديدة"] },
-  { version: "4.4.0", date: "2024-12-14", changes: ["بيانات متجاورة بأيقونات", "خيارات الخطوط"] },
-];
-
 const quotes = [
   "النجاح يبدأ بخطوة 🚀", "استثمر وقتك بحكمة ⏰", "التخطيط المالي مفتاح النجاح 💰", "كل يوم فرصة جديدة 🌟",
   "الإصرار يصنع المستحيل 💪", "فكر كبيراً وابدأ صغيراً 🎯", "المثابرة طريق التميز ⭐", "النظام أساس النجاح 📊",
 ];
 
 const greetings = [
-  (name) => `أهلاً ${name} 👋`,
-  (name) => `مرحباً ${name} 🌟`,
-  (name) => `هلا ${name} ✨`,
-  (name) => `أهلين ${name} 💫`,
-  (name) => `يا هلا ${name} 🎯`,
-  (name) => `حياك الله ${name} 🌙`,
-  (name) => `نورت ${name} ☀️`,
-  (name) => `هلا والله ${name} 🔥`,
-  (name) => `أهلاً وسهلاً ${name} 🌺`,
-  (name) => `تشرفنا ${name} ⭐`,
-  (name) => `منور ${name} 💡`,
-  (name) => `الله يحييك ${name} 🤝`,
-  (name) => `هلا وغلا ${name} 💎`,
-  (name) => `يا مرحبا ${name} 🎉`,
-  (name) => `حيّاك ${name} 🌷`,
-  (name) => `أسعد الله أوقاتك ${name} 🕐`,
-  (name) => `طال عمرك ${name} 🌿`,
-  (name) => `عساك بخير ${name} 💪`,
-  (name) => `هلا بالغالي ${name} ❤️`,
-  (name) => `مرحبتين ${name} 🙌`,
-  (name) => `يومك سعيد ${name} 🌈`,
-  (name) => `عساك طيب ${name} 🍀`,
-  (name) => `الله يسعدك ${name} 😊`,
-  (name) => `هلا بالنشيط ${name} 🚀`,
-  (name) => `يا هلا بالبطل ${name} 🏆`,
+  (name) => `أهلاً ${name} 👋`, (name) => `مرحباً ${name} 🌟`, (name) => `هلا ${name} ✨`,
+  (name) => `أهلين ${name} 💫`, (name) => `يا هلا ${name} 🎯`, (name) => `حياك الله ${name} 🌙`,
+  (name) => `نورت ${name} ☀️`, (name) => `هلا والله ${name} 🔥`, (name) => `أهلاً وسهلاً ${name} 🌺`,
+  (name) => `تشرفنا ${name} ⭐`, (name) => `منور ${name} 💡`, (name) => `الله يحييك ${name} 🤝`,
 ];
 
-// عبارات تشجيعية للصفحات المختلفة
 const encouragements = {
-  expenses: [
-    'إدارة المصروفات بذكاء = نجاح مضمون! 💰',
-    'التخطيط المالي الجيد بداية النجاح 📊',
-    'راقب مصروفاتك، تحكم بمستقبلك! 🎯',
-    'كل ريال مُدار بذكاء يصنع الفرق 💎',
-    'المتابعة الدقيقة سر التوفير 🔍',
-    'أنت على الطريق الصحيح! 🌟',
-  ],
-  tasks: [
-    'كل مهمة منجزة خطوة نحو القمة! 🏔️',
-    'النجاح يبدأ بمهمة واحدة 🚀',
-    'أنت قادر على إنجاز المزيد! 💪',
-    'التنظيم مفتاح الإنتاجية 🔑',
-    'خطوة بخطوة نحو الهدف 👣',
-    'استمر، أنت تبلي بلاءً حسناً! ⭐',
-  ],
-  projects: [
-    'كل مشروع ناجح يبدأ بخطة! 📋',
-    'الإنجازات الكبيرة تبدأ هنا 🎯',
-    'مشاريعك تعكس طموحك! 🌟',
-    'النجاح يحتاج صبراً ومتابعة 🏆',
-    'كل مشروع فرصة جديدة للتميز 💫',
-    'أنت مبدع في إدارة مشاريعك! 🚀',
-  ],
-  accounts: [
-    'حساباتك منظمة، أمورك ميسّرة! ✨',
-    'التنظيم سر النجاح 📁',
-    'إدارة ذكية = نتائج مبهرة 🎯',
-    'كل حساب في مكانه الصحيح 👌',
-    'المتابعة الدقيقة تصنع الفرق 🔍',
-  ],
-  empty: [
-    'ابدأ الآن وأضف أول عنصر! 🌱',
-    'الخطوة الأولى هي الأهم 👣',
-    'لا تتردد، ابدأ رحلتك! 🚀',
-    'كل إنجاز عظيم بدأ من هنا ⭐',
-  ]
+  expenses: ['إدارة المصروفات بذكاء = نجاح مضمون! 💰', 'التخطيط المالي الجيد بداية النجاح 📊'],
+  tasks: ['كل مهمة منجزة خطوة نحو القمة! 🏔️', 'النجاح يبدأ بمهمة واحدة 🚀'],
+  projects: ['كل مشروع ناجح يبدأ بخطة! 📋', 'الإنجازات الكبيرة تبدأ هنا 🎯'],
+  accounts: ['حساباتك منظمة، أمورك ميسّرة! ✨', 'التنظيم سر النجاح 📁'],
+  empty: ['ابدأ الآن وأضف أول عنصر! 🌱', 'الخطوة الأولى هي الأهم 👣']
 };
 
 const getRandomEncouragement = (type) => {
@@ -223,11 +125,7 @@ const getRandomEncouragement = (type) => {
   return msgs[Math.floor(Math.random() * msgs.length)];
 };
 
-const getRandomGreeting = (username) => {
-  const randomIndex = Math.floor(Math.random() * greetings.length);
-  return greetings[randomIndex](username);
-};
-
+const getRandomGreeting = (username) => greetings[Math.floor(Math.random() * greetings.length)](username);
 
 const backgrounds = [
   { id: 0, name: 'أسود', dark: 'from-gray-950 via-black to-gray-950', light: 'from-gray-100 via-gray-50 to-gray-100' },
@@ -255,6 +153,10 @@ const headerColors = [
   { id: 5, name: 'أخضر', sample: 'bg-emerald-900', dark: 'bg-emerald-950/90 backdrop-blur-sm border-emerald-900', light: 'bg-emerald-900/90 backdrop-blur-sm border-emerald-800' },
 ];
 
+// ================================// ================================
+// الجزء الثاني - المكونات المساعدة (Components)
+// ================================
+
 const FinancialPattern = () => (
   <svg className="absolute inset-0 w-full h-full opacity-[0.03] pointer-events-none" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -273,33 +175,25 @@ const FinancialPattern = () => (
 
 const MapPicker = ({ onSelect, onClose, darkMode }) => {
   const [search, setSearch] = useState('');
-  const [searching, setSearching] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [position, setPosition] = useState({ lat: 24.7136, lng: 46.6753 });
   const [locationName, setLocationName] = useState('الرياض');
-  const mapRef = useRef(null);
   const searchTimeout = useRef(null);
 
-  const searchSuggestions = async (query) => {
-    if (!query.trim() || query.length < 2) {
-      setSuggestions([]);
-      return;
-    }
+  const searchSuggestions = async (q) => {
+    if (!q.trim() || q.length < 2) { setSuggestions([]); return; }
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`);
-      const data = await response.json();
-      setSuggestions(data || []);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5`);
+      setSuggestions(await res.json() || []);
       setShowSuggestions(true);
-    } catch (error) {
-      console.error('Search error:', error);
-    }
+    } catch (e) { console.error(e); }
   };
 
-  const handleSearchInput = (value) => {
-    setSearch(value);
+  const handleSearchInput = (v) => {
+    setSearch(v);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => searchSuggestions(value), 300);
+    searchTimeout.current = setTimeout(() => searchSuggestions(v), 300);
   };
 
   const selectSuggestion = (item) => {
@@ -310,11 +204,6 @@ const MapPicker = ({ onSelect, onClose, darkMode }) => {
     setShowSuggestions(false);
   };
 
-  const handleConfirm = () => {
-    const mapUrl = `https://www.google.com/maps?q=${position.lat},${position.lng}`;
-    onSelect(mapUrl, locationName, `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`);
-  };
-
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4">
       <div className={`${darkMode ? 'bg-gray-900' : 'bg-white'} rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl`}>
@@ -322,71 +211,37 @@ const MapPicker = ({ onSelect, onClose, darkMode }) => {
           <h3 className={`font-bold text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>تحديد الموقع</h3>
           <button onClick={onClose} className={`p-1 rounded-lg ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}><X className="w-5 h-5" /></button>
         </div>
-        
         <div className="p-4">
-          <div className="relative mb-4">
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <input 
-                  type="text" 
-                  placeholder="ابحث عن موقع (مثال: برج المملكة، الرياض)" 
-                  value={search} 
-                  onChange={e => handleSearchInput(e.target.value)}
-                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                  className={`w-full p-3 rounded-xl border text-sm ${darkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'}`}
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className={`absolute top-full left-0 right-0 mt-1 rounded-xl border shadow-lg z-50 max-h-48 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                    {suggestions.map((item, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => selectSuggestion(item)}
-                        className={`w-full text-right p-3 flex items-center gap-2 ${darkMode ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-50 text-gray-700'} ${idx !== suggestions.length - 1 ? (darkMode ? 'border-b border-gray-700' : 'border-b border-gray-100') : ''}`}
-                      >
-                        <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <span className="text-sm truncate">{item.display_name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button 
-                onClick={() => searchSuggestions(search)} 
-                disabled={searching}
-                className={`px-4 rounded-xl ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white flex items-center gap-2`}
-              >
-                {searching ? <Loader className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              </button>
+          <div className="relative mb-4 flex gap-2">
+            <div className="flex-1 relative">
+              <input type="text" placeholder="ابحث عن موقع" value={search} onChange={e => handleSearchInput(e.target.value)} onFocus={() => suggestions.length > 0 && setShowSuggestions(true)} className={`w-full p-3 rounded-xl border text-sm ${darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200'}`} />
+              {showSuggestions && suggestions.length > 0 && (
+                <div className={`absolute top-full left-0 right-0 mt-1 rounded-xl border shadow-lg z-50 max-h-48 overflow-y-auto ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  {suggestions.map((item, idx) => (
+                    <button key={idx} onClick={() => selectSuggestion(item)} className={`w-full text-right p-3 flex items-center gap-2 ${darkMode ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-50 text-gray-700'}`}>
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm truncate">{item.display_name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+            <button onClick={() => searchSuggestions(search)} className={`px-4 rounded-xl ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white`}><Search className="w-4 h-4" /></button>
           </div>
-          
           <div className="relative rounded-xl overflow-hidden border-2 border-gray-300" style={{ height: '300px' }}>
-            <iframe
-              ref={mapRef}
-              src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${position.lat},${position.lng}&zoom=15&maptype=roadmap&language=ar`}
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-            />
+            <iframe src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${position.lat},${position.lng}&zoom=15`} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" title="map" />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="flex flex-col items-center">
-                <MapPin className="w-10 h-10 text-red-500 drop-shadow-lg" style={{ marginBottom: '-8px' }} />
-                <div className="w-2 h-2 bg-red-500 rounded-full shadow-lg" />
-              </div>
+              <MapPin className="w-10 h-10 text-red-500 drop-shadow-lg" />
             </div>
           </div>
-          
           <div className={`mt-3 p-3 rounded-xl text-sm ${darkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-600'}`}>
             <p><strong>الموقع:</strong> {locationName}</p>
             <p><strong>الإحداثيات:</strong> {position.lat.toFixed(6)}, {position.lng.toFixed(6)}</p>
           </div>
         </div>
-
         <div className={`p-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex gap-3 justify-end`}>
-          <button onClick={onClose} className={`px-5 py-2.5 rounded-xl text-sm ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}>إلغاء</button>
-          <button onClick={handleConfirm} className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm">تأكيد الموقع</button>
+          <button onClick={onClose} className={`px-5 py-2.5 rounded-xl text-sm ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200'}`}>إلغاء</button>
+          <button onClick={() => onSelect(`https://www.google.com/maps?q=${position.lat},${position.lng}`, locationName, `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`)} className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm">تأكيد</button>
         </div>
       </div>
     </div>
@@ -394,128 +249,56 @@ const MapPicker = ({ onSelect, onClose, darkMode }) => {
 };
 
 const TokyoNightBg = () => {
-  // إضافة الـ CSS animations
-  React.useEffect(() => {
+  useEffect(() => {
     const styleId = 'tokyo-night-styles';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
       style.id = styleId;
       style.textContent = `
-        @keyframes twinkle {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.3; transform: scale(0.8); }
-        }
-        @keyframes shoot {
-          0% { transform: translateX(0) translateY(0); opacity: 1; }
-          100% { transform: translateX(-300px) translateY(300px); opacity: 0; }
-        }
-        @keyframes aurora {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          33% { transform: translate(5%, 5%) rotate(10deg); }
-          66% { transform: translate(-5%, 5%) rotate(-10deg); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
-        }
+        @keyframes twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
+        @keyframes shoot { 0% { transform: translateX(0) translateY(0); opacity: 1; } 100% { transform: translateX(-300px) translateY(300px); opacity: 0; } }
+        @keyframes aurora { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 33% { transform: translate(5%, 5%) rotate(10deg); } 66% { transform: translate(-5%, 5%) rotate(-10deg); } }
       `;
       document.head.appendChild(style);
     }
   }, []);
 
-  // النجوم الكثيرة - 3 طبقات
-  const stars1Shadow = "742px 1123px #7aa2f7,1803px 608px #bb9af7,1582px 1726px #7dcfff,1676px 994px #7aa2f7,615px 537px #9ece6a,1311px 1363px #7aa2f7,1137px 1085px #bb9af7,1995px 1975px #7dcfff,1381px 1381px #7aa2f7,1280px 407px #bb9af7,435px 1003px #7dcfff,1636px 1146px #7aa2f7,91px 1699px #9ece6a,1588px 1717px #7aa2f7,1582px 537px #bb9af7,524px 1480px #7dcfff,1447px 1279px #7aa2f7,1831px 1663px #bb9af7,1047px 1576px #7dcfff,1668px 1376px #7aa2f7,1149px 1768px #9ece6a,502px 863px #7aa2f7,1330px 1460px #bb9af7,1989px 1016px #7dcfff,1024px 1659px #7aa2f7,1913px 1088px #bb9af7,1454px 918px #7dcfff,615px 1651px #7aa2f7,1415px 1667px #9ece6a,1349px 1404px #7aa2f7,1147px 1737px #bb9af7,1683px 297px #7dcfff,1880px 1650px #7aa2f7,851px 1017px #bb9af7,1123px 561px #7dcfff,488px 1834px #7aa2f7,296px 252px #9ece6a,1330px 1120px #7aa2f7,1949px 1687px #bb9af7,1588px 1460px #7dcfff,734px 1306px #7aa2f7,1729px 1927px #bb9af7,1840px 1077px #7dcfff,1371px 828px #7aa2f7,863px 1750px #9ece6a,320px 890px #7aa2f7,1560px 234px #bb9af7,987px 1456px #7dcfff,1234px 789px #7aa2f7,456px 1678px #9ece6a,1890px 345px #7aa2f7,678px 1234px #bb9af7,1456px 567px #7dcfff,234px 1890px #7aa2f7,1678px 890px #bb9af7,890px 456px #7dcfff,567px 1123px #7aa2f7,1345px 678px #9ece6a,789px 1567px #7aa2f7,1901px 234px #bb9af7,345px 1789px #7dcfff,1567px 901px #7aa2f7,901px 345px #bb9af7,123px 1456px #7dcfff,1789px 678px #7aa2f7,456px 890px #9ece6a";
-  
-  const stars2Shadow = "1433px 1850px #7aa2f7,671px 1791px #bb9af7,1865px 1019px #7dcfff,1383px 1811px #7aa2f7,1542px 1575px #9ece6a,965px 1479px #7aa2f7,1924px 1212px #bb9af7,327px 1766px #7dcfff,1677px 1675px #7aa2f7,1919px 1164px #bb9af7,1708px 1393px #7dcfff,1686px 1529px #7aa2f7,1538px 1939px #9ece6a,1405px 1516px #7aa2f7,1744px 1069px #bb9af7,1805px 1764px #7dcfff,1490px 1570px #7aa2f7,1725px 1344px #bb9af7,398px 1352px #7dcfff,438px 1907px #7aa2f7,1421px 1115px #9ece6a,1841px 299px #7aa2f7,1503px 1724px #bb9af7,1659px 1053px #7dcfff,1308px 1417px #7aa2f7,1909px 1672px #bb9af7,1574px 1506px #7dcfff,1836px 1266px #7aa2f7,1238px 1390px #9ece6a,1781px 1397px #7aa2f7,298px 1543px #bb9af7,1687px 876px #7dcfff,923px 1298px #7aa2f7,1456px 432px #9ece6a,765px 1876px #7aa2f7,1234px 654px #bb9af7,543px 1432px #7dcfff,1765px 987px #7aa2f7,876px 321px #bb9af7,1543px 1765px #7dcfff,321px 1098px #7aa2f7,1987px 543px #9ece6a";
-
-  const stars3Shadow = "1018px 1233px #7aa2f7,1786px 1710px #bb9af7,725px 1448px #7dcfff,1850px 1430px #7aa2f7,1626px 469px #9ece6a,1726px 646px #7aa2f7,1263px 1992px #bb9af7,363px 1535px #7dcfff,1933px 1352px #7aa2f7,1611px 1984px #bb9af7,1451px 1583px #7dcfff,354px 1987px #7aa2f7,1636px 1374px #9ece6a,1906px 1755px #7aa2f7,1530px 1016px #bb9af7,911px 1591px #7dcfff,1996px 1506px #7aa2f7,1034px 1569px #bb9af7,1705px 1491px #7dcfff,1275px 1661px #7aa2f7,498px 1823px #9ece6a,1367px 754px #7aa2f7,823px 1367px #bb9af7,1592px 498px #7dcfff,754px 1592px #7aa2f7,1823px 823px #bb9af7,367px 1754px #7dcfff,1498px 367px #7aa2f7,592px 1498px #9ece6a";
+  const stars1Shadow = "742px 1123px #7aa2f7,1803px 608px #bb9af7,1582px 1726px #7dcfff,1676px 994px #7aa2f7,615px 537px #9ece6a,1311px 1363px #7aa2f7,1137px 1085px #bb9af7,1995px 1975px #7dcfff";
+  const stars2Shadow = "1433px 1850px #7aa2f7,671px 1791px #bb9af7,1865px 1019px #7dcfff,1383px 1811px #7aa2f7,1542px 1575px #9ece6a";
 
   return (
     <>
-      {/* 3 طبقات نجوم */}
       <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0}}>
         <div style={{position:"absolute",background:"transparent",boxShadow:stars1Shadow,width:"1px",height:"1px",animation:"twinkle 3s ease-in-out infinite"}}/>
       </div>
       <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0}}>
         <div style={{position:"absolute",background:"transparent",boxShadow:stars2Shadow,width:"2px",height:"2px",animation:"twinkle 5s ease-in-out infinite 1s"}}/>
       </div>
-      <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0}}>
-        <div style={{position:"absolute",background:"transparent",boxShadow:stars3Shadow,width:"3px",height:"3px",animation:"twinkle 7s ease-in-out infinite 2s"}}/>
-      </div>
-
-      {/* 8 شهب متساقطة */}
-      {[
-        {top:'10%',left:'85%',delay:'0s'},
-        {top:'25%',left:'70%',delay:'2s'},
-        {top:'40%',left:'90%',delay:'4s'},
-        {top:'55%',left:'75%',delay:'6s'},
-        {top:'70%',left:'85%',delay:'8s'},
-        {top:'15%',left:'60%',delay:'3s'},
-        {top:'50%',left:'95%',delay:'5s'},
-        {top:'85%',left:'80%',delay:'7s'}
-      ].map((star,i) => (
-        <div key={`shoot-${i}`} style={{
-          position:"fixed",
-          top:star.top,
-          left:star.left,
-          width:"2px",
-          height:"2px",
-          background:"#7aa2f7",
-          borderRadius:"50%",
-          boxShadow:"0 0 10px 2px #7aa2f7",
-          animation:"shoot 3s ease-out infinite",
-          animationDelay:star.delay,
-          pointerEvents:"none",
-          zIndex:0
-        }}/>
+      {[{top:'10%',left:'85%',delay:'0s'},{top:'25%',left:'70%',delay:'2s'},{top:'40%',left:'90%',delay:'4s'}].map((star,i) => (
+        <div key={`shoot-${i}`} style={{position:"fixed",top:star.top,left:star.left,width:"2px",height:"2px",background:"#7aa2f7",borderRadius:"50%",boxShadow:"0 0 10px 2px #7aa2f7",animation:"shoot 3s ease-out infinite",animationDelay:star.delay,pointerEvents:"none",zIndex:0}}/>
       ))}
-
-      {/* Aurora Effect */}
-      <div style={{
-        position:"fixed",
-        top:"-50%",
-        left:"-50%",
-        width:"200%",
-        height:"200%",
-        pointerEvents:"none",
-        zIndex:0,
-        opacity:0.15,
-        background:"radial-gradient(ellipse at 20% 30%, rgba(122, 162, 247, 0.3) 0%, transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(187, 154, 247, 0.3) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(125, 207, 255, 0.2) 0%, transparent 60%)",
-        animation:"aurora 20s ease-in-out infinite"
-      }}/>
-
-      {/* 10 جزيئات عائمة */}
-      {[...Array(10)].map((_,i) => (
-        <div key={`particle-${i}`} style={{
-          position:"fixed",
-          width:"4px",
-          height:"4px",
-          background:"radial-gradient(circle, rgba(122, 162, 247, 0.8) 0%, transparent 70%)",
-          borderRadius:"50%",
-          pointerEvents:"none",
-          zIndex:0,
-          left:`${(i+1)*10}%`,
-          animation:"float 15s ease-in-out infinite",
-          animationDelay:`${i*2}s`,
-          animationDuration: i % 2 === 0 ? "20s" : "15s"
-        }}/>
-      ))}
+      <div style={{position:"fixed",top:"-50%",left:"-50%",width:"200%",height:"200%",pointerEvents:"none",zIndex:0,opacity:0.15,background:"radial-gradient(ellipse at 20% 30%, rgba(122, 162, 247, 0.3) 0%, transparent 50%)",animation:"aurora 20s ease-in-out infinite"}}/>
     </>
   );
 };
 
+// ================================// ================================
+// الجزء الثالث - المكون الرئيسي والحالات (States)
+// ================================
+
 export default function App() {
   const getSystemTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
   
-  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
-  const [currentUser, setCurrentUser] = useState(() => { const s = localStorage.getItem('currentUser'); return s ? JSON.parse(s) : null; });
+  // Auth States
+  const [authLoading, setAuthLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Theme States
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('themeMode') || 'auto');
   const [darkMode, setDarkMode] = useState(() => {
     const mode = localStorage.getItem('themeMode') || 'auto';
-    if (mode === 'auto') return getSystemTheme();
-    return mode === 'dark';
+    return mode === 'auto' ? getSystemTheme() : mode === 'dark';
   });
   const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('fontSize')) || 16);
   const [fontIndex, setFontIndex] = useState(() => parseInt(localStorage.getItem('fontIndex')) || 0);
@@ -523,6 +306,8 @@ export default function App() {
   const [accentIndex, setAccentIndex] = useState(() => parseInt(localStorage.getItem('accentIndex')) || 0);
   const [headerColorIndex, setHeaderColorIndex] = useState(() => parseInt(localStorage.getItem('headerColorIndex')) || 0);
   const [tokyoNightEnabled, setTokyoNightEnabled] = useState(() => localStorage.getItem('tokyoNightEnabled') === 'true');
+  
+  // App States
   const [currentView, setCurrentView] = useState('dashboard');
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
@@ -538,23 +323,25 @@ export default function App() {
   const [showAuditPanel, setShowAuditPanel] = useState(false);
   const [showArchivePanel, setShowArchivePanel] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
-  const [showVersions, setShowVersions] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [auditFilter, setAuditFilter] = useState('all');
   const [sessionStart, setSessionStart] = useState(null);
-  const [expandedExpense, setExpandedExpense] = useState(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [mapPickerTarget, setMapPickerTarget] = useState(null);
+  const [showExpenseHistory, setShowExpenseHistory] = useState(null);
+  const [openFolder, setOpenFolder] = useState(null);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [showNewFolderModal, setShowNewFolderModal] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [taskFilter, setTaskFilter] = useState('all');
+  const [showPasswordId, setShowPasswordId] = useState(null);
 
+  // Refs
   const auditRef = useRef(null);
   const archiveRef = useRef(null);
   const settingsRef = useRef(null);
 
-  const defaultUsers = [
-    { id: 1, username: 'نايف', password: '@Lion12345', role: 'owner', active: true, createdAt: new Date().toISOString() },
-    { id: 2, username: 'منوّر', password: '@Lion12345', role: 'manager', active: true, createdAt: new Date().toISOString() }
-  ];
-
+  // Data States
   const [users, setUsers] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
   const [expenses, setExpenses] = useState([]);
@@ -568,17 +355,28 @@ export default function App() {
   const [archivedAccounts, setArchivedAccounts] = useState([]);
   const [archivedProjects, setArchivedProjects] = useState([]);
   const [loginLog, setLoginLog] = useState([]);
-  const [showPasswordId, setShowPasswordId] = useState(null);
-  const [showExpenseHistory, setShowExpenseHistory] = useState(null);
-  const [openFolder, setOpenFolder] = useState(null);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [showNewFolderModal, setShowNewFolderModal] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
-  const [taskFilter, setTaskFilter] = useState('all');
-  
-  // عدادات الأرقام التسلسلية
   const [counters, setCounters] = useState({ E: 0, T: 0, P: 0, A: 0 });
-  // --- FINAL CLEAN HELPERS ---
+
+  // Empty States for Forms
+  const emptyExpense = { name: '', amount: '', currency: 'ر.س', dueDate: '', type: 'شهري', reason: '', status: 'لم يتم الدفع', location: '', mapUrl: '', coordinates: '', totalSpent: 0 };
+  const emptyTask = { title: '', description: '', dueDate: '', assignedTo: '', priority: 'متوسط الأهمية', status: 'قيد الانتظار', projectId: '', sectionId: '', location: '', mapUrl: '', coordinates: '' };
+  const emptyProject = { name: '', description: '', client: '', location: '', phone: '', startDate: '', endDate: '', budget: '', status: 'جاري العمل', mapUrl: '', coordinates: '', folders: [] };
+  const emptyAccount = { name: '', description: '', loginUrl: '', username: '', password: '', subscriptionDate: '', daysRemaining: 365 };
+  const emptySection = { name: '', color: 'blue' };
+
+  // Form States
+  const [newExpense, setNewExpense] = useState(emptyExpense);
+  const [newTask, setNewTask] = useState(emptyTask);
+  const [newProject, setNewProject] = useState(emptyProject);
+  const [newAccount, setNewAccount] = useState(emptyAccount);
+  const [newSection, setNewSection] = useState(emptySection);
+
+  // Helper Functions
+  const copyToClipboard = (text) => navigator.clipboard.writeText(text);
+  const calcDays = (d) => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null;
+  const getSessionMinutes = () => sessionStart ? Math.floor((Date.now() - sessionStart) / 60000) : 0;
+  const formatTime12 = (date) => date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
   const incrementCounter = async (key) => {
     await runTransaction(db, async (t) => {
       const ref = doc(db, 'system', 'counters');
@@ -586,61 +384,59 @@ export default function App() {
       t.set(ref, { ...docVal.data(), [key]: (docVal.data()?.[key] || 0) + 1 }, { merge: true });
     });
   };
-  // ---------------------------
 
-  const handleAddExpenseNew = async () => {
-    if (!newExpense.name || !newExpense.amount) return alert('أكمل البيانات');
-    const refNum = generateRefNumber('E', counters.E + 1);
-    await addDoc(collection(db, 'expenses'), { ...newExpense, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
-    await incrementCounter('E'); await addLog('add', 'مصروف', newExpense.name, refNum);
-    setNewExpense(emptyExpense); setShowModal(false);
+  const addLog = async (action, type, name, itemId) => {
+    const actionText = action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : action === 'delete' ? 'بحذف' : action === 'restore' ? 'بإستعادة' : action === 'pay' ? 'بدفع' : action;
+    const desc = `${currentUser?.name || 'النظام'} قام ${actionText} ${type}: ${name}`;
+    try {
+      await addDoc(collection(db, 'audit'), { user: currentUser?.name || 'النظام', action, itemType: type, itemName: name, itemId, description: desc, timestamp: new Date().toISOString() });
+      setNewNotifications(p => p + 1);
+      if (action === 'delete') setArchiveNotifications(p => p + 1);
+    } catch (e) { console.error(e); }
   };
 
-  const handleAddTaskNew = async () => {
-    if (!newTask.title) return alert('أكمل البيانات');
-    const refNum = generateRefNumber('T', counters.T + 1);
-    await addDoc(collection(db, 'tasks'), { ...newTask, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
-    await incrementCounter('T'); await addLog('add', 'مهمة', newTask.title, refNum);
-    setNewTask(emptyTask); setShowModal(false);
-  };
+// ================================// ================================
+// الجزء الرابع - useEffect والمصادقة
+// ================================
 
-  const handleAddProjectNew = async () => {
-    if (!newProject.name) return alert('أكمل البيانات');
-    const refNum = generateRefNumber('P', counters.P + 1);
-    await addDoc(collection(db, 'projects'), { ...newProject, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
-    await incrementCounter('P'); await addLog('add', 'مشروع', newProject.name, refNum);
-    setNewProject(emptyProject); setShowModal(false);
-  };
+  // Firebase Auth State Listener - المصادقة الآمنة
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.status === 'approved') {
+              setCurrentUser({ ...userData, uid: firebaseUser.uid });
+              setIsLoggedIn(true);
+              setSessionStart(Date.now());
+            } else {
+              await signOut(auth);
+              setIsLoggedIn(false);
+              setCurrentUser(null);
+            }
+          } else {
+            await signOut(auth);
+            setIsLoggedIn(false);
+            setCurrentUser(null);
+          }
+        } catch (error) {
+          console.error('Auth check error:', error);
+          await signOut(auth);
+          setIsLoggedIn(false);
+          setCurrentUser(null);
+        }
+      } else {
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  const handleAddAccountNew = async () => {
-    if (!newAccount.name) return alert('أكمل البيانات');
-    const refNum = generateRefNumber('A', counters.A + 1);
-    await addDoc(collection(db, 'accounts'), { ...newAccount, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.username });
-    await incrementCounter('A'); await addLog('add', 'حساب', newAccount.name, refNum);
-    setNewAccount(emptyAccount); setShowModal(false);
-  };
-  // ---------------------------
-
-
-  const emptyExpense = { name: '', amount: '', currency: 'ر.س', dueDate: '', type: 'شهري', reason: '', status: 'لم يتم الدفع', location: '', mapUrl: '', coordinates: '', totalSpent: 0 };
-  const emptyTask = { title: '', description: '', dueDate: '', assignedTo: '', priority: 'متوسط الأهمية', status: 'قيد الانتظار', projectId: '', sectionId: '', location: '', mapUrl: '', coordinates: '' };
-  const emptyProject = { name: '', description: '', client: '', location: '', phone: '', startDate: '', endDate: '', budget: '', status: 'جاري العمل', mapUrl: '', coordinates: '', folders: [] };
-  const emptyAccount = { name: '', description: '', loginUrl: '', username: '', password: '', subscriptionDate: '', daysRemaining: 365 };
-  const emptyUser = { username: '', password: '', role: 'member', active: true };
-  const emptySection = { name: '', color: 'blue' };
-
-  const [newExpense, setNewExpense] = useState(emptyExpense);
-  const [newTask, setNewTask] = useState(emptyTask);
-  const [newProject, setNewProject] = useState(emptyProject);
-  const [newAccount, setNewAccount] = useState(emptyAccount);
-  const [newUser, setNewUser] = useState(emptyUser);
-  const [newSection, setNewSection] = useState(emptySection);
-
-  // دالة النسخ
-  const copyToClipboard = (text, label) => {
-    navigator.clipboard.writeText(text);
-  };
-
+  // Theme Effects
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => { if (themeMode === 'auto') setDarkMode(mediaQuery.matches); };
@@ -664,52 +460,18 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => { localStorage.setItem('isLoggedIn', isLoggedIn); if (currentUser) localStorage.setItem('currentUser', JSON.stringify(currentUser)); }, [isLoggedIn, currentUser]);
+  // Storage Effects
   useEffect(() => { localStorage.setItem('bgIndex', bgIndex); }, [bgIndex]);
   useEffect(() => { localStorage.setItem('accentIndex', accentIndex); }, [accentIndex]);
   useEffect(() => { localStorage.setItem('headerColorIndex', headerColorIndex); }, [headerColorIndex]);
   useEffect(() => { localStorage.setItem('fontSize', fontSize); }, [fontSize]);
   useEffect(() => { localStorage.setItem('fontIndex', fontIndex); }, [fontIndex]);
-  useEffect(() => { if (currentUser) setGreeting(getRandomGreeting(currentUser.username)); }, [currentUser]);
+  useEffect(() => { if (currentUser) setGreeting(getRandomGreeting(currentUser.name || currentUser.email)); }, [currentUser]);
 
+  // Data Loading from Firebase
   useEffect(() => {
+    if (!isLoggedIn) return;
     setLoading(true);
-    
-    // إنشاء مستخدم افتراضي إذا لم يوجد
-    const initDefaultUser = async () => {
-      try {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        if (usersSnapshot.empty) {
-          // لا يوجد مستخدمين - إنشاء Owner افتراضي
-          const defaultEmail = 'naif@rkz.com';
-          const defaultPassword = '@Lion12345';
-          
-          try {
-            const userCredential = await createUserWithEmailAndPassword(auth, defaultEmail, defaultPassword);
-            await setDoc(doc(db, 'users', userCredential.user.uid), {
-              uid: userCredential.user.uid,
-              name: 'نايف',
-              email: defaultEmail,
-              password: defaultPassword,
-              role: 'owner',
-              status: 'approved',
-              active: true,
-              createdAt: new Date().toISOString()
-            });
-            console.log('✅ تم إنشاء المستخدم الافتراضي');
-          } catch (error) {
-            if (error.code === 'auth/email-already-in-use') {
-              console.log('المستخدم الافتراضي موجود بالفعل في Auth');
-            }
-          }
-        }
-      } catch (error) {
-        console.error('خطأ في إنشاء المستخدم الافتراضي:', error);
-      }
-    };
-    
-    initDefaultUser();
-    
     const unsubs = [
       onSnapshot(query(collection(db, 'expenses'), orderBy('createdAt', 'desc')), s => setExpenses(s.docs.map(d => ({id:d.id, ...d.data()})))),
       onSnapshot(query(collection(db, 'tasks'), orderBy('createdAt', 'desc')), s => setTasks(s.docs.map(d => ({id:d.id, ...d.data()})))),
@@ -721,132 +483,25 @@ export default function App() {
         setPendingUsers(allUsers.filter(u => u.status === 'pending'));
       }),
       onSnapshot(doc(db, 'system', 'counters'), s => setCounters(s.exists() ? s.data() : { E:0, T:0, P:0, A:0 })),
-      onSnapshot(query(collection(db, 'audit'), orderBy('timestamp', 'desc')), s => setAuditLog(s.docs.map(d => ({id:d.id, ...d.data()})).slice(0, 50)))
+      onSnapshot(query(collection(db, 'audit'), orderBy('timestamp', 'desc')), s => setAuditLog(s.docs.map(d => ({id:d.id, ...d.data()})).slice(0, 50))),
+      onSnapshot(query(collection(db, 'archivedExpenses'), orderBy('archivedAt', 'desc')), s => setArchivedExpenses(s.docs.map(d => ({id:d.id, ...d.data()})))),
+      onSnapshot(query(collection(db, 'archivedTasks'), orderBy('archivedAt', 'desc')), s => setArchivedTasks(s.docs.map(d => ({id:d.id, ...d.data()})))),
+      onSnapshot(query(collection(db, 'archivedProjects'), orderBy('archivedAt', 'desc')), s => setArchivedProjects(s.docs.map(d => ({id:d.id, ...d.data()})))),
+      onSnapshot(query(collection(db, 'archivedAccounts'), orderBy('archivedAt', 'desc')), s => setArchivedAccounts(s.docs.map(d => ({id:d.id, ...d.data()})))),
     ];
     setLoading(false);
     return () => unsubs.forEach(u => u());
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => { const t = setInterval(() => setCurrentTime(new Date()), 1000); return () => clearInterval(t); }, []);
-  useEffect(() => { if (isLoggedIn && !sessionStart) setSessionStart(Date.now()); }, [isLoggedIn]);
   useEffect(() => { setQuote(quotes[Math.floor(Math.random() * quotes.length)]); }, [currentView]);
 
-  const save = async (d) => { 
-    try { 
-      await setDoc(doc(db, 'data', 'main'), { 
-        users: d.users || users, expenses: d.expenses || expenses, tasks: d.tasks || tasks, 
-        projects: d.projects || projects, taskSections: d.taskSections || taskSections,
-        accounts: d.accounts || accounts, auditLog: d.auditLog || auditLog, 
-        archivedExpenses: d.archivedExpenses || archivedExpenses, archivedTasks: d.archivedTasks || archivedTasks, 
-        archivedAccounts: d.archivedAccounts || archivedAccounts, archivedProjects: d.archivedProjects || archivedProjects,
-        loginLog: d.loginLog || loginLog,
-        counters: d.counters || counters
-      }); 
-    } catch (e) { console.error(e); } 
-  };
-
-  const addLog = async (action, type, name, itemId) => {
-    const actionText = action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : action === 'delete' ? 'بحذف' : action === 'restore' ? 'بإستعادة' : action === 'pay' ? 'بدفع' : action;
-    const desc = `${currentUser?.username || 'النظام'} قام ${actionText} ${type}: ${name}`;
-    const l = { id: `LOG${Date.now()}`, user: currentUser?.username || 'النظام', action, itemType: type, itemName: name, itemId, description: desc, timestamp: new Date().toISOString() }; 
-    const nl = [l, ...auditLog]; 
-    setAuditLog(nl); 
-    setNewNotifications(p => p + 1); 
-    if (action === 'delete') setArchiveNotifications(p => p + 1);
-    return nl; 
-  };
-
-  const calcDays = (d) => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null;
-  const getSessionMinutes = () => sessionStart ? Math.floor((Date.now() - sessionStart) / 60000) : 0;
-
-  const navigateToItem = (log) => {
-    if (log.action === 'delete') {
-      setCurrentView('archive');
-    } else {
-      if (log.itemType === 'مصروف') setCurrentView('expenses');
-      else if (log.itemType === 'مهمة') setCurrentView('tasks');
-      else if (log.itemType === 'مشروع') setCurrentView('projects');
-      else if (log.itemType === 'حساب') setCurrentView('accounts');
-      else if (log.itemType === 'مستخدم') setCurrentView('users');
-    }
-    setShowAuditPanel(false);
-  };
-
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    const email = e.target.email.value.trim();
-    const password = e.target.password.value.trim();
-    
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-      
-      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-      
-      if (!userDoc.exists()) {
-        await signOut(auth);
-        return alert('المستخدم غير موجود');
-      }
-      
-      const userData = userDoc.data();
-      
-      if (userData.status === 'pending') {
-        await signOut(auth);
-        return alert('⏸️ حسابك قيد المراجعة. يرجى الانتظار حتى تتم الموافقة عليه.');
-      }
-      
-      if (userData.status === 'rejected') {
-        await signOut(auth);
-        return alert('❌ تم رفض طلب انضمامك. يرجى التواصل مع الإدارة.');
-      }
-      
-      if (userData.status === 'disabled') {
-        await signOut(auth);
-        return alert('⏸️ حسابك معطل. يرجى التواصل مع الإدارة.');
-      }
-      
-      setCurrentUser(userData);
-      setIsLoggedIn(true);
-      setSessionStart(Date.now());
-      
-      await updateDoc(doc(db, 'users', firebaseUser.uid), {
-        lastLogin: new Date().toISOString()
-      });
-      
-      const ll = [{ 
-        id: `L${Date.now()}`, 
-        user: userData.name, 
-        timestamp: new Date().toISOString(), 
-        action: 'دخول', 
-        duration: 0 
-      }, ...loginLog];
-      setLoginLog(ll);
-      save({ loginLog: ll });
-      
-    } catch (error) {
-      console.error(error);
-      let message = 'حدث خطأ أثناء تسجيل الدخول';
-      
-      if (error.code === 'auth/invalid-credential') {
-        message = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-      } else if (error.code === 'auth/user-not-found') {
-        message = 'المستخدم غير موجود';
-      } else if (error.code === 'auth/wrong-password') {
-        message = 'كلمة المرور غير صحيحة';
-      }
-      
-      alert(message);
-    }
-  };
-
+  // Auth Functions
   const logout = async () => {
-    const duration = getSessionMinutes();
-    const ll = [{ id: `L${Date.now()}`, user: currentUser.name, timestamp: new Date().toISOString(), action: 'خروج', duration }, ...loginLog];
-    setLoginLog(ll); save({ loginLog: ll }); 
     await signOut(auth);
-    setIsLoggedIn(false); setCurrentUser(null); setSessionStart(null);
-    localStorage.removeItem('isLoggedIn'); localStorage.removeItem('currentUser');
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+    setSessionStart(null);
   };
 
   const toggleTokyoNight = () => {
@@ -855,234 +510,188 @@ export default function App() {
     localStorage.setItem('tokyoNightEnabled', newValue);
   };
 
-  const addExpense = () => {
+// ================================// ================================
+// الجزء الخامس - دوال CRUD (إضافة/تعديل/حذف)
+// ================================
+
+  // CRUD Operations - Expenses
+  const addExpense = async () => {
     if (!newExpense.name || !newExpense.amount) { alert('املأ الحقول المطلوبة'); return; }
-    if (newExpense.type !== 'مرة واحدة' && !newExpense.dueDate) { alert('حدد تاريخ الاستحقاق'); return; }
-    const amount = parseFloat(newExpense.amount);
-    const exp = { 
-      ...newExpense, 
-      id: `E${Date.now()}`, 
-      amount, 
-      totalSpent: amount,
-      createdAt: new Date().toISOString(), 
-      createdBy: currentUser.username, 
-      paymentHistory: [{ date: new Date().toISOString(), amount, note: 'إنشاء المصروف', by: currentUser.username }]
-    };
-    const ne = [...expenses, exp]; const al = addLog('add', 'مصروف', exp.name, exp.id);
-    setExpenses(ne); save({ expenses: ne, auditLog: al });
-    setNewExpense(emptyExpense); setShowModal(false);
+    const refNum = generateRefNumber('E', counters.E + 1);
+    const exp = { ...newExpense, refNumber: refNum, amount: parseFloat(newExpense.amount), totalSpent: parseFloat(newExpense.amount), createdAt: new Date().toISOString(), createdBy: currentUser.name, paymentHistory: [{ date: new Date().toISOString(), amount: parseFloat(newExpense.amount), note: 'إنشاء المصروف', by: currentUser.name }] };
+    await addDoc(collection(db, 'expenses'), exp);
+    await incrementCounter('E');
+    await addLog('add', 'مصروف', exp.name, refNum);
+    setNewExpense(emptyExpense);
+    setShowModal(false);
   };
 
-  const editExpense = () => {
+  const editExpense = async () => {
     if (!editingItem.name || !editingItem.amount) { alert('املأ الحقول'); return; }
-    const oldExp = expenses.find(e => e.id === editingItem.id);
-    const newAmount = parseFloat(editingItem.amount);
-    const amountDiff = newAmount - (oldExp?.amount || 0);
-    
-    const updatedItem = { 
-      ...editingItem, 
-      amount: newAmount,
-      totalSpent: (editingItem.totalSpent || 0) + (amountDiff > 0 ? amountDiff : 0),
-      updatedAt: new Date().toISOString() 
-    };
-    
-    if (amountDiff !== 0) {
-      updatedItem.paymentHistory = [...(editingItem.paymentHistory || []), { 
-        date: new Date().toISOString(), 
-        amount: amountDiff, 
-        note: amountDiff > 0 ? 'تعديل المبلغ (زيادة)' : 'تعديل المبلغ (نقص)', 
-        by: currentUser.username 
-      }];
-    }
-    
-    const ne = expenses.map(e => e.id === editingItem.id ? updatedItem : e);
-    const al = addLog('edit', 'مصروف', editingItem.name, editingItem.id);
-    setExpenses(ne); save({ expenses: ne, auditLog: al }); setEditingItem(null); setShowModal(false);
+    await updateDoc(doc(db, 'expenses', editingItem.id), { ...editingItem, amount: parseFloat(editingItem.amount), updatedAt: new Date().toISOString() });
+    await addLog('edit', 'مصروف', editingItem.name, editingItem.id);
+    setEditingItem(null);
+    setShowModal(false);
   };
 
-  const delExpense = (exp) => {
-    const ne = expenses.filter(e => e.id !== exp.id);
-    const na = [{ ...exp, archivedAt: new Date().toISOString(), archivedBy: currentUser.username }, ...archivedExpenses];
-    const al = addLog('delete', 'مصروف', exp.name, exp.id);
-    setExpenses(ne); setArchivedExpenses(na); save({ expenses: ne, archivedExpenses: na, auditLog: al }); setShowModal(false);
+  const delExpense = async (exp) => {
+    await deleteDoc(doc(db, 'expenses', exp.id));
+    await addDoc(collection(db, 'archivedExpenses'), { ...exp, archivedAt: new Date().toISOString(), archivedBy: currentUser.name });
+    await addLog('delete', 'مصروف', exp.name, exp.id);
+    setShowModal(false);
   };
 
-  const restoreExpense = (exp) => {
-    const na = archivedExpenses.filter(e => e.id !== exp.id);
-    const { archivedAt, archivedBy, ...rest } = exp; const ne = [...expenses, rest];
-    const al = addLog('restore', 'مصروف', exp.name, exp.id);
-    setExpenses(ne); setArchivedExpenses(na); save({ expenses: ne, archivedExpenses: na, auditLog: al });
+  const restoreExpense = async (exp) => {
+    const { archivedAt, archivedBy, id, ...rest } = exp;
+    await addDoc(collection(db, 'expenses'), rest);
+    await deleteDoc(doc(db, 'archivedExpenses', exp.id));
+    await addLog('restore', 'مصروف', exp.name, exp.id);
   };
 
-  const markPaid = (id) => {
-    const exp = expenses.find(e => e.id === id);
-    const payment = { date: new Date().toISOString(), amount: exp.amount, paidBy: currentUser.username };
-    const ne = expenses.map(e => e.id === id ? { 
-      ...e, 
-      status: 'مدفوع', 
-      paidAt: new Date().toISOString(), 
-      totalSpent: (e.totalSpent || 0) + e.amount,
-      paymentHistory: [...(e.paymentHistory || []), { ...payment, note: 'تم الدفع' }]
-    } : e);
-    const al = addLog('pay', 'مصروف', exp.name, exp.id); 
-    setExpenses(ne); save({ expenses: ne, auditLog: al });
-  };
-
-  // تحديث المصروفات المتكررة
-  const refreshExpenses = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let updated = false;
-    
-    const ne = expenses.map(e => {
-      if (e.type === 'مرة واحدة' || e.status === 'مدفوع') return e;
-      
-      const days = calcDaysRemaining(e.dueDate, e.type);
-      if (days !== null && days <= 0) {
-        updated = true;
-        const newDueDate = new Date(e.dueDate);
-        newDueDate.setDate(newDueDate.getDate() + (e.type === 'شهري' ? 30 : 365));
-        return {
-          ...e,
-          dueDate: newDueDate.toISOString().split('T')[0],
-          status: 'لم يتم الدفع',
-          totalSpent: (e.totalSpent || 0) + e.amount,
-          paymentHistory: [...(e.paymentHistory || []), { 
-            date: new Date().toISOString(), 
-            amount: e.amount, 
-            note: 'تحديث تلقائي', 
-            by: 'النظام' 
-          }]
-        };
-      }
-      return e;
-    });
-    
-    if (updated) {
-      setExpenses(ne);
-      save({ expenses: ne });
-    } else {
-    }
-  };
-
-  const addTask = () => {
+  // CRUD Operations - Tasks
+  const addTask = async () => {
     if (!newTask.title) { alert('أدخل عنوان المهمة'); return; }
-    const t = { ...newTask, id: `T${Date.now()}`, createdAt: new Date().toISOString(), createdBy: currentUser.username };
-    const nt = [...tasks, t]; const al = addLog('add', 'مهمة', t.title, t.id);
-    setTasks(nt); save({ tasks: nt, auditLog: al });
-    setNewTask(emptyTask); setShowModal(false);
+    const refNum = generateRefNumber('T', counters.T + 1);
+    const t = { ...newTask, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.name };
+    await addDoc(collection(db, 'tasks'), t);
+    await incrementCounter('T');
+    await addLog('add', 'مهمة', t.title, refNum);
+    setNewTask(emptyTask);
+    setShowModal(false);
   };
 
-  const editTask = () => {
+  const editTask = async () => {
     if (!editingItem.title) { alert('أدخل عنوان المهمة'); return; }
-    const nt = tasks.map(t => t.id === editingItem.id ? { ...editingItem, updatedAt: new Date().toISOString() } : t);
-    const al = addLog('edit', 'مهمة', editingItem.title, editingItem.id);
-    setTasks(nt); save({ tasks: nt, auditLog: al }); setEditingItem(null); setShowModal(false);
+    await updateDoc(doc(db, 'tasks', editingItem.id), { ...editingItem, updatedAt: new Date().toISOString() });
+    await addLog('edit', 'مهمة', editingItem.title, editingItem.id);
+    setEditingItem(null);
+    setShowModal(false);
   };
 
-  const delTask = (t) => {
-    const nt = tasks.filter(x => x.id !== t.id);
-    const na = [{ ...t, archivedAt: new Date().toISOString(), archivedBy: currentUser.username }, ...archivedTasks];
-    const al = addLog('delete', 'مهمة', t.title, t.id);
-    setTasks(nt); setArchivedTasks(na); save({ tasks: nt, archivedTasks: na, auditLog: al }); setShowModal(false);
+  const delTask = async (t) => {
+    await deleteDoc(doc(db, 'tasks', t.id));
+    await addDoc(collection(db, 'archivedTasks'), { ...t, archivedAt: new Date().toISOString(), archivedBy: currentUser.name });
+    await addLog('delete', 'مهمة', t.title, t.id);
+    setShowModal(false);
   };
 
-  const restoreTask = (t) => {
-    const na = archivedTasks.filter(x => x.id !== t.id);
-    const { archivedAt, archivedBy, ...rest } = t; const nt = [...tasks, rest];
-    const al = addLog('restore', 'مهمة', t.title, t.id);
-    setTasks(nt); setArchivedTasks(na); save({ tasks: nt, archivedTasks: na, auditLog: al });
+  const restoreTask = async (t) => {
+    const { archivedAt, archivedBy, id, ...rest } = t;
+    await addDoc(collection(db, 'tasks'), rest);
+    await deleteDoc(doc(db, 'archivedTasks', t.id));
+    await addLog('restore', 'مهمة', t.title, t.id);
   };
 
-  const addSection = () => {
-    if (!newSection.name) { alert('أدخل اسم القسم'); return; }
-    const s = { id: `S${Date.now()}`, name: newSection.name, color: newSection.color, createdAt: new Date().toISOString(), createdBy: currentUser.username };
-    const ns = [...taskSections, s]; const al = addLog('add', 'قسم', s.name, s.id);
-    setTaskSections(ns); save({ taskSections: ns, auditLog: al });
-    setNewSection(emptySection); setShowModal(false);
-  };
-
-  const addProject = () => {
+  // CRUD Operations - Projects
+  const addProject = async () => {
     if (!newProject.name) { alert('أدخل اسم المشروع'); return; }
-    const p = { ...newProject, id: `P${Date.now()}`, createdAt: new Date().toISOString(), createdBy: currentUser.username };
-    const np = [...projects, p]; const al = addLog('add', 'مشروع', p.name, p.id);
-    setProjects(np); save({ projects: np, auditLog: al });
-    setNewProject(emptyProject); setShowModal(false);
+    const refNum = generateRefNumber('P', counters.P + 1);
+    const p = { ...newProject, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.name };
+    await addDoc(collection(db, 'projects'), p);
+    await incrementCounter('P');
+    await addLog('add', 'مشروع', p.name, refNum);
+    setNewProject(emptyProject);
+    setShowModal(false);
   };
 
-  const editProject = () => {
+  const editProject = async () => {
     if (!editingItem.name) { alert('أدخل اسم المشروع'); return; }
-    const np = projects.map(p => p.id === editingItem.id ? { ...editingItem, updatedAt: new Date().toISOString() } : p);
-    const al = addLog('edit', 'مشروع', editingItem.name, editingItem.id);
-    setProjects(np); save({ projects: np, auditLog: al }); setEditingItem(null); setShowModal(false);
+    await updateDoc(doc(db, 'projects', editingItem.id), { ...editingItem, updatedAt: new Date().toISOString() });
+    await addLog('edit', 'مشروع', editingItem.name, editingItem.id);
+    setEditingItem(null);
+    setShowModal(false);
   };
 
-  const delProject = (p) => {
-    const np = projects.filter(x => x.id !== p.id);
-    const na = [{ ...p, archivedAt: new Date().toISOString(), archivedBy: currentUser.username }, ...archivedProjects];
-    const al = addLog('delete', 'مشروع', p.name, p.id);
-    setProjects(np); setArchivedProjects(na); save({ projects: np, archivedProjects: na, auditLog: al }); setShowModal(false); setSelectedProject(null);
+  const delProject = async (p) => {
+    await deleteDoc(doc(db, 'projects', p.id));
+    await addDoc(collection(db, 'archivedProjects'), { ...p, archivedAt: new Date().toISOString(), archivedBy: currentUser.name });
+    await addLog('delete', 'مشروع', p.name, p.id);
+    setShowModal(false);
+    setSelectedProject(null);
   };
 
-  const restoreProject = (p) => {
-    const na = archivedProjects.filter(x => x.id !== p.id);
-    const { archivedAt, archivedBy, ...rest } = p; const np = [...projects, rest];
-    const al = addLog('restore', 'مشروع', p.name, p.id);
-    setProjects(np); setArchivedProjects(na); save({ projects: np, archivedProjects: na, auditLog: al });
+  const restoreProject = async (p) => {
+    const { archivedAt, archivedBy, id, ...rest } = p;
+    await addDoc(collection(db, 'projects'), rest);
+    await deleteDoc(doc(db, 'archivedProjects', p.id));
+    await addLog('restore', 'مشروع', p.name, p.id);
   };
 
-  const addAccount = () => {
+  // CRUD Operations - Accounts
+  const addAccount = async () => {
     if (!newAccount.name || !newAccount.username) { alert('املأ الحقول'); return; }
-    const a = { ...newAccount, id: `A${Date.now()}`, createdAt: new Date().toISOString(), createdBy: currentUser.username };
-    const na = [...accounts, a]; const al = addLog('add', 'حساب', a.name, a.id);
-    setAccounts(na); save({ accounts: na, auditLog: al });
-    setNewAccount(emptyAccount); setShowModal(false);
+    const refNum = generateRefNumber('A', counters.A + 1);
+    const a = { ...newAccount, refNumber: refNum, createdAt: new Date().toISOString(), createdBy: currentUser.name };
+    await addDoc(collection(db, 'accounts'), a);
+    await incrementCounter('A');
+    await addLog('add', 'حساب', a.name, refNum);
+    setNewAccount(emptyAccount);
+    setShowModal(false);
   };
 
-  const editAccount = () => {
+  const editAccount = async () => {
     if (!editingItem.name) { alert('املأ الحقول'); return; }
-    const na = accounts.map(a => a.id === editingItem.id ? { ...editingItem, updatedAt: new Date().toISOString() } : a);
-    const al = addLog('edit', 'حساب', editingItem.name, editingItem.id);
-    setAccounts(na); save({ accounts: na, auditLog: al }); setEditingItem(null); setShowModal(false);
+    await updateDoc(doc(db, 'accounts', editingItem.id), { ...editingItem, updatedAt: new Date().toISOString() });
+    await addLog('edit', 'حساب', editingItem.name, editingItem.id);
+    setEditingItem(null);
+    setShowModal(false);
   };
 
-  const delAccount = (a) => {
-    const na = accounts.filter(x => x.id !== a.id);
-    const nar = [{ ...a, archivedAt: new Date().toISOString(), archivedBy: currentUser.username }, ...archivedAccounts];
-    const al = addLog('delete', 'حساب', a.name, a.id);
-    setAccounts(na); setArchivedAccounts(nar); save({ accounts: na, archivedAccounts: nar, auditLog: al }); setShowModal(false);
+  const delAccount = async (a) => {
+    await deleteDoc(doc(db, 'accounts', a.id));
+    await addDoc(collection(db, 'archivedAccounts'), { ...a, archivedAt: new Date().toISOString(), archivedBy: currentUser.name });
+    await addLog('delete', 'حساب', a.name, a.id);
+    setShowModal(false);
   };
 
-  const restoreAccount = (a) => {
-    const nar = archivedAccounts.filter(x => x.id !== a.id);
-    const { archivedAt, archivedBy, ...rest } = a; const na = [...accounts, rest];
-    const al = addLog('restore', 'حساب', a.name, a.id);
-    setAccounts(na); setArchivedAccounts(nar); save({ accounts: na, archivedAccounts: nar, auditLog: al });
+  const restoreAccount = async (a) => {
+    const { archivedAt, archivedBy, id, ...rest } = a;
+    await addDoc(collection(db, 'accounts'), rest);
+    await deleteDoc(doc(db, 'archivedAccounts', a.id));
+    await addLog('restore', 'حساب', a.name, a.id);
   };
 
-  const addUser = () => {
-    if (!newUser.username || !newUser.password) { alert('املأ الحقول'); return; }
-    if (users.find(u => u.username === newUser.username)) { alert('المستخدم موجود'); return; }
-    const u = { ...newUser, id: Date.now(), createdAt: new Date().toISOString(), createdBy: currentUser.username };
-    const nu = [...users, u]; const al = addLog('add', 'مستخدم', u.username, u.id);
-    setUsers(nu); save({ users: nu, auditLog: al });
-    setNewUser(emptyUser); setShowModal(false);
+  // CRUD Operations - Sections
+  const addSection = async () => {
+    if (!newSection.name) { alert('أدخل اسم القسم'); return; }
+    const s = { ...newSection, createdAt: new Date().toISOString(), createdBy: currentUser.name };
+    await addDoc(collection(db, 'taskSections'), s);
+    await addLog('add', 'قسم', s.name, 'section');
+    setNewSection(emptySection);
+    setShowModal(false);
   };
 
-  const editUser = () => {
-    if (!editingItem.username) { alert('املأ الحقول'); return; }
-    const nu = users.map(u => u.id === editingItem.id ? { ...editingItem, updatedAt: new Date().toISOString() } : u);
-    const al = addLog('edit', 'مستخدم', editingItem.username, editingItem.id);
-    setUsers(nu); save({ users: nu, auditLog: al }); setEditingItem(null); setShowModal(false);
+  // User Management - موافقة/رفض المستخدمين الجدد
+  const approveUser = async (user) => {
+    try {
+      await updateDoc(doc(db, 'users', user.id), {
+        status: 'approved',
+        approvedDate: new Date().toISOString(),
+        approvedBy: currentUser.uid
+      });
+      alert(`✅ تمت الموافقة على ${user.name}`);
+    } catch (error) {
+      console.error(error);
+      alert('حدث خطأ');
+    }
   };
 
-  const delUser = (u) => {
-    if (u.role === 'owner') { alert('لا يمكن حذف المالك'); return; }
-    if (u.username === currentUser.username) { alert('لا يمكن حذف نفسك'); return; }
-    const nu = users.filter(x => x.id !== u.id); const al = addLog('delete', 'مستخدم', u.username, u.id);
-    setUsers(nu); save({ users: nu, auditLog: al }); setShowModal(false);
+  const rejectUser = async (user) => {
+    if (!window.confirm(`هل تريد رفض طلب ${user.name}؟`)) return;
+    try {
+      await updateDoc(doc(db, 'users', user.id), {
+        status: 'rejected',
+        rejectedDate: new Date().toISOString(),
+        rejectedBy: currentUser.uid
+      });
+      alert(`❌ تم رفض ${user.name}`);
+    } catch (error) {
+      console.error(error);
+      alert('حدث خطأ');
+    }
   };
 
+  // Map Picker Functions
   const openMapPicker = (target) => {
     setMapPickerTarget(target);
     setShowMapPicker(true);
@@ -1098,31 +707,27 @@ export default function App() {
     setShowMapPicker(false);
   };
 
+// ================================// ================================
+// الجزء السادس - التنسيق والمكونات الداخلية
+// ================================
+
+  // Styling Variables
   const accent = accentColors[accentIndex];
   const currentBg = backgrounds[bgIndex];
   const currentFont = fonts[fontIndex];
   const currentHeaderColor = headerColors[headerColorIndex];
-  const bg = tokyoNightEnabled 
-    ? 'bg-gradient-to-br from-gray-900 to-gray-800'
-    : `bg-gradient-to-br ${darkMode ? currentBg.dark : currentBg.light}`;
-  // التصميم الزجاجي - شفافية أقل
-  const card = tokyoNightEnabled 
-    ? 'bg-gray-800/80 backdrop-blur-md border-gray-700/50' 
-    : (darkMode ? 'bg-gray-800/80 backdrop-blur-sm border-gray-700/50' : 'bg-white/90 backdrop-blur-sm border-gray-200');
+  const bg = tokyoNightEnabled ? 'bg-gradient-to-br from-gray-900 to-gray-800' : `bg-gradient-to-br ${darkMode ? currentBg.dark : currentBg.light}`;
+  const card = tokyoNightEnabled ? 'bg-gray-800/80 backdrop-blur-md border-gray-700/50' : (darkMode ? 'bg-gray-800/80 backdrop-blur-sm border-gray-700/50' : 'bg-white/90 backdrop-blur-sm border-gray-200');
   const headerCard = darkMode ? currentHeaderColor.dark : currentHeaderColor.light;
   const headerTxt = headerColorIndex > 0 ? 'text-white' : (darkMode ? 'text-white' : 'text-gray-900');
   const headerTxtSm = headerColorIndex > 0 ? 'text-gray-300' : (darkMode ? 'text-gray-400' : 'text-gray-500');
-  const cardPopup = tokyoNightEnabled
-    ? 'bg-gray-800/95 backdrop-blur-md border-gray-700'
-    : (darkMode ? 'bg-gray-800/95 backdrop-blur-md border-gray-700' : 'bg-white/95 backdrop-blur-md border-gray-200');
-  const inp = tokyoNightEnabled 
-    ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20' 
-    : (darkMode ? 'bg-gray-700/80 border-gray-600 text-white placeholder-gray-400' : 'bg-white/90 border-gray-300 text-gray-900 placeholder-gray-400');
+  const cardPopup = tokyoNightEnabled ? 'bg-gray-800/95 backdrop-blur-md border-gray-700' : (darkMode ? 'bg-gray-800/95 backdrop-blur-md border-gray-700' : 'bg-white/95 backdrop-blur-md border-gray-200');
+  const inp = tokyoNightEnabled ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-500' : (darkMode ? 'bg-gray-700/80 border-gray-600 text-white placeholder-gray-400' : 'bg-white/90 border-gray-300 text-gray-900 placeholder-gray-400');
   const txt = tokyoNightEnabled ? 'text-gray-100' : (darkMode ? 'text-white' : 'text-gray-900');
-  const txtMd = tokyoNightEnabled ? 'text-gray-300' : (darkMode ? 'text-gray-200' : 'text-gray-700');
   const txtSm = tokyoNightEnabled ? 'text-gray-400' : (darkMode ? 'text-gray-400' : 'text-gray-500');
   const iconClass = `w-3.5 h-3.5 ${txtSm}`;
 
+  // Computed Values
   const totalArchived = (archivedExpenses?.length || 0) + (archivedTasks?.length || 0) + (archivedAccounts?.length || 0) + (archivedProjects?.length || 0);
   const urgentExpenses = expenses.filter(e => e.status !== 'مدفوع' && e.type !== 'مرة واحدة' && calcDays(e.dueDate) <= 15 && calcDays(e.dueDate) !== null);
   const urgentTasks = tasks.filter(t => t.priority === 'عالي الأهمية' || (calcDays(t.dueDate) !== null && calcDays(t.dueDate) < 0));
@@ -1131,68 +736,27 @@ export default function App() {
   const yearlyExpenses = expenses.filter(e => e.type === 'سنوي').reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
   const onceExpenses = expenses.filter(e => e.type === 'مرة واحدة').reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
 
-  const formatTime12 = (date) => {
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-  };
-
-  // مكون الفقاعة الملونة
-  const Badge = ({ type, status }) => {
+  // Internal Components
+  const Badge = ({ status }) => {
     const styles = {
-      // المهام
       'عالي الأهمية': 'bg-red-500/10 border-red-500/30 text-red-400',
       'مستعجل': 'bg-orange-500/10 border-orange-500/30 text-orange-400',
       'متوسط الأهمية': 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400',
       'منخفض الأهمية': 'bg-green-500/10 border-green-500/30 text-green-400',
-      // المصروفات
       'مدفوع': 'bg-green-500/10 border-green-500/30 text-green-400',
       'لم يتم الدفع': 'bg-red-500/10 border-red-500/30 text-red-400',
-      'قريباً الدفع': 'bg-orange-500/10 border-orange-500/30 text-orange-400',
-      'متأخر': 'bg-red-500/10 border-red-500/30 text-red-400',
-      // المشاريع
       'جاري العمل': 'bg-blue-500/10 border-blue-500/30 text-blue-400',
-      'منتهي': 'bg-green-500/10 border-green-500/30 text-green-400',
+      'مكتمل': 'bg-green-500/10 border-green-500/30 text-green-400',
       'متوقف': 'bg-red-500/10 border-red-500/30 text-red-400',
     };
-    const lightStyles = {
-      'عالي الأهمية': 'bg-red-500/10 border-red-500/30 text-red-600',
-      'مستعجل': 'bg-orange-500/10 border-orange-500/30 text-orange-600',
-      'متوسط الأهمية': 'bg-yellow-500/10 border-yellow-500/30 text-yellow-600',
-      'منخفض الأهمية': 'bg-green-500/10 border-green-500/30 text-green-600',
-      'مدفوع': 'bg-green-500/10 border-green-500/30 text-green-600',
-      'لم يتم الدفع': 'bg-red-500/10 border-red-500/30 text-red-600',
-      'قريباً الدفع': 'bg-orange-500/10 border-orange-500/30 text-orange-600',
-      'متأخر': 'bg-red-500/10 border-red-500/30 text-red-600',
-      'جاري العمل': 'bg-blue-500/10 border-blue-500/30 text-blue-600',
-      'منتهي': 'bg-green-500/10 border-green-500/30 text-green-600',
-      'متوقف': 'bg-red-500/10 border-red-500/30 text-red-600',
-    };
-    const styleClass = darkMode ? styles[status] : lightStyles[status];
-    return <span className={`px-2 py-0.5 rounded-lg text-xs border ${styleClass || 'bg-gray-500/10 border-gray-500/30 text-gray-400'}`}>{status}</span>;
+    return <span className={`px-2 py-0.5 rounded-lg text-xs border ${styles[status] || 'bg-gray-500/10 border-gray-500/30 text-gray-400'}`}>{status}</span>;
   };
 
   const InfoItem = ({ icon: Icon, children, href, phone }) => {
-    if (href) {
-      return (
-        <a href={href} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-1 ${txtSm} hover:underline`}>
-          <Icon className={iconClass} />{children}
-        </a>
-      );
-    }
-    if (phone) {
-      return (
-        <a href={`tel:${phone}`} className={`inline-flex items-center gap-1 ${txtSm} hover:underline`}>
-          <Icon className={iconClass} />{children}
-        </a>
-      );
-    }
-    return (
-      <span className={`inline-flex items-center gap-1 ${txtSm}`}>
-        <Icon className={iconClass} />{children}
-      </span>
-    );
+    if (href) return <a href={href} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-1 ${txtSm} hover:underline`}><Icon className={iconClass} />{children}</a>;
+    if (phone) return <a href={`tel:${phone}`} className={`inline-flex items-center gap-1 ${txtSm} hover:underline`}><Icon className={iconClass} />{children}</a>;
+    return <span className={`inline-flex items-center gap-1 ${txtSm}`}><Icon className={iconClass} />{children}</span>;
   };
-
-  const Label = ({ children }) => <span className={`text-xs ${txtSm}`}>{children}</span>;
 
   const IconBtn = ({ onClick, icon: Icon, title, disabled }) => (
     <button onClick={onClick} disabled={disabled} className={`p-2 rounded-lg ${darkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'} ${disabled ? 'opacity-50' : ''}`} title={title}>
@@ -1200,1480 +764,171 @@ export default function App() {
     </button>
   );
 
-  const hideScrollbar = { scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' };
+  const hideScrollbar = { scrollbarWidth: 'none', msOverflowStyle: 'none' };
   const hideScrollbarClass = '[&::-webkit-scrollbar]:hidden';
 
-  if (loading) return <div className={`min-h-screen ${bg} flex items-center justify-center`} dir="rtl"><Loader className="w-12 h-12 text-blue-500 animate-spin" /></div>;
-
-
-  if (!isLoggedIn) return (
-    <div className={`min-h-screen ${bg} flex items-center justify-center p-4 relative overflow-hidden`} style={hideScrollbar} dir="rtl">
-      <FinancialPattern />
-      <div className={`${card} p-8 rounded-2xl shadow-2xl w-full max-w-md border relative z-10`}>
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center text-gray-700 text-2xl font-bold" style={{ backgroundColor: '#dcdddc' }}>RKZ</div>
-          <h1 className={`text-xl font-bold ${txt}`}>ركائز الأولى للتعمير</h1>
-          <p className={`text-sm ${txtSm}`}>منصة الإدارة والمشاريع</p>
-          <p className={`text-xs ${txtSm} mt-1`}>بوابة النظام</p>
-        </div>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input type="email" name="email" placeholder="البريد الإلكتروني" className={`w-full p-3 border rounded-xl text-sm ${inp}`} required />
-          <input type="password" name="password" placeholder="كلمة المرور" className={`w-full p-3 border rounded-xl text-sm ${inp}`} required />
-          <button className={`w-full bg-gradient-to-r ${accent.gradient} text-white p-3 rounded-xl font-bold text-sm`}>دخول</button>
-        </form>
-        <div className={`mt-4 p-3 rounded-lg text-xs ${darkMode ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'}`}>
-          <p className={`${txt} font-bold mb-1`}>معلومات الدخول الافتراضية:</p>
-          <p className={txtSm}>البريد: <code className="font-mono">naif@rkz.com</code></p>
-          <p className={txtSm}>كلمة المرور: <code className="font-mono">@Lion12345</code></p>
-        </div>
-        <div className="text-center mt-6"><button onClick={() => setShowVersions(true)} className="text-xs text-gray-400">v{APP_VERSION}</button></div>
+  // Loading State
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center" dir="rtl">
+        <Loader className="w-12 h-12 text-blue-500 animate-spin" />
       </div>
-      {showVersions && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowVersions(false)}>
-          <div className={`${card} p-6 rounded-2xl max-w-md w-full border`} onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4"><h3 className={`text-lg font-bold ${txt}`}>سجل النسخ</h3><button onClick={() => setShowVersions(false)} className={txtSm}><X className="w-5 h-5" /></button></div>
-            <div className={`space-y-3 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>{versionHistory.map((v, i) => (<div key={v.version} className={`p-3 rounded-xl ${i === 0 ? `${accent.color}/20` : darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}><div className="flex justify-between mb-2"><span className={`font-bold text-sm ${txt}`}>v{v.version}</span><span className={`text-xs ${txtSm}`}>{v.date}</span></div><ul className={`text-xs ${txtSm} space-y-1`}>{v.changes.map((c, j) => <li key={j}>• {c}</li>)}</ul></div>))}</div>
+    );
+  }
+
+  // Login Redirect - التوجيه لصفحة المصادقة الآمنة
+  if (!isLoggedIn) {
+    return (
+      <div className={`min-h-screen ${bg} flex items-center justify-center p-4 relative overflow-hidden`} dir="rtl">
+        <FinancialPattern />
+        <div className={`${card} p-8 rounded-2xl shadow-2xl w-full max-w-md border relative z-10`}>
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center text-gray-700 text-2xl font-bold" style={{ backgroundColor: '#dcdddc' }}>RKZ</div>
+            <h1 className={`text-xl font-bold ${txt}`}>ركائز الأولى للتعمير</h1>
+            <p className={`text-sm ${txtSm}`}>منصة الإدارة والمشاريع</p>
+          </div>
+          
+          <div className={`p-6 rounded-xl text-center ${darkMode ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'}`}>
+            <Shield className={`w-12 h-12 mx-auto mb-4 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+            <h2 className={`font-bold mb-2 ${txt}`}>نظام المصادقة الآمن</h2>
+            <p className={`text-sm ${txtSm} mb-4`}>
+              يرجى استخدام صفحة تسجيل الدخول الآمنة للوصول إلى النظام
+            </p>
+            <a 
+              href="/auth-pages.html" 
+              className={`inline-block w-full bg-gradient-to-r ${accent.gradient} text-white p-3 rounded-xl font-bold text-sm hover:opacity-90 transition-all`}
+            >
+              الذهاب لصفحة الدخول
+            </a>
+          </div>
+          
+          <div className="text-center mt-6">
+            <span className="text-xs text-gray-400">v{APP_VERSION}</span>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    );
+  }
+
+  // Main App Loading
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center" dir="rtl">
+        <Loader className="w-12 h-12 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
+
+// ================================// ================================
+// الجزء السادس - التنسيق والمكونات الداخلية
+// ================================
+
+  // Styling Variables
+  const accent = accentColors[accentIndex];
+  const currentBg = backgrounds[bgIndex];
+  const currentFont = fonts[fontIndex];
+  const currentHeaderColor = headerColors[headerColorIndex];
+  const bg = tokyoNightEnabled ? 'bg-gradient-to-br from-gray-900 to-gray-800' : `bg-gradient-to-br ${darkMode ? currentBg.dark : currentBg.light}`;
+  const card = tokyoNightEnabled ? 'bg-gray-800/80 backdrop-blur-md border-gray-700/50' : (darkMode ? 'bg-gray-800/80 backdrop-blur-sm border-gray-700/50' : 'bg-white/90 backdrop-blur-sm border-gray-200');
+  const headerCard = darkMode ? currentHeaderColor.dark : currentHeaderColor.light;
+  const headerTxt = headerColorIndex > 0 ? 'text-white' : (darkMode ? 'text-white' : 'text-gray-900');
+  const headerTxtSm = headerColorIndex > 0 ? 'text-gray-300' : (darkMode ? 'text-gray-400' : 'text-gray-500');
+  const cardPopup = tokyoNightEnabled ? 'bg-gray-800/95 backdrop-blur-md border-gray-700' : (darkMode ? 'bg-gray-800/95 backdrop-blur-md border-gray-700' : 'bg-white/95 backdrop-blur-md border-gray-200');
+  const inp = tokyoNightEnabled ? 'bg-gray-700/50 border-gray-600/50 text-white placeholder-gray-500' : (darkMode ? 'bg-gray-700/80 border-gray-600 text-white placeholder-gray-400' : 'bg-white/90 border-gray-300 text-gray-900 placeholder-gray-400');
+  const txt = tokyoNightEnabled ? 'text-gray-100' : (darkMode ? 'text-white' : 'text-gray-900');
+  const txtSm = tokyoNightEnabled ? 'text-gray-400' : (darkMode ? 'text-gray-400' : 'text-gray-500');
+  const iconClass = `w-3.5 h-3.5 ${txtSm}`;
+
+  // Computed Values
+  const totalArchived = (archivedExpenses?.length || 0) + (archivedTasks?.length || 0) + (archivedAccounts?.length || 0) + (archivedProjects?.length || 0);
+  const urgentExpenses = expenses.filter(e => e.status !== 'مدفوع' && e.type !== 'مرة واحدة' && calcDays(e.dueDate) <= 15 && calcDays(e.dueDate) !== null);
+  const urgentTasks = tasks.filter(t => t.priority === 'عالي الأهمية' || (calcDays(t.dueDate) !== null && calcDays(t.dueDate) < 0));
+  const totalExpenses = expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+  const monthlyExpenses = expenses.filter(e => e.type === 'شهري').reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+  const yearlyExpenses = expenses.filter(e => e.type === 'سنوي').reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+  const onceExpenses = expenses.filter(e => e.type === 'مرة واحدة').reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+  // Internal Components
+  const Badge = ({ status }) => {
+    const styles = {
+      'عالي الأهمية': 'bg-red-500/10 border-red-500/30 text-red-400',
+      'مستعجل': 'bg-orange-500/10 border-orange-500/30 text-orange-400',
+      'متوسط الأهمية': 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400',
+      'منخفض الأهمية': 'bg-green-500/10 border-green-500/30 text-green-400',
+      'مدفوع': 'bg-green-500/10 border-green-500/30 text-green-400',
+      'لم يتم الدفع': 'bg-red-500/10 border-red-500/30 text-red-400',
+      'جاري العمل': 'bg-blue-500/10 border-blue-500/30 text-blue-400',
+      'مكتمل': 'bg-green-500/10 border-green-500/30 text-green-400',
+      'متوقف': 'bg-red-500/10 border-red-500/30 text-red-400',
+    };
+    return <span className={`px-2 py-0.5 rounded-lg text-xs border ${styles[status] || 'bg-gray-500/10 border-gray-500/30 text-gray-400'}`}>{status}</span>;
+  };
+
+  const InfoItem = ({ icon: Icon, children, href, phone }) => {
+    if (href) return <a href={href} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-1 ${txtSm} hover:underline`}><Icon className={iconClass} />{children}</a>;
+    if (phone) return <a href={`tel:${phone}`} className={`inline-flex items-center gap-1 ${txtSm} hover:underline`}><Icon className={iconClass} />{children}</a>;
+    return <span className={`inline-flex items-center gap-1 ${txtSm}`}><Icon className={iconClass} />{children}</span>;
+  };
+
+  const IconBtn = ({ onClick, icon: Icon, title, disabled }) => (
+    <button onClick={onClick} disabled={disabled} className={`p-2 rounded-lg ${darkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'} ${disabled ? 'opacity-50' : ''}`} title={title}>
+      <Icon className="w-4 h-4" />
+    </button>
   );
 
-  return (
-    <>
-      {tokyoNightEnabled && <TokyoNightBg />}
-      <div style={{position:"relative",zIndex:1}}>
-        <div className={`min-h-screen relative overflow-x-hidden pb-16`} style={{ fontSize: `${fontSize}px`, fontFamily: currentFont.value, background: tokyoNightEnabled ? (darkMode ? 'linear-gradient(135deg, #1a1b26 0%, #16161e 100%)' : 'linear-gradient(135deg, #c0caf5 0%, #a9b1d6 100%)') : `linear-gradient(to bottom right, ${darkMode ? currentBg.dark : currentBg.light})`, ...hideScrollbar }} dir="rtl">
-      <style>{`
-          @keyframes twinkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
-          @keyframes aurora{0%,100%{transform:translate(0,0) rotate(0deg)}33%{transform:translate(5%,5%) rotate(10deg)}66%{transform:translate(-5%,5%) rotate(-10deg)}}
-          @keyframes float{0%,100%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-100vh) translateX(50px);opacity:0}}
-          @keyframes cardGlow{0%,100%{border-color:rgba(122,162,247,0.2);box-shadow:0 0 10px rgba(122,162,247,0.1)}50%{border-color:rgba(122,162,247,0.3);box-shadow:0 0 15px rgba(122,162,247,0.15)}}
-          .tokyo-card{background:rgba(36,40,59,0.8)!important;backdrop-filter:blur(10px)!important;border:1px solid rgba(122,162,247,0.2)!important;animation:cardGlow 8s ease-in-out infinite!important;transition:all 0.5s ease!important}
-          .tokyo-card:hover{transform:translateY(-2px)!important;border-color:rgba(122,162,247,0.4)!important}
-        *::-webkit-scrollbar { display: none; } 
-        * { scrollbar-width: none; -ms-overflow-style: none; } 
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } 
-        input[type=number] { -moz-appearance: textfield; }
-        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; ${darkMode ? 'filter: invert(1);' : ''} }
-        ${darkMode ? `input[type="date"] { color-scheme: dark; }` : ''}
-        input[type="date"]:not(:valid):before { content: "أدخل التاريخ"; color: ${darkMode ? '#9ca3af' : '#6b7280'}; }
-        input[type="date"]:focus:before { content: none; }
-      `}</style>
-      <FinancialPattern />
-      
-      {showMapPicker && <MapPicker darkMode={darkMode} onClose={() => setShowMapPicker(false)} onSelect={handleMapSelect} />}
-      
-      <link href={currentFont.url} rel="stylesheet" />
-      
-      <div className={`${headerCard} border-b px-4 py-3 flex flex-wrap items-center justify-between sticky top-0 z-50 gap-3`}>
-        <div className="flex items-center gap-3">
-          <button onClick={() => { setCurrentView('dashboard'); setSelectedProject(null); }} className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-700 font-bold text-xs" style={{ backgroundColor: '#dcdddc' }}>RKZ</button>
-          <div>
-            <h1 className={`font-bold ${headerTxt}`}>نظام الإدارة المالية</h1>
-            <p className={`${headerTxtSm}`}>ركائز الأولى للتعمير</p>
-            <p className={`${headerTxtSm}`}>{currentTime.toLocaleDateString('en-US')} | {formatTime12(currentTime)} | {quote}</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={`${headerTxt}`}>{greeting}</span>
-          <span className={`${headerTxtSm}`}>
-            <Shield className="w-3 h-3 inline ml-1" />
-            {currentUser.role === 'owner' ? 'المالك' : currentUser.role === 'manager' ? 'مدير' : 'عضو'}
-          </span>
-          <span className={`${headerTxtSm}`}>({formatNumber(getSessionMinutes())} د)</span>
-          
-          <div className="relative" ref={auditRef}>
-            <button onClick={() => { setShowAuditPanel(!showAuditPanel); setShowArchivePanel(false); setShowSettingsPanel(false); setNewNotifications(0); }} className={`p-2 rounded-lg ${headerColorIndex > 0 ? 'hover:bg-white/10' : (darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}>
-              <Clock className={`w-5 h-5 ${headerTxtSm}`} />
-              {newNotifications > 0 && <span className={`absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center`}>{newNotifications}</span>}
-            </button>
-            {showAuditPanel && (
-              <div className={`absolute left-0 top-12 w-80 ${cardPopup} rounded-xl shadow-2xl border z-50 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>
-                <div className={`p-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between`}>
-                  <span className={`font-bold text-sm ${txt}`}>آخر العمليات</span>
-                  <button onClick={() => { setCurrentView('audit'); setShowAuditPanel(false); }} className={`text-xs ${accent.text}`}>عرض الكل</button>
-                </div>
-                <div className="p-2">{auditLog.slice(0, 8).map(l => (
-                  <div key={l.id} onClick={() => navigateToItem(l)} className={`p-2 rounded-lg mb-1 cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
-                    <p className={`text-xs ${txt}`}>{l.description}</p>
-                    <span className={`text-xs ${txtSm}`}>{new Date(l.timestamp).toLocaleString('en-US')}</span>
-                  </div>
-                ))}</div>
-              </div>
-            )}
-          </div>
+  const hideScrollbar = { scrollbarWidth: 'none', msOverflowStyle: 'none' };
+  const hideScrollbarClass = '[&::-webkit-scrollbar]:hidden';
 
-          <div className="relative" ref={archiveRef}>
-            <button onClick={() => { setShowArchivePanel(!showArchivePanel); setShowAuditPanel(false); setShowSettingsPanel(false); setArchiveNotifications(0); }} className={`p-2 rounded-lg ${headerColorIndex > 0 ? 'hover:bg-white/10' : (darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}>
-              <Archive className={`w-5 h-5 ${headerTxtSm}`} />
-              {archiveNotifications > 0 && <span className={`absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center`}>{archiveNotifications}</span>}
-            </button>
-            {showArchivePanel && (
-              <div className={`absolute left-0 top-12 w-64 ${cardPopup} rounded-xl shadow-2xl border z-50`}>
-                <div className={`p-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between`}>
-                  <span className={`font-bold text-sm ${txt}`}>الأرشيف</span>
-                  <button onClick={() => { setCurrentView('archive'); setShowArchivePanel(false); }} className={`text-xs ${accent.text}`}>عرض الكل</button>
-                </div>
-                <div className="p-2">
-                  {[{ label: 'المصروفات', count: archivedExpenses?.length || 0 },{ label: 'المهام', count: archivedTasks?.length || 0 },{ label: 'المشاريع', count: archivedProjects?.length || 0 },{ label: 'الحسابات', count: archivedAccounts?.length || 0 }].map(item => (
-                    <div key={item.label} onClick={() => { setCurrentView('archive'); setShowArchivePanel(false); }} className={`p-2 rounded-lg mb-1 flex justify-between cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
-                      <span className={`text-xs ${txt}`}>{item.label}</span>
-                      <span className={`text-xs ${txtSm}`}>{formatNumber(item.count)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="relative" ref={settingsRef}>
-            <button onClick={() => { setShowSettingsPanel(!showSettingsPanel); setShowAuditPanel(false); setShowArchivePanel(false); }} className={`p-2 rounded-lg ${headerColorIndex > 0 ? 'hover:bg-white/10' : (darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}>
-              <Settings className={`w-5 h-5 ${headerTxtSm}`} />
-            </button>
-            {showSettingsPanel && (
-              <div className={`absolute left-0 top-12 w-80 ${cardPopup} rounded-xl shadow-2xl border z-50 p-4 max-h-[80vh] overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>
-                <h4 className={`font-bold text-sm mb-3 ${txt}`}>الإعدادات</h4>
-                
-                <div className="mb-4">
-                  <p className={`text-xs mb-2 ${txtSm}`}>نمط الواجهة</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button onClick={toggleTokyoNight} className={`p-3 rounded-xl border-2 transition-all ${tokyoNightEnabled ? 'border-blue-500 bg-blue-500/20' : (darkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-100')}`}>
-                      <div className="text-center">
-                        <div className="text-2xl mb-1">🌃</div>
-                        <div className={`text-xs font-bold ${txt}`}>Tokyo Night</div>
-                        <div className={`text-[10px] ${txtSm}`}>نجوم متلألئة</div>
-                      </div>
-                    </button>
-                    <button onClick={toggleTokyoNight} className={`p-3 rounded-xl border-2 transition-all ${!tokyoNightEnabled ? 'border-blue-500 bg-blue-500/20' : (darkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-100')}`}>
-                      <div className="text-center">
-                        <div className="text-2xl mb-1">🎨</div>
-                        <div className={`text-xs font-bold ${txt}`}>كلاسيكي</div>
-                        <div className={`text-[10px] ${txtSm}`}>الثيم الأصلي</div>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className={`text-xs mb-2 ${txtSm}`}>المظهر</p>
-                  <div className="flex gap-2">
-                    {[{ mode: 'light', icon: Sun, label: 'نهاري' }, { mode: 'dark', icon: Moon, label: 'ليلي' }, { mode: 'auto', icon: Monitor, label: 'تلقائي' }].map(t => (
-                      <button key={t.mode} onClick={() => setThemeMode(t.mode)} className={`flex-1 p-2 rounded-lg flex flex-col items-center gap-1 ${themeMode === t.mode ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
-                        <t.icon className="w-4 h-4" />
-                        <span className="text-xs">{t.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className={`text-xs mb-2 ${txtSm}`}>نوع الخط</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {fonts.map((f, i) => (
-                      <button key={f.id} onClick={() => setFontIndex(i)} className={`p-2 rounded-lg text-xs ${fontIndex === i ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`} style={{ fontFamily: f.value }}>
-                        {f.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className={`text-xs mb-2 ${txtSm}`}>حجم الخط</p>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setFontSize(f => Math.max(12, f - 2))} className={`w-8 h-8 rounded-lg flex items-center justify-center ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200'}`}>
-                      <Type className="w-3 h-3" />
-                    </button>
-                    <span className={`text-sm ${txt} flex-1 text-center`}>{formatNumber(fontSize)}px</span>
-                    <button onClick={() => setFontSize(f => Math.min(24, f + 2))} className={`w-8 h-8 rounded-lg flex items-center justify-center ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200'}`}>
-                      <Type className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className={`text-xs mb-2 ${txtSm}`}>الخلفية</p>
-                  <div className="flex gap-2 flex-wrap">{backgrounds.map((b, i) => (<button key={b.id} onClick={() => setBgIndex(i)} className={`w-8 h-8 rounded-lg bg-gradient-to-br ${b.dark} ${bgIndex === i ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`} title={b.name} />))}</div>
-                </div>
-
-                <div className="mb-4">
-                  <p className={`text-xs mb-2 ${txtSm}`}>لون الشريط العلوي</p>
-                  <div className="flex gap-2 flex-wrap">{headerColors.map((c, i) => (<button key={c.id} onClick={() => setHeaderColorIndex(i)} className={`w-8 h-8 rounded-lg ${c.sample} ${headerColorIndex === i ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`} title={c.name} />))}</div>
-                </div>
-
-                <div className="mb-4">
-                  <p className={`text-xs mb-2 ${txtSm}`}>اللون الرئيسي</p>
-                  <div className="flex gap-2">{accentColors.map((c, i) => (<button key={c.id} onClick={() => setAccentIndex(i)} className={`w-8 h-8 rounded-lg ${c.color} ${accentIndex === i ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`} title={c.name} />))}</div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <button onClick={logout} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"><Power className="w-5 h-5" /></button>
-        </div>
+  // Loading State
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center" dir="rtl">
+        <Loader className="w-12 h-12 text-blue-500 animate-spin" />
       </div>
+    );
+  }
 
-
-      <div className="flex flex-col md:flex-row">
-        <div className={`w-full md:w-48 ${headerCard} border-b md:border-l p-2`}>
-          <nav className="flex md:flex-col gap-1 flex-wrap">
-            {[
-              { id: 'dashboard', icon: Activity, label: 'الرئيسية' },
-              { id: 'expenses', icon: Wallet, label: 'المصروفات' },
-              { id: 'tasks', icon: CheckSquare, label: 'المهام' },
-              { id: 'projects', icon: FolderOpen, label: 'المشاريع' },
-              { id: 'accounts', icon: Users, label: 'الحسابات' },
-              { id: 'users', icon: UserCog, label: 'المستخدمين' },
-              ...(currentUser?.role === 'owner' ? [{ id: 'pending', icon: Shield, label: 'طلبات الانضمام', badge: pendingUsers.length }] : []),
-              { id: 'archive', icon: Archive, label: 'الأرشيف' },
-              { id: 'audit', icon: History, label: 'السجل' }
-            ].map(item => (
-              <button key={item.id} onClick={() => { setCurrentView(item.id); setSelectedProject(null); setProjectFilter(null); }} className={`flex items-center gap-2 p-2 rounded-xl transition-all relative ${currentView === item.id ? `bg-gradient-to-r ${accent.gradient} text-white` : headerColorIndex > 0 ? 'hover:bg-white/10 text-gray-300' : (darkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600')}`}>
-                <item.icon className="w-4 h-4" />
-                <span>{item.label}</span>
-                {item.badge > 0 && (
-                  <span className="absolute left-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div className={`flex-1 p-4 relative z-10 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>
+  // Login Redirect - التوجيه لصفحة المصادقة الآمنة
+  if (!isLoggedIn) {
+    return (
+      <div className={`min-h-screen ${bg} flex items-center justify-center p-4 relative overflow-hidden`} dir="rtl">
+        <FinancialPattern />
+        <div className={`${card} p-8 rounded-2xl shadow-2xl w-full max-w-md border relative z-10`}>
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center text-gray-700 text-2xl font-bold" style={{ backgroundColor: '#dcdddc' }}>RKZ</div>
+            <h1 className={`text-xl font-bold ${txt}`}>ركائز الأولى للتعمير</h1>
+            <p className={`text-sm ${txtSm}`}>منصة الإدارة والمشاريع</p>
+          </div>
           
-          {currentView === 'dashboard' && (
-            <div>
-              <h2 className={`text-lg font-bold mb-4 ${txt}`}>لوحة التحكم</h2>
-              
-              {/* بطاقات الإحصائيات - تصميم موحد */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                {/* بطاقة المصروفات */}
-                <button onClick={() => setCurrentView('expenses')} className={`${card} p-4 rounded-xl border text-right hover:border-rose-500/50 transition-all`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className={`font-bold text-sm ${txt}`}>المصروفات</h3>
-                    <span className={`text-2xl font-bold ${txt}`}>{formatNumber(expenses.length)}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="p-2 rounded-lg bg-blue-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>شهري</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(expenses.filter(e => e.type === 'شهري').length)}</span></div></div>
-                    <div className="p-2 rounded-lg bg-purple-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>سنوي</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(expenses.filter(e => e.type === 'سنوي').length)}</span></div></div>
-                    <div className="p-2 rounded-lg bg-orange-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>مرة واحدة</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(expenses.filter(e => e.type === 'مرة واحدة').length)}</span></div></div>
-                  </div>
-                  <div className={`mt-3 pt-2 border-t ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
-                    <div className="flex justify-between text-xs"><span className={txtSm}>الإجمالي</span><span className={`font-bold ${txt}`}>{formatNumber(expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0))} ر.س</span></div>
-                  </div>
-                </button>
-
-                {/* بطاقة المهام */}
-                <button onClick={() => setCurrentView('tasks')} className={`${card} p-4 rounded-xl border text-right hover:border-violet-500/50 transition-all`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className={`font-bold text-sm ${txt}`}>المهام</h3>
-                    <span className={`text-2xl font-bold ${txt}`}>{formatNumber(tasks.length)}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="p-2 rounded-lg bg-red-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>عالي الأهمية</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(tasks.filter(t => t.priority === 'عالي الأهمية').length)}</span></div></div>
-                    <div className="p-2 rounded-lg bg-orange-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>مستعجل</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(tasks.filter(t => t.priority === 'مستعجل').length)}</span></div></div>
-                    <div className="p-2 rounded-lg bg-yellow-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>متوسط</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(tasks.filter(t => t.priority === 'متوسط الأهمية').length)}</span></div></div>
-                    <div className="p-2 rounded-lg bg-green-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>منخفض</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(tasks.filter(t => t.priority === 'منخفض الأهمية').length)}</span></div></div>
-                  </div>
-                </button>
-
-                {/* بطاقة المشاريع */}
-                <button onClick={() => setCurrentView('projects')} className={`${card} p-4 rounded-xl border text-right hover:border-emerald-500/50 transition-all`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className={`font-bold text-sm ${txt}`}>المشاريع</h3>
-                    <span className={`text-2xl font-bold ${txt}`}>{formatNumber(projects.length)}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="p-2 rounded-lg bg-blue-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>جاري العمل</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(projects.filter(p => p.status === 'جاري العمل').length)}</span></div></div>
-                    <div className="p-2 rounded-lg bg-green-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>مكتمل</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(projects.filter(p => p.status === 'مكتمل').length)}</span></div></div>
-                    <div className="p-2 rounded-lg bg-gray-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>متوقف</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(projects.filter(p => p.status === 'متوقف').length)}</span></div></div>
-                  </div>
-                  <div className={`mt-3 pt-2 border-t ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
-                    <div className="flex justify-between text-xs"><span className={txtSm}>القيمة</span><span className={`font-bold ${txt}`}>{formatNumber(projects.reduce((s, p) => s + (parseFloat(p.budget) || 0), 0))} ر.س</span></div>
-                  </div>
-                </button>
-
-                {/* بطاقة الحسابات */}
-                <button onClick={() => setCurrentView('accounts')} className={`${card} p-4 rounded-xl border text-right hover:border-amber-500/50 transition-all`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className={`font-bold text-sm ${txt}`}>الحسابات</h3>
-                    <span className={`text-2xl font-bold ${txt}`}>{formatNumber(accounts.length)}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="p-2 rounded-lg bg-green-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>نشط</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d === null || d > 30; }).length)}</span></div></div>
-                    <div className="p-2 rounded-lg bg-yellow-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>ينتهي قريباً</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 30 && d > 0; }).length)}</span></div></div>
-                    <div className="p-2 rounded-lg bg-red-500/20"><div className="flex justify-between"><span className={`text-xs ${txt}`}>منتهي</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 0; }).length)}</span></div></div>
-                  </div>
-                </button>
-              </div>
-
-              {/* بنود تحتاج اهتمام - تصميم موحد */}
-              {(urgentExpenses.length > 0 || urgentTasks.length > 0 || accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 30 && d > 0; }).length > 0) && (
-                <div className={`${card} p-4 rounded-xl border mb-4`}>
-                  <div className="flex items-center gap-2 mb-4">
-                    <AlertTriangle className="w-5 h-5 text-red-500" />
-                    <h3 className={`font-bold ${txt}`}>بنود تحتاج اهتمام</h3>
-                  </div>
-                  
-                  {/* مصروفات قريبة */}
-                  {urgentExpenses.length > 0 && (
-                    <div className="mb-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`text-sm font-bold ${txt}`}>مصروفات قريبة</span>
-                        <span className="bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full text-xs">{urgentExpenses.length}</span>
-                      </div>
-                      <div className="grid md:grid-cols-3 gap-2">
-                        {urgentExpenses.slice(0, 3).map(e => {
-                          const d = calcDays(e.dueDate);
-                          const isOverdue = d !== null && d < 0;
-                          const isUrgent = d !== null && d <= 7;
-                          const bgColor = isOverdue ? 'bg-red-500/20' : isUrgent ? 'bg-orange-500/20' : 'bg-yellow-500/20';
-                          const textColor = isOverdue ? 'text-red-400' : isUrgent ? 'text-orange-400' : 'text-yellow-400';
-                          return (
-                            <div key={e.id} className={`p-2 rounded-lg ${bgColor}`}>
-                              <div className="flex justify-between"><span className={`text-xs ${txt}`}>{e.name}</span><span className={`text-xs font-bold ${textColor}`}>{isOverdue ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم`}</span></div>
-                              <div className="flex justify-between mt-1"><span className={`text-xs ${txtSm}`}>{formatNumber(e.amount)} ريال</span><span className={`text-xs ${txtSm}`}>استحقاق: {e.dueDate}</span></div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* مهام عالية الأهمية */}
-                  {urgentTasks.length > 0 && (
-                    <div className="mb-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`text-sm font-bold ${txt}`}>مهام عالية الأهمية</span>
-                        <span className="bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full text-xs">{urgentTasks.length}</span>
-                      </div>
-                      <div className="grid md:grid-cols-2 gap-2">
-                        {urgentTasks.slice(0, 4).map(t => {
-                          const d = calcDays(t.dueDate);
-                          const isHigh = t.priority === 'عالي الأهمية';
-                          const bgColor = isHigh ? 'bg-red-500/20' : 'bg-orange-500/20';
-                          const textColor = isHigh ? 'text-red-400' : 'text-orange-400';
-                          return (
-                            <div key={t.id} className={`p-2 rounded-lg ${bgColor}`}>
-                              <div className="flex justify-between"><span className={`text-xs ${txt}`}>{t.title}</span><span className={`text-xs font-bold ${textColor}`}>{t.priority}</span></div>
-                              <div className="flex justify-between mt-1"><span className={`text-xs ${txtSm}`}>المنفذ: {t.assignedTo || 'غير محدد'}</span>{d !== null && <span className={`text-xs ${txtSm}`}>{d < 0 ? `مضى ${formatNumber(Math.abs(d))} يوم` : `متبقي ${formatNumber(d)} يوم`}</span>}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* اشتراكات تنتهي قريباً */}
-                  {accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 30 && d > 0; }).length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`text-sm font-bold ${txt}`}>اشتراكات تنتهي قريباً</span>
-                        <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full text-xs">{accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 30 && d > 0; }).length}</span>
-                      </div>
-                      <div className="grid md:grid-cols-3 gap-2">
-                        {accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 30 && d > 0; }).slice(0, 3).map(a => {
-                          const d = calcDays(a.subscriptionDate);
-                          const bgColor = d <= 7 ? 'bg-orange-500/20' : d <= 15 ? 'bg-yellow-500/20' : 'bg-green-500/20';
-                          const textColor = d <= 7 ? 'text-orange-400' : d <= 15 ? 'text-yellow-400' : 'text-green-400';
-                          return (
-                            <div key={a.id} className={`p-2 rounded-lg ${bgColor}`}>
-                              <div className="flex justify-between"><span className={`text-xs ${txt}`}>{a.name}</span><span className={`text-xs font-bold ${textColor}`}>{formatNumber(d)} يوم</span></div>
-                              <div className="flex justify-between mt-1"><span className={`text-xs ${txtSm}`}>انتهاء: {a.subscriptionDate}</span></div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* الأقسام السفلية */}
-              <div className="grid md:grid-cols-3 gap-4">
-                {/* المصروفات القادمة */}
-                <div className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex justify-between mb-3"><h3 className={`font-bold text-sm ${txt}`}>المصروفات القادمة</h3><button onClick={() => setCurrentView('expenses')} className={`text-xs ${accent.text}`}>الكل</button></div>
-                  {expenses.filter(e => e.status !== 'مدفوع').length === 0 ? <p className={`text-center py-6 text-xs ${txtSm}`}>لا توجد مصروفات</p> : 
-                    <div className="space-y-2">{expenses.filter(e => e.status !== 'مدفوع').slice(0, 4).map(e => {
-                      const d = calcDays(e.dueDate);
-                      return (
-                        <div key={e.id} className={`p-2 rounded-lg ${d !== null && d < 0 ? 'bg-red-500/20' : d !== null && d < 7 ? 'bg-orange-500/20' : 'bg-green-500/20'}`}>
-                          <div className="flex justify-between"><span className={`text-xs ${txt}`}>{e.name}</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(e.amount)} ريال</span></div>
-                          {d !== null && <span className={`text-xs ${txtSm}`}>{d < 0 ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم`}</span>}
-                        </div>
-                      );
-                    })}</div>}
-                </div>
-
-                {/* المشاريع النشطة */}
-                <div className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex justify-between mb-3"><h3 className={`font-bold text-sm ${txt}`}>المشاريع النشطة</h3><button onClick={() => setCurrentView('projects')} className={`text-xs ${accent.text}`}>الكل</button></div>
-                  {projects.filter(p => p.status === 'جاري العمل').length === 0 ? <p className={`text-center py-6 text-xs ${txtSm}`}>لا توجد مشاريع</p> : 
-                    <div className="space-y-2">{projects.filter(p => p.status === 'جاري العمل').slice(0, 4).map(p => (
-                      <div key={p.id} className="p-2 rounded-lg bg-blue-500/20">
-                        <div className="flex justify-between"><span className={`text-xs ${txt}`}>{p.name}</span><span className={`text-xs font-bold ${txt}`}>جاري العمل</span></div>
-                        <span className={`text-xs ${txtSm}`}>العميل: {p.client || 'غير محدد'}</span>
-                      </div>
-                    ))}</div>}
-                </div>
-
-                {/* آخر العمليات */}
-                <div className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex justify-between mb-3"><h3 className={`font-bold text-sm ${txt}`}>آخر العمليات</h3><button onClick={() => setCurrentView('audit')} className={`text-xs ${accent.text}`}>السجل</button></div>
-                  {auditLog.length === 0 ? <p className={`text-center py-6 text-xs ${txtSm}`}>لا توجد عمليات</p> : 
-                    <div className="space-y-2">{auditLog.slice(0, 4).map(l => (
-                      <div key={l.id} className={`p-2 rounded-lg ${l.action === 'add' ? 'bg-green-500/20' : l.action === 'edit' ? 'bg-blue-500/20' : l.action === 'delete' ? 'bg-red-500/20' : 'bg-purple-500/20'}`}>
-                        <div className="flex justify-between"><span className={`text-xs ${txt}`}>{l.description?.substring(0, 25) || 'عملية'}...</span><span className={`text-xs ${txtSm}`}>{l.user}</span></div>
-                        <span className={`text-xs ${txtSm}`}>{new Date(l.timestamp).toLocaleDateString('en-GB')} {formatTime12(new Date(l.timestamp))}</span>
-                      </div>
-                    ))}</div>}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {currentView === 'expenses' && (
-            <div>
-              <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
-                <h2 className={`text-lg font-bold ${txt}`}>المصروفات</h2>
-                <button onClick={() => { setNewExpense(emptyExpense); setModalType('addExp'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}><Plus className="w-4 h-4" />إضافة</button>
-              </div>              {/* بطاقات الإحصائيات - تصميم موحد */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className={`font-bold text-sm ${txt}`}>الإجمالي</h3>
-                    <span className={`text-2xl font-bold ${txt}`}>{formatNumber(expenses.length)}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="p-2 rounded-lg bg-blue-500/20">
-                      <div className="flex justify-between"><span className={`text-xs ${txt}`}>المبلغ</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(totalExpenses)} ر.س</span></div>
-                    </div>
-                  </div>
-                </div>
-                <div className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className={`font-bold text-sm ${txt}`}>الشهري</h3>
-                    <span className={`text-2xl font-bold ${txt}`}>{formatNumber(expenses.filter(e => e.type === 'شهري').length)}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="p-2 rounded-lg bg-green-500/20">
-                      <div className="flex justify-between"><span className={`text-xs ${txt}`}>المبلغ</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(monthlyExpenses)} ر.س</span></div>
-                    </div>
-                  </div>
-                </div>
-                <div className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className={`font-bold text-sm ${txt}`}>السنوي</h3>
-                    <span className={`text-2xl font-bold ${txt}`}>{formatNumber(expenses.filter(e => e.type === 'سنوي').length)}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="p-2 rounded-lg bg-purple-500/20">
-                      <div className="flex justify-between"><span className={`text-xs ${txt}`}>المبلغ</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(yearlyExpenses)} ر.س</span></div>
-                    </div>
-                  </div>
-                </div>
-                <div className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className={`font-bold text-sm ${txt}`}>مرة واحدة</h3>
-                    <span className={`text-2xl font-bold ${txt}`}>{formatNumber(expenses.filter(e => e.type === 'مرة واحدة').length)}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="p-2 rounded-lg bg-orange-500/20">
-                      <div className="flex justify-between"><span className={`text-xs ${txt}`}>المبلغ</span><span className={`text-xs font-bold ${txt}`}>{formatNumber(onceExpenses)} ر.س</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {expenses.length === 0 ? (
-                <div className={`${card} p-8 rounded-xl border text-center`}>
-                  <Wallet className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
-                  <p className={txtSm}>لا توجد مصروفات</p>
-                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
-                </div>
-              ) : (
-                <div className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className={`font-bold ${txt}`}>قائمة المصروفات</h3>
-                    <span className={`text-xs ${txtSm}`}>{formatNumber(expenses.length)} مصروف</span>
-                  </div>
-                  <div className="space-y-2">
-                    {[...expenses].sort((a, b) => {
-                      const dA = a.type !== 'مرة واحدة' ? calcDaysRemaining(a.dueDate, a.type) : 999;
-                      const dB = b.type !== 'مرة واحدة' ? calcDaysRemaining(b.dueDate, b.type) : 999;
-                      return (dA || 999) - (dB || 999);
-                    }).map(e => {
-                      const d = e.type !== 'مرة واحدة' ? calcDaysRemaining(e.dueDate, e.type) : null;
-                      const color = getExpenseColor(d, e.type);
-                      const daysText = d !== null ? (d < 0 ? `متأخر ${formatNumber(Math.abs(d))} يوم` : `${formatNumber(d)} يوم`) : null;
-                      return (
-                        <div key={e.id} className={`p-3 rounded-lg ${color.bg}`}>
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <span className={`text-xs font-mono px-2 py-0.5 rounded ${color.badge}`}>{e.refNumber || 'E-0000'}</span>
-                                <h3 className={`font-bold ${txt}`}>{e.name}</h3>
-                                {daysText && e.type !== 'مرة واحدة' && <span className={`text-xs font-bold ${color.text}`}>{daysText}</span>}
-                                {e.type === 'مرة واحدة' && <span className={`text-xs font-bold ${color.text}`}>مرة واحدة</span>}
-                              </div>
-                              <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${txtSm}`}>
-                                <span className={txt}>{e.type === 'شهري' ? 'شهرياً' : e.type === 'سنوي' ? 'سنوياً' : 'المبلغ'}: <span className="font-bold">{formatNumber(e.amount)}</span></span>
-                                {e.type !== 'مرة واحدة' && <span className={txt}>الإجمالي: <span className="font-bold">{formatNumber(e.totalSpent || 0)}</span></span>}
-                                {e.dueDate && <span>استحقاق: {e.dueDate}</span>}
-                                <span>{e.createdBy}</span>
-                              </div>
-                            </div>
-                            <div className="flex gap-1">
-                              <button onClick={() => setShowExpenseHistory(showExpenseHistory === e.id ? null : e.id)} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20"><BookOpen className="w-4 h-4 text-gray-300" /></button>
-                              {e.type !== 'مرة واحدة' && (
-                                <button onClick={() => {
-                                  const newDueDate = new Date(e.dueDate);
-                                  newDueDate.setDate(newDueDate.getDate() + (e.type === 'شهري' ? 30 : 365));
-                                  const payment = { date: new Date().toISOString(), amount: e.amount, note: 'تحديث يدوي', by: currentUser.username };
-                                  const ne = expenses.map(ex => ex.id === e.id ? { ...ex, dueDate: newDueDate.toISOString().split('T')[0], totalSpent: (ex.totalSpent || 0) + parseFloat(ex.amount), paymentHistory: [...(ex.paymentHistory || []), payment] } : ex);
-                                  const al = addLog('refresh', 'مصروف', e.name, e.id);
-                                  setExpenses(ne); save({ expenses: ne, auditLog: al });
-                                }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20"><RefreshCw className="w-4 h-4 text-gray-300" /></button>
-                              )}
-                              <button onClick={() => { setEditingItem({ ...e }); setModalType('editExp'); setShowModal(true); }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20"><Pencil className="w-4 h-4 text-gray-300" /></button>
-                              <button onClick={() => { setSelectedItem(e); setModalType('delExp'); setShowModal(true); }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20"><Trash2 className="w-4 h-4 text-gray-300" /></button>
-                            </div>
-                          </div>
-                          {showExpenseHistory === e.id && (
-                            <div className={`mt-3 pt-3 border-t border-white/10`}>
-                              <p className={`font-bold mb-2 text-xs ${txt}`}>سجل العمليات:</p>
-                              {e.paymentHistory?.length > 0 ? (
-                                <div className="space-y-1">
-                                  {e.paymentHistory.map((p, i) => (
-                                    <div key={i} className="p-2 rounded-lg bg-white/5 flex flex-wrap gap-3 text-xs">
-                                      <span className={txt}>{formatNumber(p.amount)} ريال</span>
-                                      <span className={txtSm}>{new Date(p.date).toLocaleDateString('en-GB')}</span>
-                                      <span className={txtSm}>{formatTime12(new Date(p.date))}</span>
-                                      {p.note && <span className={txtSm}>{p.note}</span>}
-                                      <span className={txtSm}>{p.by || p.paidBy}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : <p className={`text-xs ${txtSm}`}>لا توجد عمليات سابقة</p>}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-
-          {currentView === 'tasks' && (
-            <div>
-              <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
-                <h2 className={`text-lg font-bold ${txt}`}>المهام</h2>
-                <div className="flex gap-2">
-                  <button onClick={() => { setNewSection(emptySection); setModalType('addSection'); setShowModal(true); }} className={`flex items-center gap-1 ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'} px-3 py-2 rounded-xl text-xs`}>
-                    <Layers className="w-4 h-4" />إضافة قسم
-                  </button>
-                  <button onClick={() => { setNewTask(emptyTask); setModalType('addTask'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}>
-                    <Plus className="w-4 h-4" />إضافة مهمة
-                  </button>
-                </div>
-              </div>              {/* بطاقات إحصائيات المهام - تصميم موحد */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>الإجمالي</span>
-                    <CheckSquare className={`w-4 h-4 ${txtSm}`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(tasks.length)}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-blue-500/20"><span className="text-xs text-blue-400">مهمة</span></div>
-                </div>
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>عالي الأهمية</span>
-                    <AlertTriangle className={`w-4 h-4 text-red-400`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(tasks.filter(t => t.priority === 'عالي الأهمية').length)}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-red-500/20"><span className="text-xs text-red-400">مهمة</span></div>
-                </div>
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>مستعجل</span>
-                    <Clock className={`w-4 h-4 text-orange-400`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(tasks.filter(t => t.priority === 'مستعجل').length)}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-orange-500/20"><span className="text-xs text-orange-400">مهمة</span></div>
-                </div>
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>متوسط + منخفض</span>
-                    <Activity className={`w-4 h-4 text-green-400`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(tasks.filter(t => t.priority === 'متوسط الأهمية' || t.priority === 'منخفض الأهمية').length)}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-green-500/20"><span className="text-xs text-green-400">مهمة</span></div>
-                </div>
-              </div>
-
-              <div className="flex gap-2 mb-4 flex-wrap">
-                <button onClick={() => setTaskFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs ${taskFilter === 'all' ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>الكل</button>
-                <button onClick={() => setTaskFilter('priority')} className={`px-3 py-1.5 rounded-lg text-xs ${taskFilter === 'priority' ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>حسب الأولوية</button>
-              </div>
-
-              {projects.length > 0 && (
-                <div className="flex gap-2 mb-4 flex-wrap">
-                  <button onClick={() => setProjectFilter(null)} className={`px-3 py-1.5 rounded-lg text-xs ${!projectFilter ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>كل المشاريع</button>
-                  {projects.map(p => (
-                    <button key={p.id} onClick={() => setProjectFilter(projectFilter === p.id ? null : p.id)} className={`px-3 py-1.5 rounded-lg text-xs ${projectFilter === p.id ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-                      {p.name} ({formatNumber(tasks.filter(t => t.projectId === p.id).length)})
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {(projectFilter ? tasks.filter(t => t.projectId === projectFilter) : tasks).length === 0 ? (
-                <div className={`${card} p-8 rounded-xl border text-center`}>
-                  <CheckSquare className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
-                  <p className={txtSm}>لا توجد مهام</p>
-                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
-                </div>
-              ) : (
-                <div className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className={`font-bold ${txt}`}>قائمة المهام</h3>
-                    <span className={`text-xs ${txtSm}`}>{formatNumber((projectFilter ? tasks.filter(t => t.projectId === projectFilter) : tasks).length)} مهمة</span>
-                  </div>
-                  <div className="space-y-2">
-                    {[...(projectFilter ? tasks.filter(t => t.projectId === projectFilter) : tasks)]
-                      .sort((a, b) => {
-                        if (taskFilter === 'priority') {
-                          const priorityOrder = { 'عالي الأهمية': 0, 'مستعجل': 1, 'متوسط الأهمية': 2, 'منخفض الأهمية': 3 };
-                          return (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3);
-                        }
-                        return 0;
-                      })
-                      .map(t => {
-                      const d = calcDays(t.dueDate);
-                      const project = projects.find(p => p.id === t.projectId);
-                      const color = getTaskColor(t.priority);
-                      const daysText = d !== null ? (d < 0 ? `مضى ${formatNumber(Math.abs(d))} يوم` : `متبقي ${formatNumber(d)} يوم`) : null;
-                      return (
-                        <div key={t.id} className={`p-3 rounded-lg ${color.bg}`}>
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <span className={`text-xs font-mono px-2 py-0.5 rounded ${color.badge}`}>{t.refNumber || 'T-0000'}</span>
-                                <h3 className={`font-bold ${txt}`}>{t.title}</h3>
-                                <span className={`text-xs font-bold ${color.text}`}>{t.priority}</span>
-                              </div>
-                              {t.description && <p className={`text-xs ${txtSm} mb-1`}>{t.description}</p>}
-                              <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${txtSm}`}>
-                                {project && <span className={accent.text}>{project.name}</span>}
-                                <span>أنشئ: {t.createdBy}</span>
-                                {t.assignedTo && <span>المنفذ: {t.assignedTo}</span>}
-                                {daysText && <span>{daysText}</span>}
-                              </div>
-                            </div>
-                            <div className="flex gap-1">
-                              <button onClick={() => { setEditingItem({ ...t }); setModalType('editTask'); setShowModal(true); }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20"><Pencil className="w-4 h-4 text-gray-300" /></button>
-                              <button onClick={() => { setSelectedItem(t); setModalType('delTask'); setShowModal(true); }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20"><Trash2 className="w-4 h-4 text-gray-300" /></button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {currentView === 'projects' && !selectedProject && (
-            <div>
-              <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
-                <h2 className={`text-lg font-bold ${txt}`}>المشاريع</h2>
-                <button onClick={() => { setNewProject(emptyProject); setModalType('addProject'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}><Plus className="w-4 h-4" />إضافة مشروع</button>
-              </div>              {/* بطاقات إحصائيات المشاريع - تصميم موحد */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>الإجمالي</span>
-                    <FolderOpen className={`w-4 h-4 ${txtSm}`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(projects.length)}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-blue-500/20"><span className="text-xs text-blue-400">مشروع</span></div>
-                </div>
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>جاري العمل</span>
-                    <Activity className={`w-4 h-4 text-blue-400`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(projects.filter(p => p.status === 'جاري العمل').length)}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-blue-500/20"><span className="text-xs text-blue-400">مشروع</span></div>
-                </div>
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>مكتمل</span>
-                    <CheckSquare className={`w-4 h-4 text-green-400`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(projects.filter(p => p.status === 'مكتمل').length)}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-green-500/20"><span className="text-xs text-green-400">مشروع</span></div>
-                </div>
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>القيمة الإجمالية</span>
-                    <DollarSign className={`w-4 h-4 text-purple-400`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(projects.reduce((s, p) => s + (parseFloat(p.budget) || 0), 0))}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-purple-500/20"><span className="text-xs text-purple-400">ريال</span></div>
-                </div>
-              </div>
-
-              {projects.length === 0 ? (
-                <div className={`${card} p-8 rounded-xl border text-center`}>
-                  <FolderOpen className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
-                  <p className={txtSm}>لا توجد مشاريع</p>
-                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
-                </div>
-              ) : (
-                <div className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className={`font-bold ${txt}`}>قائمة المشاريع</h3>
-                    <span className={`text-xs ${txtSm}`}>{formatNumber(projects.length)} مشروع</span>
-                  </div>
-                  <div className="space-y-2">
-                    {projects.map(p => {
-                      const projectTasks = tasks.filter(t => t.projectId === p.id);
-                      const color = getProjectColor(p.status);
-                      return (
-                        <div key={p.id} onClick={() => setSelectedProject(p)} className={`p-3 rounded-lg ${color.bg} cursor-pointer hover:opacity-80 transition-all`}>
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <span className={`text-xs font-mono px-2 py-0.5 rounded ${color.badge}`}>{p.refNumber || 'P-0000'}</span>
-                                <h3 className={`font-bold ${txt}`}>{p.name}</h3>
-                                <span className={`text-xs font-bold ${color.text}`}>{p.status}</span>
-                              </div>
-                              {p.description && <p className={`text-xs ${txtSm} mb-1`}>{p.description.substring(0, 60)}...</p>}
-                              <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${txtSm}`}>
-                                {p.client && <span>العميل: {p.client}</span>}
-                                {p.budget && <span>الميزانية: {formatNumber(p.budget)} ر.س</span>}
-                                <span>{formatNumber(projectTasks.length)} مهمة</span>
-                                <span>{p.createdBy}</span>
-                              </div>
-                            </div>
-                            <ChevronLeft className={`w-5 h-5 ${txtSm}`} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {currentView === 'projects' && selectedProject && (
-            <div>
-              <button onClick={() => setSelectedProject(null)} className={`flex items-center gap-1 mb-4 ${accent.text}`}><ChevronLeft className="w-4 h-4" />العودة</button>
-              
-              <div className={`${card} p-4 rounded-xl border mb-4`}>
-                <div className="flex justify-between items-start mb-4 flex-wrap gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className={`text-lg font-bold ${txt}`}>{selectedProject.name}</h2>
-                    <Badge status={selectedProject.status} />
-                  </div>
-                  <div className="flex gap-1">
-                    <IconBtn onClick={() => { setEditingItem({ ...selectedProject }); setModalType('editProject'); setShowModal(true); }} icon={Pencil} title="تعديل" />
-                    <IconBtn onClick={() => { setSelectedItem(selectedProject); setModalType('delProject'); setShowModal(true); }} icon={Trash2} title="حذف" />
-                  </div>
-                </div>
-
-                {selectedProject.description && <p className={`text-xs ${txtSm} mb-4`}>{selectedProject.description}</p>}
-
-                <div className={`text-xs ${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mb-4`}>
-                  {selectedProject.client && <InfoItem icon={User}>{selectedProject.client}</InfoItem>}
-                  {selectedProject.phone && <InfoItem icon={Phone} phone={selectedProject.phone}>{selectedProject.phone}</InfoItem>}
-                  {selectedProject.location && <InfoItem icon={MapPin} href={selectedProject.mapUrl}>{selectedProject.location}</InfoItem>}
-                  {selectedProject.budget && <InfoItem icon={DollarSign}>{formatNumber(selectedProject.budget)} ريال</InfoItem>}
-                  {selectedProject.startDate && <InfoItem icon={Calendar}>من: {selectedProject.startDate}</InfoItem>}
-                  {selectedProject.endDate && <InfoItem icon={Calendar}>إلى: {selectedProject.endDate}</InfoItem>}
-                  <InfoItem icon={User}>{selectedProject.createdBy}</InfoItem>
-                </div>
-              </div>
-
-              <div className={`${card} p-4 rounded-xl border mb-4`}>
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className={`font-bold text-sm ${txt}`}>ملفات المشروع ({formatNumber(selectedProject.folders?.reduce((sum, f) => sum + (f.files?.length || 0), 0) || 0)})</h3>
-                  <button onClick={() => setShowNewFolderModal(true)} className={`flex items-center gap-1 ${accent.text}`}>
-                    <FolderPlus className="w-4 h-4" />إضافة مجلد
-                  </button>
-                </div>
-                
-                {(!selectedProject.folders || selectedProject.folders.length === 0) ? (
-                  <p className={`text-center py-4 ${txtSm}`}>لا توجد مجلدات</p>
-                ) : (
-                  <div className="space-y-3">
-                    {selectedProject.folders.map((folder, fi) => (
-                      <div key={fi} className={`p-3 rounded-lg border ${darkMode ? 'bg-gray-700/30 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
-                        <div className="flex justify-between items-center mb-2">
-                          <button onClick={() => setOpenFolder(openFolder === fi ? null : fi)} className={`flex items-center gap-2 ${txt} font-bold`}>
-                            {openFolder === fi ? <FolderOpen className="w-5 h-5" /> : <Folder className="w-5 h-5" />}
-                            {folder.name} ({folder.files?.length || 0})
-                          </button>
-                          <div className="flex gap-1">
-                            <label className={`cursor-pointer p-1.5 rounded ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}>
-                              <Plus className="w-4 h-4" />
-                              <input type="file" className="hidden" multiple onChange={(e) => {
-                                const files = Array.from(e.target.files);
-                                const newFolders = [...selectedProject.folders];
-                                files.forEach(file => {
-                                  const reader = new FileReader();
-                                  reader.onload = (ev) => {
-                                    const fileData = { name: file.name, url: ev.target.result, type: file.type, size: file.size, uploadedAt: new Date().toISOString(), uploadedBy: currentUser.username };
-                                    newFolders[fi].files = [...(newFolders[fi].files || []), fileData];
-                                    const np = projects.map(p => p.id === selectedProject.id ? { ...p, folders: newFolders } : p);
-                                    setProjects(np); setSelectedProject({ ...selectedProject, folders: newFolders }); save({ projects: np });
-                                  };
-                                  reader.readAsDataURL(file);
-                                });
-                              }} />
-                            </label>
-                            <button onClick={() => {
-                              if (window.window.confirm('هل تريد حذف هذا المجلد؟')) {
-                                const newFolders = selectedProject.folders.filter((_, i) => i !== fi);
-                                const np = projects.map(p => p.id === selectedProject.id ? { ...p, folders: newFolders } : p);
-                                setProjects(np); setSelectedProject({ ...selectedProject, folders: newFolders }); save({ projects: np });
-                              }
-                            }} className={`p-1.5 rounded ${darkMode ? 'hover:bg-gray-600 text-red-400' : 'hover:bg-gray-200 text-red-500'}`}>
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                        
-                        {openFolder === fi && folder.files?.length > 0 && (
-                          <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mt-3">
-                            {folder.files.map((f, ffi) => (
-                              <div key={ffi} className="relative group">
-                                {f.type?.startsWith('image/') ? (
-                                  <img src={f.url} alt={f.name} onClick={() => setPreviewImage(f.url)} className="w-full h-20 object-cover rounded-lg cursor-pointer" />
-                                ) : (
-                                  <div className={`w-full h-20 rounded-lg flex flex-col items-center justify-center ${darkMode ? 'bg-gray-600' : 'bg-gray-200'}`}>
-                                    <FileText className="w-6 h-6 mb-1" />
-                                    <span className={`text-xs ${txtSm} truncate px-1 w-full text-center`}>{f.name}</span>
-                                  </div>
-                                )}
-                                <div className={`absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all rounded-lg flex items-center justify-center gap-2`}>
-                                  {f.type?.startsWith('image/') && <button onClick={() => setPreviewImage(f.url)} className="text-white text-xs">عرض</button>}
-                                  <a href={f.url} download={f.name} className="text-white text-xs">تحميل</a>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className={`${card} p-4 rounded-xl border`}>
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className={`font-bold text-sm ${txt}`}>مهام المشروع ({formatNumber(tasks.filter(t => t.projectId === selectedProject.id).length)})</h3>
-                  <button onClick={() => { setNewTask({ ...emptyTask, projectId: selectedProject.id }); setModalType('addTask'); setShowModal(true); }} className={`${accent.text}`}><Plus className="w-4 h-4 inline" />إضافة مهمة</button>
-                </div>
-                {tasks.filter(t => t.projectId === selectedProject.id).length === 0 ? (
-                  <p className={`text-center py-4 ${txtSm}`}>لا توجد مهام</p>
-                ) : (
-                  <div className="space-y-2">
-                    {tasks.filter(t => t.projectId === selectedProject.id).map(t => (
-                      <div key={t.id} className={`p-3 rounded-lg border ${darkMode ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-50 border-gray-200'} flex justify-between items-center`}>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <Badge status={t.priority} />
-                            <span className={`text-xs ${txt}`}>{t.title}</span>
-                          </div>
-                        </div>
-                        <span className={`text-xs ${txtSm}`}>{t.dueDate}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-
-          {currentView === 'accounts' && (
-            <div>
-              <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
-                <h2 className={`text-lg font-bold ${txt}`}>الحسابات</h2>
-                <button onClick={() => { setNewAccount(emptyAccount); setModalType('addAcc'); setShowModal(true); }} className={`flex items-center gap-1 bg-gradient-to-r ${accent.gradient} text-white px-3 py-2 rounded-xl text-xs`}><Plus className="w-4 h-4" />إضافة</button>
-              </div>              {/* بطاقات إحصائيات الحسابات - تصميم موحد */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>الإجمالي</span>
-                    <Users className={`w-4 h-4 ${txtSm}`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(accounts.length)}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-blue-500/20"><span className="text-xs text-blue-400">حساب</span></div>
-                </div>
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>نشط</span>
-                    <CheckCircle className={`w-4 h-4 text-green-400`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d === null || d > 30; }).length)}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-green-500/20"><span className="text-xs text-green-400">حساب</span></div>
-                </div>
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>ينتهي قريباً</span>
-                    <AlertTriangle className={`w-4 h-4 text-yellow-400`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 30 && d > 0; }).length)}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-yellow-500/20"><span className="text-xs text-yellow-400">حساب</span></div>
-                </div>
-                <div className={`${card} p-3 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-xs ${txtSm}`}>منتهي</span>
-                    <XCircle className={`w-4 h-4 text-red-400`} />
-                  </div>
-                  <p className={`text-lg font-bold ${txt}`}>{formatNumber(accounts.filter(a => { const d = calcDays(a.subscriptionDate); return d !== null && d <= 0; }).length)}</p>
-                  <div className="mt-2 p-1.5 rounded-lg bg-red-500/20"><span className="text-xs text-red-400">حساب</span></div>
-                </div>
-              </div>
-
-              {accounts.length === 0 ? (
-                <div className={`${card} p-8 rounded-xl border text-center`}>
-                  <Users className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} />
-                  <p className={txtSm}>لا توجد حسابات</p>
-                  <p className={`text-xs ${txtSm} mt-2`}>{getRandomEncouragement('empty')}</p>
-                </div>
-              ) : (
-                <div className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className={`font-bold ${txt}`}>قائمة الحسابات</h3>
-                    <span className={`text-xs ${txtSm}`}>{formatNumber(accounts.length)} حساب</span>
-                  </div>
-                  <div className="space-y-2">
-                    {accounts.map(a => {
-                      const d = calcDays(a.subscriptionDate);
-                      const color = getAccountColor(d);
-                      return (
-                        <div key={a.id} className={`p-3 rounded-lg ${color.bg}`}>
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <span className={`text-xs font-mono px-2 py-0.5 rounded ${color.badge}`}>{a.refNumber || 'A-0000'}</span>
-                                <h3 className={`font-bold ${txt}`}>{a.name}</h3>
-                                {d !== null && <span className={`text-xs font-bold ${color.text}`}>{d <= 0 ? 'منتهي' : `${formatNumber(d)} يوم`}</span>}
-                              </div>
-                              <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${txtSm}`}>
-                                <span>{a.username}</span>
-                                {a.subscriptionDate && <span>انتهاء: {a.subscriptionDate}</span>}
-                              </div>
-                            </div>
-                            <div className="flex gap-1">
-                              <button onClick={() => copyToClipboard(a.username, 'اسم المستخدم')} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20"><Copy className="w-4 h-4 text-gray-300" /></button>
-                              <button onClick={() => setShowPasswordId(showPasswordId === a.id ? null : a.id)} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20">{showPasswordId === a.id ? <EyeOff className="w-4 h-4 text-gray-300" /> : <Eye className="w-4 h-4 text-gray-300" />}</button>
-                              {a.loginUrl && <a href={a.loginUrl} target="_blank" rel="noreferrer" className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20"><ExternalLink className="w-4 h-4 text-gray-300" /></a>}
-                              <button onClick={() => { setEditingItem({ ...a }); setModalType('editAcc'); setShowModal(true); }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20"><Pencil className="w-4 h-4 text-gray-300" /></button>
-                              <button onClick={() => { setSelectedItem(a); setModalType('delAcc'); setShowModal(true); }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20"><Trash2 className="w-4 h-4 text-gray-300" /></button>
-                            </div>
-                          </div>
-                          {showPasswordId === a.id && (
-                            <div className="mt-2 pt-2 border-t border-white/10 flex items-center gap-2">
-                              <span className={`text-xs ${txt}`}>كلمة المرور: <span className="font-mono">{a.password}</span></span>
-                              <button onClick={() => copyToClipboard(a.password, 'كلمة المرور')} className="p-1 rounded bg-white/10 hover:bg-white/20"><Copy className="w-3 h-3 text-gray-300" /></button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {currentView === 'users' && (
-            <div>
-              <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                <h2 className={`text-lg font-bold ${txt}`}>المستخدمين النشطين</h2>
-              </div>
-              <div className="space-y-3">{users.map(u => (
-                <div key={u.id} className={`${card} p-4 rounded-xl border`}>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex-1">
-                      <h3 className={`font-bold ${txt}`}>{u.name}</h3>
-                      <p className={`${txtSm} text-xs mb-1`}>{u.email}</p>
-                      <p className={`${txtSm} mb-2 text-xs`}>{u.role === 'owner' ? 'المالك' : u.role === 'manager' ? 'مدير' : 'عضو'}</p>
-                      
-                      <div className="flex items-center gap-2 mt-2 p-2 rounded-lg" style={{background: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)'}}>
-                        <Shield className="w-4 h-4 text-red-400" />
-                        <span className={`text-xs ${txt}`}>كلمة المرور:</span>
-                        <code className={`text-xs font-mono ${txtSm}`}>
-                          {showPasswordId === u.id ? (u.password || '••••••••') : '••••••••'}
-                        </code>
-                        <button
-                          onClick={() => setShowPasswordId(showPasswordId === u.id ? null : u.id)}
-                          className="text-blue-400 hover:text-blue-300 ml-auto"
-                        >
-                          {showPasswordId === u.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                      
-                      <div className={`${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mt-2`}>
-                        <InfoItem icon={u.active !== false ? CheckCircle : XCircle}>{u.active !== false ? 'نشط' : 'معطل'}</InfoItem>
-                        {u.approvedDate && <span className="text-xs">انضم: {new Date(u.approvedDate).toLocaleDateString('ar-SA')}</span>}
-                      </div>
-                    </div>
-                    {u.role !== 'owner' && (
-                      <div className="flex gap-1">
-                        <IconBtn onClick={() => { setEditingItem({ ...u }); setModalType('editUser'); setShowModal(true); }} icon={Pencil} title="تعديل" />
-                        <IconBtn onClick={() => { setSelectedItem(u); setModalType('delUser'); setShowModal(true); }} icon={Trash2} title="حذف" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}</div>
-            </div>
-          )}
-
-          {currentView === 'pending' && (
-            <div>
-              <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                <h2 className={`text-lg font-bold ${txt}`}>طلبات الانضمام</h2>
-                <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-lg text-xs font-bold">
-                  {pendingUsers.length} طلب
-                </span>
-              </div>
-              
-              {pendingUsers.length === 0 ? (
-                <div className={`${card} p-8 rounded-xl border text-center`}>
-                  <p className={txtSm}>لا توجد طلبات معلقة</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {pendingUsers.map(user => (
-                    <div key={user.id} className={`${card} p-4 rounded-xl border`}>
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className={`font-bold ${txt}`}>{user.name}</h3>
-                          <p className={`${txtSm} text-xs`}>{user.email}</p>
-                          <p className={`text-xs ${txtSm} mt-1`}>
-                            تاريخ الطلب: {new Date(user.requestDate).toLocaleDateString('ar-SA')}
-                          </p>
-                        </div>
-                        <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-xs font-bold">
-                          قيد المراجعة
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 mb-3 p-2 rounded-lg" style={{background: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)'}}>
-                        <Shield className="w-4 h-4 text-red-400" />
-                        <span className={`text-xs ${txt}`}>كلمة المرور:</span>
-                        <code className={`text-xs font-mono ${txtSm}`}>
-                          {showPasswordId === user.id ? (user.password || '••••••••') : '••••••••'}
-                        </code>
-                        <button
-                          onClick={() => setShowPasswordId(showPasswordId === user.id ? null : user.id)}
-                          className="text-blue-400 hover:text-blue-300 ml-auto"
-                        >
-                          {showPasswordId === user.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <button
-                          onClick={async () => {
-                            try {
-                              await updateDoc(doc(db, 'users', user.uid), {
-                                status: 'approved',
-                                approvedDate: new Date().toISOString(),
-                                approvedBy: currentUser.uid || currentUser.id
-                              });
-                              alert(`✅ تمت الموافقة على ${user.name}`);
-                            } catch (error) {
-                              console.error(error);
-                              alert('حدث خطأ');
-                            }
-                          }}
-                          className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-xl text-xs font-bold transition-all"
-                        >
-                          قبول
-                        </button>
-                        
-                        <button
-                          onClick={async () => {
-                            if (!window.confirm(`هل تريد رفض طلب ${user.name}؟`)) return;
-                            try {
-                              await updateDoc(doc(db, 'users', user.uid), {
-                                status: 'rejected',
-                                rejectedDate: new Date().toISOString(),
-                                rejectedBy: currentUser.uid || currentUser.id
-                              });
-                              alert(`❌ تم رفض ${user.name}`);
-                            } catch (error) {
-                              console.error(error);
-                              alert('حدث خطأ');
-                            }
-                          }}
-                          className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-xl text-xs font-bold transition-all"
-                        >
-                          رفض
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {currentView === 'archive' && (
-            <div>
-              <h2 className={`text-lg font-bold mb-4 ${txt}`}>الأرشيف</h2>
-              {totalArchived === 0 ? (
-                <div className={`${card} p-8 rounded-xl border text-center`}><Archive className={`w-12 h-12 mx-auto mb-3 ${txtSm}`} /><p className={txtSm}>الأرشيف فارغ</p></div>
-              ) : (
-                <div className="space-y-4">
-                  {archivedExpenses?.length > 0 && (
-                    <div>
-                      <h3 className={`font-bold text-sm mb-2 ${txt}`}>المصروفات ({formatNumber(archivedExpenses.length)})</h3>
-                      {archivedExpenses.map(e => (
-                        <div key={e.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`font-bold text-sm ${txt}`}>{e.name}</span>
-                              <span className={`${txt}`}>{formatNumber(e.amount)} ريال</span>
-                            </div>
-                            <div className={`text-xs ${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mt-1`}>
-                              <span className="inline-flex items-center gap-1"><User className="w-3 h-3" />حذف بواسطة: {e.archivedBy}</span>
-                              {e.archivedAt && <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(e.archivedAt).toLocaleDateString('en-GB')}</span>}
-                              {e.archivedAt && <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime12(new Date(e.archivedAt))}</span>}
-                            </div>
-                          </div>
-                          <IconBtn onClick={() => restoreExpense(e)} icon={RotateCcw} title="إستعادة" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {archivedTasks?.length > 0 && (
-                    <div>
-                      <h3 className={`font-bold text-sm mb-2 ${txt}`}>المهام ({formatNumber(archivedTasks.length)})</h3>
-                      {archivedTasks.map(t => (
-                        <div key={t.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}>
-                          <div className="flex-1">
-                            <span className={`font-bold text-sm ${txt}`}>{t.title}</span>
-                            <div className={`text-xs ${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mt-1`}>
-                              <span className="inline-flex items-center gap-1"><User className="w-3 h-3" />حذف بواسطة: {t.archivedBy}</span>
-                              {t.archivedAt && <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(t.archivedAt).toLocaleDateString('en-GB')}</span>}
-                              {t.archivedAt && <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime12(new Date(t.archivedAt))}</span>}
-                            </div>
-                          </div>
-                          <IconBtn onClick={() => restoreTask(t)} icon={RotateCcw} title="إستعادة" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {archivedProjects?.length > 0 && (
-                    <div>
-                      <h3 className={`font-bold text-sm mb-2 ${txt}`}>المشاريع ({formatNumber(archivedProjects.length)})</h3>
-                      {archivedProjects.map(p => (
-                        <div key={p.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}>
-                          <div className="flex-1">
-                            <span className={`font-bold text-sm ${txt}`}>{p.name}</span>
-                            <div className={`text-xs ${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mt-1`}>
-                              <span className="inline-flex items-center gap-1"><User className="w-3 h-3" />حذف بواسطة: {p.archivedBy}</span>
-                              {p.archivedAt && <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(p.archivedAt).toLocaleDateString('en-GB')}</span>}
-                              {p.archivedAt && <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime12(new Date(p.archivedAt))}</span>}
-                            </div>
-                          </div>
-                          <IconBtn onClick={() => restoreProject(p)} icon={RotateCcw} title="إستعادة" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {archivedAccounts?.length > 0 && (
-                    <div>
-                      <h3 className={`font-bold text-sm mb-2 ${txt}`}>الحسابات ({formatNumber(archivedAccounts.length)})</h3>
-                      {archivedAccounts.map(a => (
-                        <div key={a.id} className={`${card} p-3 rounded-xl border mb-2 flex justify-between items-center`}>
-                          <div className="flex-1">
-                            <span className={`font-bold text-sm ${txt}`}>{a.name}</span>
-                            <div className={`text-xs ${txtSm} flex flex-wrap items-center gap-x-3 gap-y-1 mt-1`}>
-                              <span className="inline-flex items-center gap-1"><User className="w-3 h-3" />حذف بواسطة: {a.archivedBy}</span>
-                              {a.archivedAt && <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(a.archivedAt).toLocaleDateString('en-GB')}</span>}
-                              {a.archivedAt && <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime12(new Date(a.archivedAt))}</span>}
-                            </div>
-                          </div>
-                          <IconBtn onClick={() => restoreAccount(a)} icon={RotateCcw} title="إستعادة" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {currentView === 'audit' && (
-            <div>
-              <h2 className={`text-lg font-bold mb-4 ${txt}`}>السجل</h2>
-              <div className="flex gap-2 mb-4">
-                <button onClick={() => setAuditFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs ${auditFilter === 'all' ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>الكل</button>
-                <button onClick={() => setAuditFilter('login')} className={`px-3 py-1.5 rounded-lg text-xs ${auditFilter === 'login' ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>تسجيل الدخول</button>
-                <button onClick={() => setAuditFilter('operations')} className={`px-3 py-1.5 rounded-lg text-xs ${auditFilter === 'operations' ? accent.color + ' text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>العمليات</button>
-              </div>
-              <div className={`${card} rounded-xl border overflow-x-auto ${hideScrollbarClass}`} style={hideScrollbar}>
-                <table className="w-full text-xs">
-                  <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-100'}>
-                    <tr><th className={`p-3 text-right ${txt}`}>الوقت</th><th className={`p-3 text-right ${txt}`}>المستخدم</th><th className={`p-3 text-right ${txt}`}>النوع</th><th className={`p-3 text-right ${txt}`}>الوصف</th></tr>
-                  </thead>
-                  <tbody>
-                    {(auditFilter === 'login' ? loginLog : auditFilter === 'operations' ? auditLog : [...auditLog, ...loginLog.map(l => ({ ...l, isLogin: true }))].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))).slice(0, 50).map((l, i) => (
-                      <tr key={l.id} onClick={() => !l.isLogin && navigateToItem(l)} className={`${i % 2 === 0 ? (darkMode ? 'bg-gray-800/50' : 'bg-gray-50') : ''} ${!l.isLogin ? 'cursor-pointer' : ''} ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
-                        <td className={`p-3 ${txtSm}`}>{new Date(l.timestamp).toLocaleString('en-US')}</td>
-                        <td className={`p-3 ${txt}`}>{l.user}</td>
-                        <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs ${l.isLogin ? (l.action === 'دخول' ? 'bg-green-500' : 'bg-red-500') : accent.color} text-white`}>{l.isLogin ? l.action : l.action === 'add' ? 'إضافة' : l.action === 'edit' ? 'تعديل' : l.action === 'delete' ? 'حذف' : l.action === 'restore' ? 'إستعادة' : 'دفع'}</span></td>
-                        <td className={`p-3 ${txtSm}`}>{l.description || `${l.user} قام بـ${l.action}`}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          <div className="text-center py-4 text-xs text-gray-400" style={{ fontSize: '12px' }}>
-            <span>ركائز الأولى للتعمير | </span>
-            <button onClick={() => setShowVersions(true)} className="hover:text-gray-300">v{APP_VERSION}</button>
+          <div className={`p-6 rounded-xl text-center ${darkMode ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'}`}>
+            <Shield className={`w-12 h-12 mx-auto mb-4 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+            <h2 className={`font-bold mb-2 ${txt}`}>نظام المصادقة الآمن</h2>
+            <p className={`text-sm ${txtSm} mb-4`}>
+              يرجى استخدام صفحة تسجيل الدخول الآمنة للوصول إلى النظام
+            </p>
+            <a 
+              href="/auth-pages.html" 
+              className={`inline-block w-full bg-gradient-to-r ${accent.gradient} text-white p-3 rounded-xl font-bold text-sm hover:opacity-90 transition-all`}
+            >
+              الذهاب لصفحة الدخول
+            </a>
+          </div>
+          
+          <div className="text-center mt-6">
+            <span className="text-xs text-gray-400">v{APP_VERSION}</span>
           </div>
         </div>
       </div>
+    );
+  }
 
+  // Main App Loading
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center" dir="rtl">
+        <Loader className="w-12 h-12 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
 
-      {showVersions && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowVersions(false)}>
-          <div className={`${card} p-6 rounded-2xl max-w-md w-full border`} onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4"><h3 className={`text-lg font-bold ${txt}`}>سجل النسخ</h3><button onClick={() => setShowVersions(false)} className={txtSm}><X className="w-5 h-5" /></button></div>
-            <div className={`space-y-3 max-h-80 overflow-y-auto ${hideScrollbarClass}`} style={hideScrollbar}>{versionHistory.map((v, i) => (<div key={v.version} className={`p-3 rounded-xl ${i === 0 ? `${accent.color}/20` : darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}><div className="flex justify-between mb-2"><span className={`font-bold text-sm ${txt}`}>v{v.version}</span><span className={`text-xs ${txtSm}`}>{v.date}</span></div><ul className={`text-xs ${txtSm} space-y-1`}>{v.changes.map((c, j) => <li key={j}>• {c}</li>)}</ul></div>))}</div>
-          </div>
-        </div>
-      )}
-
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className={`p-5 rounded-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto ${hideScrollbarClass}`} style={{
-            background: tokyoNightEnabled 
-              ? 'rgba(36, 40, 59, 0.8)' 
-              : (darkMode ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)'),
-            backdropFilter: 'blur(10px)',
-            border: tokyoNightEnabled 
-              ? '1px solid rgba(122, 162, 247, 0.2)' 
-              : `1px solid ${darkMode ? 'rgba(75, 85, 99, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
-            boxShadow: tokyoNightEnabled
-              ? '0 8px 32px rgba(0, 0, 0, 0.4)'
-              : `0 20px 25px -5px ${darkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)'}`,
-            ...hideScrollbar
-          }}>
-            
-            {modalType === 'delExp' && <><h3 className={`text-lg font-bold mb-4 ${txt}`}>حذف مصروف</h3><p className={`mb-6 text-sm ${txtSm}`}>هل تريد حذف "{selectedItem?.name}"؟</p><div className="flex gap-3 justify-end"><button onClick={() => setShowModal(false)} className={`px-4 py-2 rounded-xl text-sm ${tokyoNightEnabled?'bg-gray-700/50 text-white':(darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black')}`}>إلغاء</button><button onClick={() => delExpense(selectedItem)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm">حذف</button></div></>}
-            {modalType === 'delTask' && <><h3 className={`text-lg font-bold mb-4 ${txt}`}>حذف مهمة</h3><p className={`mb-6 text-sm ${txtSm}`}>هل تريد حذف "{selectedItem?.title}"؟</p><div className="flex gap-3 justify-end"><button onClick={() => setShowModal(false)} className={`px-4 py-2 rounded-xl text-sm ${tokyoNightEnabled?'bg-gray-700/50 text-white':(darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black')}`}>إلغاء</button><button onClick={() => delTask(selectedItem)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm">حذف</button></div></>}
-            {modalType === 'delProject' && <><h3 className={`text-lg font-bold mb-4 ${txt}`}>حذف مشروع</h3><p className={`mb-6 text-sm ${txtSm}`}>هل تريد حذف "{selectedItem?.name}"؟</p><div className="flex gap-3 justify-end"><button onClick={() => setShowModal(false)} className={`px-4 py-2 rounded-xl text-sm ${tokyoNightEnabled?'bg-gray-700/50 text-white':(darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black')}`}>إلغاء</button><button onClick={() => delProject(selectedItem)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm">حذف</button></div></>}
-            {modalType === 'delAcc' && <><h3 className={`text-lg font-bold mb-4 ${txt}`}>حذف حساب</h3><p className={`mb-6 text-sm ${txtSm}`}>هل تريد حذف "{selectedItem?.name}"؟</p><div className="flex gap-3 justify-end"><button onClick={() => setShowModal(false)} className={`px-4 py-2 rounded-xl text-sm ${tokyoNightEnabled?'bg-gray-700/50 text-white':(darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black')}`}>إلغاء</button><button onClick={() => delAccount(selectedItem)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm">حذف</button></div></>}
-            {modalType === 'delUser' && <><h3 className={`text-lg font-bold mb-4 ${txt}`}>حذف مستخدم</h3><p className={`mb-6 text-sm ${txtSm}`}>هل تريد حذف "{selectedItem?.username}"؟</p><div className="flex gap-3 justify-end"><button onClick={() => setShowModal(false)} className={`px-4 py-2 rounded-xl text-sm ${tokyoNightEnabled?'bg-gray-700/50 text-white':(darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black')}`}>إلغاء</button><button onClick={() => delUser(selectedItem)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm">حذف</button></div></>}
-
-            {modalType === 'addSection' && (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className={`font-bold ${txt}`}>إضافة قسم</h3>
-                  <button onClick={()=>setShowModal(false)} className="text-gray-400 hover:text-white text-xl">×</button>
-                </div>
-                <div className="space-y-3">
-                  <input placeholder="اسم القسم *" value={newSection.name} onChange={e=>setNewSection({...newSection,name:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <button onClick={()=>setShowModal(false)} className={`flex-1 py-2.5 rounded-xl text-sm ${tokyoNightEnabled?'bg-gray-700/50 hover:bg-gray-600/50 text-white':(darkMode?'bg-gray-700 hover:bg-gray-600 text-white':'bg-gray-200 hover:bg-gray-300 text-black')}`}>إلغاء</button>
-                  <button onClick={addSection} className={`flex-1 bg-gradient-to-r ${accent.gradient} text-white py-2.5 rounded-xl text-sm`}>إضافة</button>
-                </div>
-              </>
-            )}
-
-            {(modalType === 'addExp' || modalType === 'editExp') && (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className={`font-bold ${txt}`}>{modalType === 'addExp' ? 'إضافة مصروف' : 'تعديل مصروف'}</h3>
-                  <button onClick={()=>{setShowModal(false);setEditingItem(null);}} className="text-gray-400 hover:text-white text-xl">×</button>
-                </div>
-                <div className="space-y-3">
-                  <input placeholder="اسم المصروف *" value={modalType==='addExp'?newExpense.name:editingItem?.name||''} onChange={e=>modalType==='addExp'?setNewExpense({...newExpense,name:e.target.value}):setEditingItem({...editingItem,name:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <input type="number" placeholder="المبلغ *" value={modalType==='addExp'?newExpense.amount:editingItem?.amount||''} onChange={e=>modalType==='addExp'?setNewExpense({...newExpense,amount:e.target.value}):setEditingItem({...editingItem,amount:parseFloat(e.target.value)})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <select value={modalType==='addExp'?newExpense.type:editingItem?.type||'شهري'} onChange={e=>modalType==='addExp'?setNewExpense({...newExpense,type:e.target.value}):setEditingItem({...editingItem,type:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`}><option value="">النوع</option><option value="شهري">شهري</option><option value="سنوي">سنوي</option><option value="مرة واحدة">مرة واحدة</option></select>
-                  {(modalType==='addExp'?newExpense.type:editingItem?.type)!=='مرة واحدة'&&<input type="date" placeholder="تاريخ الاستحقاق" value={modalType==='addExp'?newExpense.dueDate:editingItem?.dueDate||''} onChange={e=>modalType==='addExp'?setNewExpense({...newExpense,dueDate:e.target.value}):setEditingItem({...editingItem,dueDate:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />}
-                  <input placeholder="الوصف (اختياري)" value={modalType==='addExp'?newExpense.reason:editingItem?.reason||''} onChange={e=>modalType==='addExp'?setNewExpense({...newExpense,reason:e.target.value}):setEditingItem({...editingItem,reason:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <div className="flex gap-2">
-                    <input placeholder="الموقع (اختياري)" value={modalType==='addExp'?newExpense.location:editingItem?.location||''} onChange={e=>modalType==='addExp'?setNewExpense({...newExpense,location:e.target.value}):setEditingItem({...editingItem,location:e.target.value})} className={`flex-1 border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                    <button onClick={()=>openMapPicker(modalType==='addExp'?'newExpense':'editExpense')} className={`border rounded-xl px-3 ${inp}`}>📍</button>
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <button onClick={()=>{setShowModal(false);setEditingItem(null);}} className={`flex-1 py-2.5 rounded-xl text-sm ${tokyoNightEnabled?'bg-gray-700/50 hover:bg-gray-600/50 text-white':(darkMode?'bg-gray-700 hover:bg-gray-600 text-white':'bg-gray-200 hover:bg-gray-300 text-black')}`}>إلغاء</button>
-                  <button onClick={modalType==='addExp'?addExpense:editExpense} className={`flex-1 bg-gradient-to-r ${accent.gradient} text-white py-2.5 rounded-xl text-sm`}>{modalType==='addExp'?'إضافة':'حفظ'}</button>
-                </div>
-              </>
-            )}
-
-            {(modalType === 'addTask' || modalType === 'editTask') && (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className={`font-bold ${txt}`}>{modalType === 'addTask' ? 'إضافة مهمة' : 'تعديل مهمة'}</h3>
-                  <button onClick={()=>{setShowModal(false);setEditingItem(null);}} className="text-gray-400 hover:text-white text-xl">×</button>
-                </div>
-                <div className="space-y-3">
-                  <input placeholder="عنوان المهمة *" value={modalType==='addTask'?newTask.title:editingItem?.title||''} onChange={e=>modalType==='addTask'?setNewTask({...newTask,title:e.target.value}):setEditingItem({...editingItem,title:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <select value={modalType==='addTask'?newTask.priority:editingItem?.priority||''} onChange={e=>modalType==='addTask'?setNewTask({...newTask,priority:e.target.value}):setEditingItem({...editingItem,priority:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`}><option value="">الأولوية</option><option value="عالي الأهمية">عالي الأهمية</option><option value="مستعجل">مستعجل</option><option value="متوسط الأهمية">متوسط الأهمية</option><option value="منخفض الأهمية">منخفض الأهمية</option></select>
-                  <select value={modalType==='addTask'?newTask.projectId:editingItem?.projectId||''} onChange={e=>modalType==='addTask'?setNewTask({...newTask,projectId:e.target.value}):setEditingItem({...editingItem,projectId:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`}><option value="">المشروع (اختياري)</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
-                  {taskSections.length>0&&<select value={modalType==='addTask'?newTask.sectionId:editingItem?.sectionId||''} onChange={e=>modalType==='addTask'?setNewTask({...newTask,sectionId:e.target.value}):setEditingItem({...editingItem,sectionId:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`}><option value="">القسم (اختياري)</option>{taskSections.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>}
-                  <textarea placeholder="الوصف (اختياري)" rows="2" value={modalType==='addTask'?newTask.description:editingItem?.description||''} onChange={e=>modalType==='addTask'?setNewTask({...newTask,description:e.target.value}):setEditingItem({...editingItem,description:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm resize-none ${inp}`} />
-                  <input type="date" placeholder="تاريخ التسليم" value={modalType==='addTask'?newTask.dueDate:editingItem?.dueDate||''} onChange={e=>modalType==='addTask'?setNewTask({...newTask,dueDate:e.target.value}):setEditingItem({...editingItem,dueDate:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <select value={modalType==='addTask'?newTask.assignedTo:editingItem?.assignedTo||''} onChange={e=>modalType==='addTask'?setNewTask({...newTask,assignedTo:e.target.value}):setEditingItem({...editingItem,assignedTo:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`}><option value="">المسؤول (اختياري)</option>{users.map(u=><option key={u.id} value={u.username}>{u.username}</option>)}</select>
-                  <div className="flex gap-2">
-                    <input placeholder="الموقع (اختياري)" value={modalType==='addTask'?newTask.location:editingItem?.location||''} onChange={e=>modalType==='addTask'?setNewTask({...newTask,location:e.target.value}):setEditingItem({...editingItem,location:e.target.value})} className={`flex-1 border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                    <button onClick={()=>openMapPicker(modalType==='addTask'?'newTask':'editTask')} className={`border rounded-xl px-3 ${inp}`}>📍</button>
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <button onClick={()=>{setShowModal(false);setEditingItem(null);}} className={`flex-1 py-2.5 rounded-xl text-sm ${tokyoNightEnabled?'bg-gray-700/50 hover:bg-gray-600/50 text-white':(darkMode?'bg-gray-700 hover:bg-gray-600 text-white':'bg-gray-200 hover:bg-gray-300 text-black')}`}>إلغاء</button>
-                  <button onClick={modalType==='addTask'?addTask:editTask} className={`flex-1 bg-gradient-to-r ${accent.gradient} text-white py-2.5 rounded-xl text-sm`}>{modalType==='addTask'?'إضافة':'حفظ'}</button>
-                </div>
-              </>
-            )}
-
-            {(modalType === 'addProject' || modalType === 'editProject') && (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className={`font-bold ${txt}`}>{modalType === 'addProject' ? 'إضافة مشروع' : 'تعديل مشروع'}</h3>
-                  <button onClick={()=>{setShowModal(false);setEditingItem(null);}} className="text-gray-400 hover:text-white text-xl">×</button>
-                </div>
-                <div className="space-y-3">
-                  <input placeholder="اسم المشروع *" value={modalType==='addProject'?newProject.name:editingItem?.name||''} onChange={e=>modalType==='addProject'?setNewProject({...newProject,name:e.target.value}):setEditingItem({...editingItem,name:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <textarea placeholder="الوصف (اختياري)" rows="2" value={modalType==='addProject'?newProject.description:editingItem?.description||''} onChange={e=>modalType==='addProject'?setNewProject({...newProject,description:e.target.value}):setEditingItem({...editingItem,description:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm resize-none ${inp}`} />
-                  <input placeholder="العميل (اختياري)" value={modalType==='addProject'?newProject.client:editingItem?.client||''} onChange={e=>modalType==='addProject'?setNewProject({...newProject,client:e.target.value}):setEditingItem({...editingItem,client:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <input placeholder="رقم الهاتف (اختياري)" value={modalType==='addProject'?newProject.phone:editingItem?.phone||''} onChange={e=>modalType==='addProject'?setNewProject({...newProject,phone:e.target.value}):setEditingItem({...editingItem,phone:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <div className="flex gap-2">
-                    <input placeholder="الموقع (اختياري)" value={modalType==='addProject'?newProject.location:editingItem?.location||''} onChange={e=>modalType==='addProject'?setNewProject({...newProject,location:e.target.value}):setEditingItem({...editingItem,location:e.target.value})} className={`flex-1 border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                    <button onClick={()=>openMapPicker(modalType==='addProject'?'newProject':'editProject')} className={`border rounded-xl px-3 ${inp}`}>📍</button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input type="date" placeholder="تاريخ البدء" value={modalType==='addProject'?newProject.startDate:editingItem?.startDate||''} onChange={e=>modalType==='addProject'?setNewProject({...newProject,startDate:e.target.value}):setEditingItem({...editingItem,startDate:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                    <input type="date" placeholder="تاريخ الانتهاء" value={modalType==='addProject'?newProject.endDate:editingItem?.endDate||''} onChange={e=>modalType==='addProject'?setNewProject({...newProject,endDate:e.target.value}):setEditingItem({...editingItem,endDate:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  </div>
-                  <input type="number" placeholder="الميزانية (اختياري)" value={modalType==='addProject'?newProject.budget:editingItem?.budget||''} onChange={e=>modalType==='addProject'?setNewProject({...newProject,budget:e.target.value}):setEditingItem({...editingItem,budget:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <select value={modalType==='addProject'?newProject.status:editingItem?.status||''} onChange={e=>modalType==='addProject'?setNewProject({...newProject,status:e.target.value}):setEditingItem({...editingItem,status:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`}><option value="">الحالة</option><option value="جاري العمل">جاري العمل</option><option value="متوقف">متوقف</option><option value="مكتمل">مكتمل</option></select>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <button onClick={()=>{setShowModal(false);setEditingItem(null);}} className={`flex-1 py-2.5 rounded-xl text-sm ${tokyoNightEnabled?'bg-gray-700/50 hover:bg-gray-600/50 text-white':(darkMode?'bg-gray-700 hover:bg-gray-600 text-white':'bg-gray-200 hover:bg-gray-300 text-black')}`}>إلغاء</button>
-                  <button onClick={modalType==='addProject'?addProject:editProject} className={`flex-1 bg-gradient-to-r ${accent.gradient} text-white py-2.5 rounded-xl text-sm`}>{modalType==='addProject'?'إضافة':'حفظ'}</button>
-                </div>
-              </>
-            )}
-
-            {(modalType === 'addAcc' || modalType === 'editAcc') && (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className={`font-bold ${txt}`}>{modalType === 'addAcc' ? 'إضافة حساب' : 'تعديل حساب'}</h3>
-                  <button onClick={()=>{setShowModal(false);setEditingItem(null);}} className="text-gray-400 hover:text-white text-xl">×</button>
-                </div>
-                <div className="space-y-3">
-                  <input placeholder="اسم الحساب *" value={modalType==='addAcc'?newAccount.name:editingItem?.name||''} onChange={e=>modalType==='addAcc'?setNewAccount({...newAccount,name:e.target.value}):setEditingItem({...editingItem,name:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <input placeholder="الوصف (اختياري)" value={modalType==='addAcc'?newAccount.description:editingItem?.description||''} onChange={e=>modalType==='addAcc'?setNewAccount({...newAccount,description:e.target.value}):setEditingItem({...editingItem,description:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <input placeholder="رابط الدخول (اختياري)" value={modalType==='addAcc'?newAccount.loginUrl:editingItem?.loginUrl||''} onChange={e=>modalType==='addAcc'?setNewAccount({...newAccount,loginUrl:e.target.value}):setEditingItem({...editingItem,loginUrl:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <input placeholder="اسم المستخدم *" value={modalType==='addAcc'?newAccount.username:editingItem?.username||''} onChange={e=>modalType==='addAcc'?setNewAccount({...newAccount,username:e.target.value}):setEditingItem({...editingItem,username:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <input type="password" placeholder="كلمة المرور *" value={modalType==='addAcc'?newAccount.password:editingItem?.password||''} onChange={e=>modalType==='addAcc'?setNewAccount({...newAccount,password:e.target.value}):setEditingItem({...editingItem,password:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <input type="date" placeholder="تاريخ انتهاء الاشتراك" value={modalType==='addAcc'?newAccount.subscriptionDate:editingItem?.subscriptionDate||''} onChange={e=>modalType==='addAcc'?setNewAccount({...newAccount,subscriptionDate:e.target.value}):setEditingItem({...editingItem,subscriptionDate:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <button onClick={()=>{setShowModal(false);setEditingItem(null);}} className={`flex-1 py-2.5 rounded-xl text-sm ${tokyoNightEnabled?'bg-gray-700/50 hover:bg-gray-600/50 text-white':(darkMode?'bg-gray-700 hover:bg-gray-600 text-white':'bg-gray-200 hover:bg-gray-300 text-black')}`}>إلغاء</button>
-                  <button onClick={modalType==='addAcc'?addAccount:editAccount} className={`flex-1 bg-gradient-to-r ${accent.gradient} text-white py-2.5 rounded-xl text-sm`}>{modalType==='addAcc'?'إضافة':'حفظ'}</button>
-                </div>
-              </>
-            )}
-
-            {(modalType === 'addUser' || modalType === 'editUser') && (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className={`font-bold ${txt}`}>{modalType === 'addUser' ? 'إضافة مستخدم' : 'تعديل مستخدم'}</h3>
-                  <button onClick={()=>{setShowModal(false);setEditingItem(null);}} className="text-gray-400 hover:text-white text-xl">×</button>
-                </div>
-                <div className="space-y-3">
-                  <input placeholder="اسم المستخدم *" value={modalType==='addUser'?newUser.username:editingItem?.username||''} onChange={e=>modalType==='addUser'?setNewUser({...newUser,username:e.target.value}):setEditingItem({...editingItem,username:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <input type="password" placeholder="كلمة المرور *" value={modalType==='addUser'?newUser.password:editingItem?.password||''} onChange={e=>modalType==='addUser'?setNewUser({...newUser,password:e.target.value}):setEditingItem({...editingItem,password:e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-                  <select value={modalType==='addUser'?newUser.role:editingItem?.role||'member'} onChange={e=>modalType==='addUser'?setNewUser({...newUser,role:e.target.value}):setEditingItem({...editingItem,role:e.target.value})} disabled={editingItem?.role==='owner'} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`}><option value="">الصلاحية</option><option value="owner">المالك</option><option value="manager">مدير</option><option value="member">عضو</option></select>
-                  <label className={`flex items-center gap-2 ${txt} text-sm`}><input type="checkbox" checked={modalType==='addUser'?newUser.active:editingItem?.active!==false} onChange={e=>modalType==='addUser'?setNewUser({...newUser,active:e.target.checked}):setEditingItem({...editingItem,active:e.target.checked})} className="w-4 h-4 rounded" /><span>نشط</span></label>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <button onClick={()=>{setShowModal(false);setEditingItem(null);}} className={`flex-1 py-2.5 rounded-xl text-sm ${tokyoNightEnabled?'bg-gray-700/50 hover:bg-gray-600/50 text-white':(darkMode?'bg-gray-700 hover:bg-gray-600 text-white':'bg-gray-200 hover:bg-gray-300 text-black')}`}>إلغاء</button>
-                  <button onClick={modalType==='addUser'?addUser:editUser} className={`flex-1 bg-gradient-to-r ${accent.gradient} text-white py-2.5 rounded-xl text-sm`}>{modalType==='addUser'?'إضافة':'حفظ'}</button>
-                </div>
-              </>
-            )}
-
-          </div>
-        </div>
-      )}
-
-      {showNewFolderModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={() => setShowNewFolderModal(false)}>
-          <div className="p-5 rounded-2xl max-w-sm w-full" style={{
-            background: tokyoNightEnabled 
-              ? 'rgba(36, 40, 59, 0.8)' 
-              : (darkMode ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)'),
-            backdropFilter: 'blur(10px)',
-            border: tokyoNightEnabled 
-              ? '1px solid rgba(122, 162, 247, 0.2)' 
-              : `1px solid ${darkMode ? 'rgba(75, 85, 99, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
-            boxShadow: tokyoNightEnabled
-              ? '0 8px 32px rgba(0, 0, 0, 0.4)'
-              : `0 20px 25px -5px ${darkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)'}`
-          }} onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className={`font-bold ${txt}`}>إضافة مجلد جديد</h3>
-              <button onClick={() => { setShowNewFolderModal(false); setNewFolderName(''); }} className="text-gray-400 hover:text-white text-xl">×</button>
-            </div>
-            <div className="space-y-3">
-              <input placeholder="اسم المجلد *" value={newFolderName} onChange={e => setNewFolderName(e.target.value)} className={`w-full border rounded-xl px-4 py-2.5 text-sm ${inp}`} />
-            </div>
-            <div className="flex gap-2 mt-4">
-              <button onClick={() => { setShowNewFolderModal(false); setNewFolderName(''); }} className={`flex-1 py-2.5 rounded-xl text-sm ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-black'}`}>إلغاء</button>
-              <button onClick={() => {
-                if (!newFolderName.trim()) { alert('أدخل اسم المجلد'); return; }
-                const newFolder = { name: newFolderName, files: [], createdAt: new Date().toISOString(), createdBy: currentUser.username };
-                const newFolders = [...(selectedProject.folders || []), newFolder];
-                const np = projects.map(p => p.id === selectedProject.id ? { ...p, folders: newFolders } : p);
-                setProjects(np); setSelectedProject({ ...selectedProject, folders: newFolders }); save({ projects: np });
-                setShowNewFolderModal(false); setNewFolderName('');
-              }} className={`flex-1 bg-gradient-to-r ${accent.gradient} text-white py-2.5 rounded-xl text-sm`}>إضافة</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {previewImage && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4" onClick={() => setPreviewImage(null)}>
-          <button onClick={() => setPreviewImage(null)} className="absolute top-4 left-4 text-white p-2 hover:bg-white/10 rounded-lg"><X className="w-8 h-8" /></button>
-          <img src={previewImage} alt="preview" className="max-w-full max-h-full object-contain rounded-lg" />
-        </div>
-      )}
-    </div>
-  </div>
-  </>
-  );
-}
+// ================================
