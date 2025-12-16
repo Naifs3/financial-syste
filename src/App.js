@@ -343,7 +343,7 @@ export default function App() {
 
   // Data States
   const [users, setUsers] = useState([]);
-  const [pendingUsers, setPendingUsers] = useState([]);
+  // نظام المصادقة الآمن - Firebase Auth State Listener useEffect(() => {   const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {     if (firebaseUser) {       try {         const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));         if (userDoc.exists()) {           const userData = userDoc.data();           if (userData.status === 'approved') {             setCurrentUser({ ...userData, uid: firebaseUser.uid });             setIsLoggedIn(true);             setSessionStart(Date.now());           } else {             await signOut(auth);             setIsLoggedIn(false);             setCurrentUser(null);           }         } else {           await signOut(auth);           setIsLoggedIn(false);           setCurrentUser(null);         }       } catch (error) {         console.error('Auth check error:', error);         await signOut(auth);         setIsLoggedIn(false);         setCurrentUser(null);       }     } else {       setIsLoggedIn(false);       setCurrentUser(null);     }     setAuthLoading(false);   });   return () => unsubscribe(); }, []);
   const [expenses, setExpenses] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -497,7 +497,7 @@ export default function App() {
   useEffect(() => { setQuote(quotes[Math.floor(Math.random() * quotes.length)]); }, [currentView]);
 
   // Auth Functions
-  const logout = async () => {
+  // موافقة/رفض المستخدمين الجدد const approveUser = async (user) => {   try {     await updateDoc(doc(db, 'users', user.id), {       status: 'approved',       approvedDate: new Date().toISOString(),       approvedBy: currentUser.uid     });     alert('✅ تمت الموافقة على ' + user.name);   } catch (error) {     console.error(error);     alert('حدث خطأ');   } };  const rejectUser = async (user) => {   if (!window.confirm('هل تريد رفض طلب ' + user.name + '؟')) return;   try {     await updateDoc(doc(db, 'users', user.id), {       status: 'rejected',       rejectedDate: new Date().toISOString(),       rejectedBy: currentUser.uid     });     alert('❌ تم رفض ' + user.name);   } catch (error) {     console.error(error);     alert('حدث خطأ');   } };
     await signOut(auth);
     setIsLoggedIn(false);
     setCurrentUser(null);
