@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, getDoc, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot, query, orderBy, runTransaction } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot, query, orderBy, runTransaction } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { Calendar, CheckSquare, Users, Moon, Sun, Monitor, Plus, Archive, Clock, Activity, History, Loader, Power, Pencil, Trash2, RotateCcw, UserCog, ChevronLeft, ChevronDown, ChevronUp, FolderOpen, FileText, MapPin, User, X, Phone, Settings, Layers, CreditCard, DollarSign, Wallet, FolderPlus, AlertTriangle, Image, Map, Type, Search, RefreshCw, Shield, CheckCircle, XCircle, Copy, ExternalLink, Eye, EyeOff, Folder, BookOpen } from 'lucide-react';
 
@@ -674,6 +674,42 @@ export default function App() {
 
   useEffect(() => {
     setLoading(true);
+    
+    // إنشاء مستخدم افتراضي إذا لم يوجد
+    const initDefaultUser = async () => {
+      try {
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        if (usersSnapshot.empty) {
+          // لا يوجد مستخدمين - إنشاء Owner افتراضي
+          const defaultEmail = 'naif@rkz.com';
+          const defaultPassword = '@Lion12345';
+          
+          try {
+            const userCredential = await createUserWithEmailAndPassword(auth, defaultEmail, defaultPassword);
+            await setDoc(doc(db, 'users', userCredential.user.uid), {
+              uid: userCredential.user.uid,
+              name: 'نايف',
+              email: defaultEmail,
+              password: defaultPassword,
+              role: 'owner',
+              status: 'approved',
+              active: true,
+              createdAt: new Date().toISOString()
+            });
+            console.log('✅ تم إنشاء المستخدم الافتراضي');
+          } catch (error) {
+            if (error.code === 'auth/email-already-in-use') {
+              console.log('المستخدم الافتراضي موجود بالفعل في Auth');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('خطأ في إنشاء المستخدم الافتراضي:', error);
+      }
+    };
+    
+    initDefaultUser();
+    
     const unsubs = [
       onSnapshot(query(collection(db, 'expenses'), orderBy('createdAt', 'desc')), s => setExpenses(s.docs.map(d => ({id:d.id, ...d.data()})))),
       onSnapshot(query(collection(db, 'tasks'), orderBy('createdAt', 'desc')), s => setTasks(s.docs.map(d => ({id:d.id, ...d.data()})))),
@@ -683,9 +719,6 @@ export default function App() {
         const allUsers = s.docs.map(d => ({id:d.id, ...d.data()})); 
         setUsers(allUsers.filter(u => u.status === 'approved'));
         setPendingUsers(allUsers.filter(u => u.status === 'pending'));
-        if (allUsers.length === 0) {
-          setUsers([{id:'default', name:'نايف', email:'naif@rkz.com', password:'@Lion12345', role:'owner', status:'approved', active:true}]);
-        }
       }),
       onSnapshot(doc(db, 'system', 'counters'), s => setCounters(s.exists() ? s.data() : { E:0, T:0, P:0, A:0 })),
       onSnapshot(query(collection(db, 'audit'), orderBy('timestamp', 'desc')), s => setAuditLog(s.docs.map(d => ({id:d.id, ...d.data()})).slice(0, 50)))
@@ -1188,6 +1221,11 @@ export default function App() {
           <input type="password" name="password" placeholder="كلمة المرور" className={`w-full p-3 border rounded-xl text-sm ${inp}`} required />
           <button className={`w-full bg-gradient-to-r ${accent.gradient} text-white p-3 rounded-xl font-bold text-sm`}>دخول</button>
         </form>
+        <div className={`mt-4 p-3 rounded-lg text-xs ${darkMode ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'}`}>
+          <p className={`${txt} font-bold mb-1`}>معلومات الدخول الافتراضية:</p>
+          <p className={txtSm}>البريد: <code className="font-mono">naif@rkz.com</code></p>
+          <p className={txtSm}>كلمة المرور: <code className="font-mono">@Lion12345</code></p>
+        </div>
         <div className="text-center mt-6"><button onClick={() => setShowVersions(true)} className="text-xs text-gray-400">v{APP_VERSION}</button></div>
       </div>
       {showVersions && (
