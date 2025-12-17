@@ -20,17 +20,9 @@
       appId: "1:243232571212:web:d3c5bd06b09ef825d959e9"
     };
 
-    let app, auth, db;
-    
-    try {
-      app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-      console.log("Firebase initialized successfully");
-    } catch (e) {
-      console.error("Firebase init error:", e);
-      alert("خطأ في تهيئة Firebase: " + e.message);
-    }
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
     window.authState = { isLogin: true };
 
@@ -43,12 +35,14 @@
         : 'لديك حساب؟ <button onclick="toggleMode()" class="text-blue-400 hover:underline font-bold">تسجيل الدخول</button>';
       document.getElementById('nameField').style.display = window.authState.isLogin ? 'none' : 'block';
       document.getElementById('message').classList.add('hidden');
+      document.getElementById('redirectBtn').classList.add('hidden');
+      document.getElementById('formFields').classList.remove('hidden');
     };
 
     window.showMessage = (text, isError = false) => {
       const msg = document.getElementById('message');
       msg.textContent = text;
-      msg.className = `p-4 rounded-xl text-center text-sm ${isError ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`;
+      msg.className = `p-4 rounded-xl text-center text-sm mb-4 ${isError ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`;
       msg.classList.remove('hidden');
     };
 
@@ -78,30 +72,23 @@
 
       try {
         if (window.authState.isLogin) {
-          // تسجيل الدخول
-          console.log("Attempting login...");
           const userCredential = await signInWithEmailAndPassword(auth, email, password);
-          console.log("Login successful, checking user doc...");
-          
           const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
           
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            console.log("User data:", userData);
-            
             if (userData.status === 'approved') {
-              showMessage('تم تسجيل الدخول بنجاح! جاري التحويل...');
-              setTimeout(() => window.location.href = '/', 1500);
+              showMessage('✅ تم تسجيل الدخول بنجاح!');
+              document.getElementById('formFields').classList.add('hidden');
+              document.getElementById('redirectBtn').classList.remove('hidden');
             } else if (userData.status === 'pending') {
               await auth.signOut();
-              showMessage('حسابك قيد المراجعة. انتظر موافقة المسؤول.', true);
+              showMessage('⏳ حسابك قيد المراجعة. انتظر موافقة المسؤول.', true);
             } else {
               await auth.signOut();
-              showMessage('تم رفض طلب انضمامك. تواصل مع المسؤول.', true);
+              showMessage('❌ تم رفض طلب انضمامك.', true);
             }
           } else {
-            // المستخدم موجود في Auth لكن ليس في Firestore
-            console.log("User not in Firestore, creating doc...");
             await setDoc(doc(db, 'users', userCredential.user.uid), {
               name: email.split('@')[0],
               email: email,
@@ -109,19 +96,15 @@
               status: 'approved',
               createdAt: new Date().toISOString()
             });
-            showMessage('تم تسجيل الدخول بنجاح! جاري التحويل...');
-            setTimeout(() => window.location.href = '/', 1500);
+            showMessage('✅ تم تسجيل الدخول بنجاح!');
+            document.getElementById('formFields').classList.add('hidden');
+            document.getElementById('redirectBtn').classList.remove('hidden');
           }
         } else {
-          // إنشاء حساب جديد
-          console.log("Checking if first user...");
           const usersSnapshot = await getDocs(collection(db, 'users'));
           const isFirstUser = usersSnapshot.empty;
-          console.log("Is first user:", isFirstUser);
           
-          console.log("Creating account...");
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-          console.log("Account created, saving to Firestore...");
           
           await setDoc(doc(db, 'users', userCredential.user.uid), {
             name: name,
@@ -131,40 +114,25 @@
             createdAt: new Date().toISOString(),
             requestDate: new Date().toISOString()
           });
-          console.log("User saved to Firestore");
 
           if (isFirstUser) {
-            showMessage('تم إنشاء حسابك كمالك للنظام! جاري التحويل...');
-            setTimeout(() => window.location.href = '/', 1500);
+            showMessage('✅ تم إنشاء حسابك كمالك للنظام!');
+            document.getElementById('formFields').classList.add('hidden');
+            document.getElementById('redirectBtn').classList.remove('hidden');
           } else {
             await auth.signOut();
-            showMessage('تم إنشاء حسابك بنجاح! انتظر موافقة المسؤول للدخول.');
+            showMessage('✅ تم إنشاء حسابك! انتظر موافقة المسؤول.');
           }
         }
       } catch (error) {
-        console.error("Full error:", error);
-        
-        // عرض الخطأ التفصيلي
-        let errorMsg = 'خطأ: ' + error.code + ' - ' + error.message;
-        
-        if (error.code === 'auth/email-already-in-use') {
-          errorMsg = 'هذا البريد مسجل مسبقاً. جرب تسجيل الدخول بدلاً من إنشاء حساب.';
-        } else if (error.code === 'auth/weak-password') {
-          errorMsg = 'كلمة المرور ضعيفة (6 أحرف على الأقل)';
-        } else if (error.code === 'auth/invalid-email') {
-          errorMsg = 'البريد الإلكتروني غير صحيح';
-        } else if (error.code === 'auth/user-not-found') {
-          errorMsg = 'هذا البريد غير مسجل. جرب إنشاء حساب جديد.';
-        } else if (error.code === 'auth/wrong-password') {
-          errorMsg = 'كلمة المرور غير صحيحة';
-        } else if (error.code === 'auth/invalid-credential') {
-          errorMsg = 'البريد أو كلمة المرور غير صحيحة';
-        } else if (error.code === 'auth/network-request-failed') {
-          errorMsg = 'خطأ في الاتصال بالإنترنت';
-        } else if (error.code === 'auth/too-many-requests') {
-          errorMsg = 'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى.';
-        }
-        
+        console.error("Error:", error);
+        let errorMsg = 'خطأ: ' + error.code;
+        if (error.code === 'auth/email-already-in-use') errorMsg = 'هذا البريد مسجل مسبقاً';
+        else if (error.code === 'auth/weak-password') errorMsg = 'كلمة المرور ضعيفة';
+        else if (error.code === 'auth/invalid-email') errorMsg = 'البريد غير صحيح';
+        else if (error.code === 'auth/user-not-found') errorMsg = 'البريد غير مسجل';
+        else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') errorMsg = 'كلمة المرور غير صحيحة';
+        else if (error.code === 'permission-denied') errorMsg = 'خطأ في الصلاحيات - تواصل مع المسؤول';
         showMessage(errorMsg, true);
       } finally {
         btn.disabled = false;
@@ -176,24 +144,13 @@
       document.getElementById('password').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleSubmit();
       });
-      document.getElementById('email').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') document.getElementById('password').focus();
-      });
     });
   </script>
   <style>
     body { font-family: 'Cairo', sans-serif; }
-    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
-    .float-animation { animation: float 6s ease-in-out infinite; }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
-  
-  <div class="absolute inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl float-animation"></div>
-    <div class="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl float-animation" style="animation-delay: 2s;"></div>
-    <div class="absolute top-1/2 left-1/2 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl float-animation" style="animation-delay: 4s;"></div>
-  </div>
 
   <div class="relative z-10 w-full max-w-md">
     <div class="bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-700/50 p-8">
@@ -206,43 +163,38 @@
 
       <h2 id="formTitle" class="text-xl font-bold text-white text-center mb-6">تسجيل الدخول</h2>
 
-      <div id="message" class="hidden mb-4"></div>
+      <div id="message" class="hidden"></div>
 
-      <div class="space-y-4">
+      <a id="redirectBtn" href="/" class="hidden w-full p-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-lg text-center block mb-4 no-underline">
+        🚀 اضغط هنا للدخول للنظام
+      </a>
+
+      <div id="formFields" class="space-y-4">
         <div id="nameField" style="display: none;">
           <label class="block text-gray-400 text-sm mb-2">الاسم الكامل</label>
-          <input type="text" id="name" placeholder="أدخل اسمك" class="w-full p-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+          <input type="text" id="name" placeholder="أدخل اسمك" class="w-full p-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-500 outline-none">
         </div>
 
         <div>
           <label class="block text-gray-400 text-sm mb-2">البريد الإلكتروني</label>
-          <input type="email" id="email" placeholder="example@email.com" class="w-full p-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+          <input type="email" id="email" placeholder="example@email.com" class="w-full p-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-500 outline-none">
         </div>
 
         <div>
           <label class="block text-gray-400 text-sm mb-2">كلمة المرور</label>
-          <input type="password" id="password" placeholder="••••••••" class="w-full p-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+          <input type="password" id="password" placeholder="••••••••" class="w-full p-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-500 outline-none">
         </div>
 
-        <button id="submitBtn" onclick="handleSubmit()" class="w-full p-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300">
+        <button id="submitBtn" onclick="handleSubmit()" class="w-full p-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-bold text-lg">
           دخول
         </button>
-      </div>
 
-      <div id="toggleText" class="text-center mt-6 text-gray-400 text-sm">
-        ليس لديك حساب؟ <button onclick="toggleMode()" class="text-blue-400 hover:underline font-bold">إنشاء حساب</button>
-      </div>
-
-      <div class="mt-6 pt-6 border-t border-gray-700/50">
-        <div class="flex items-center justify-center gap-2 text-gray-500 text-xs">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-          <span>اتصال آمن ومشفر</span>
+        <div id="toggleText" class="text-center mt-6 text-gray-400 text-sm">
+          ليس لديك حساب؟ <button onclick="toggleMode()" class="text-blue-400 hover:underline font-bold">إنشاء حساب</button>
         </div>
       </div>
 
     </div>
-
-    <p class="text-center text-gray-600 text-xs mt-4">v5.4.0-SecureAuth</p>
   </div>
 
 </body>
