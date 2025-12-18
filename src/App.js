@@ -470,20 +470,18 @@ export default function App() {
     });
   };
   
-  
+
   const addLog = async (action, type, name, itemId) => {
     await addDoc(collection(db, 'audit'), {
-      user: currentUser?.username || 'النظام', 
-      action, 
-      itemType: type, 
-      itemName: name, 
+      user: currentUser?.username || 'النظام',
+      action,
+      itemType: type,
+      itemName: name,
       itemId,
       description: `${currentUser?.username} قام ${action === 'add' ? 'بإضافة' : action === 'edit' ? 'بتعديل' : 'بحذف'} ${type}: ${name}`,
       timestamp: new Date().toISOString()
     });
   };
-
-
   const handleAddExpenseNew = async () => {
     if (!newExpense.name || !newExpense.amount) return alert('أكمل البيانات');
     const refNum = generateRefNumber('E', counters.E + 1);
@@ -1016,8 +1014,6 @@ export default function App() {
       )}
     </div>
   );
-
-
 
   return (
     <div className={`min-h-screen ${bg} relative overflow-x-hidden pb-16`} style={{ fontSize: `${fontSize}px`, fontFamily: currentFont.value, ...hideScrollbar }} dir="rtl">
