@@ -493,8 +493,6 @@ function App() {
       <Login 
         onLogin={handleLogin}
         users={users}
-        darkMode={darkMode}
-        accentGradient={accentGradient}
       />
     );
   }
