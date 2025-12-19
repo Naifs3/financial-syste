@@ -48,14 +48,14 @@ const Login = ({ onLogin, users, darkMode, accentGradient }) => {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center bg-gradient-to-br ${darkMode ? 'from-gray-900 via-gray-800 to-gray-900' : 'from-gray-50 via-white to-gray-50'} p-4`}>
-      <div className={`relative w-full max-w-md ${darkMode ? 'bg-gray-800/90' : 'bg-white/90'} backdrop-blur-sm rounded-2xl shadow-2xl p-8 border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="relative w-full max-w-md bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-700">
         <div className="text-center mb-8">
-          <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br ${accentGradient} mb-4`}>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 mb-4">
             <span className="text-3xl font-bold text-white">RKZ</span>
           </div>
-          <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>نظام الإدارة المالية</h1>
-          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>ركائز الأولى للتعمير</p>
+          <h1 className="text-2xl font-bold text-white mb-2">نظام الإدارة المالية</h1>
+          <p className="text-sm text-gray-400">ركائز الأولى للتعمير</p>
         </div>
 
         {error && (
@@ -66,12 +66,12 @@ const Login = ({ onLogin, users, darkMode, accentGradient }) => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>اسم المستخدم</label>
+            <label className="block text-sm font-medium mb-2 text-gray-300">اسم المستخدم</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className={`w-full px-4 py-3 rounded-xl border ${darkMode ? 'bg-gray-900/50 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
+              className="w-full px-4 py-3 rounded-xl border bg-gray-900/50 border-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               placeholder="أدخل اسم المستخدم"
               required
               disabled={loading}
@@ -79,24 +79,32 @@ const Login = ({ onLogin, users, darkMode, accentGradient }) => {
           </div>
 
           <div>
-            <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>كلمة المرور</label>
+            <label className="block text-sm font-medium mb-2 text-gray-300">كلمة المرور</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl border ${darkMode ? 'bg-gray-900/50 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12`}
+                className="w-full px-4 py-3 rounded-xl border bg-gray-900/50 border-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12"
                 placeholder="أدخل كلمة المرور"
                 required
                 disabled={loading}
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className={`absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-gray-700/50 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)} 
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-gray-700/50 transition-colors text-gray-400"
+              >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
 
-          <button type="submit" disabled={loading} className={`w-full py-3 rounded-xl bg-gradient-to-r ${accentGradient} text-white font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}>
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {loading ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -111,13 +119,13 @@ const Login = ({ onLogin, users, darkMode, accentGradient }) => {
           </button>
         </form>
 
-        <div className={`mt-6 pt-6 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} text-center`}>
-          <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-600'}`}>نظام الإدارة المالية v6.0</p>
-          <p className={`text-xs ${darkMode ? 'text-gray-600' : 'text-gray-500'} mt-1`}>جميع الحقوق محفوظة © 2024</p>
+        <div className="mt-6 pt-6 border-t border-gray-700 text-center">
+          <p className="text-xs text-gray-500">نظام الإدارة المالية v6.0</p>
+          <p className="text-xs text-gray-600 mt-1">جميع الحقوق محفوظة © 2024</p>
         </div>
 
-        <div className={`mt-4 p-3 rounded-xl ${darkMode ? 'bg-blue-500/10' : 'bg-blue-50'} border ${darkMode ? 'border-blue-500/30' : 'border-blue-200'}`}>
-          <p className={`text-xs ${darkMode ? 'text-blue-400' : 'text-blue-600'} text-center`}>للتجربة: نايف / @Lion12345</p>
+        <div className="mt-4 p-3 rounded-xl bg-blue-500/10 border border-blue-500/30">
+          <p className="text-xs text-blue-400 text-center">للتجربة: نايف / @Lion12345</p>
         </div>
       </div>
     </div>
@@ -125,5 +133,3 @@ const Login = ({ onLogin, users, darkMode, accentGradient }) => {
 };
 
 export default Login;
-```
-
