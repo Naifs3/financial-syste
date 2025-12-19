@@ -4,14 +4,14 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 
-// ⚠️ مهم: استبدل هذه البيانات ببياناتك من Firebase Console
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDpzPCma5c4Tuxd5htRHOvm4aYLRbj8Qkg",
+  authDomain: "financial-system-8f4b3.firebaseapp.com",
+  projectId: "financial-system-8f4b3",
+  storageBucket: "financial-system-8f4b3.firebasestorage.app",
+  messagingSenderId: "243232571212",
+  appId: "1:243232571212:web:d3c5bd06b09ef825d959e9"
 };
 
 // Initialize Firebase
@@ -25,6 +25,4 @@ export const auth = getAuth(app);
 export default app;
 ```
 
-### الخطوة 4: اكتب في الأسفل
-```
-Add Firebase configuration
+---
