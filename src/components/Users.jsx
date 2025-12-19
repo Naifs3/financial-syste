@@ -1,12 +1,4 @@
-🚀 Users.jsx - إدارة المستخدمين!
-
-📝 الخطوة التالية:
-Add file → Create new file
-اكتب:
-src/components/Users.jsx
-
-📄 الصق هذا الكود:
-javascript// src/components/Users.jsx
+// src/components/Users.jsx
 import React, { useState } from 'react';
 import { Users as UsersIcon, Plus, Search, Edit, Trash2, Shield, CheckCircle, Clock, UserCheck } from 'lucide-react';
 import { decrypt } from '../utils/helpers';
@@ -15,9 +7,7 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [showAddModal, setShowAddModal] = useState(false);
 
-  // تصفية المستخدمين
   const filteredUsers = users.filter(user => {
     const username = decrypt(user.username);
     const matchSearch = username.toLowerCase().includes(searchTerm.toLowerCase());
@@ -29,20 +19,18 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
     return matchSearch && matchRole && matchStatus;
   });
 
-  // حساب الإحصائيات
   const totalUsers = users.length;
   const activeUsers = users.filter(u => u.active).length;
   const pendingApprovals = users.filter(u => !u.approved).length;
   const ownerCount = users.filter(u => u.role === 'owner').length;
   const managerCount = users.filter(u => u.role === 'manager').length;
 
-  // ألوان الأدوار
   const getRoleColor = (role) => {
     switch (role) {
-      case 'owner': return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' };
-      case 'manager': return { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30' };
-      case 'member': return { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500/30' };
-      default: return { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500/30' };
+      case 'owner': return { bg: 'bg-red-500/20', text: 'text-red-400' };
+      case 'manager': return { bg: 'bg-blue-500/20', text: 'text-blue-400' };
+      case 'member': return { bg: 'bg-gray-500/20', text: 'text-gray-400' };
+      default: return { bg: 'bg-gray-500/20', text: 'text-gray-400' };
     }
   };
 
@@ -55,28 +43,21 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
     }
   };
 
-  // التحقق من الصلاحيات
   const canModifyUser = (user) => {
-    // المالك يمكنه تعديل الكل
     if (currentUser.role === 'owner') return true;
-    // المدير يمكنه تعديل الأعضاء فقط
     if (currentUser.role === 'manager' && user.role === 'member') return true;
     return false;
   };
 
   const canDeleteUser = (user) => {
-    // لا يمكن حذف المالك أو نفسك
     if (user.role === 'owner' || user.id === currentUser.id) return false;
-    // المالك يمكنه حذف الكل
     if (currentUser.role === 'owner') return true;
-    // المدير يمكنه حذف الأعضاء فقط
     if (currentUser.role === 'manager' && user.role === 'member') return true;
     return false;
   };
 
   return (
     <div className="p-4 space-y-6 pb-20 md:pb-6">
-      {/* العنوان */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className={`text-2xl font-bold ${txt} flex items-center gap-2`}>
@@ -85,18 +66,8 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
           </h2>
           <p className={`text-sm ${txtSm} mt-1`}>إدارة المستخدمين والصلاحيات</p>
         </div>
-        {(currentUser.role === 'owner' || currentUser.role === 'manager') && (
-          <button
-            onClick={() => setShowAddModal(true)}
-            className={`px-4 py-2 rounded-xl bg-gradient-to-r ${accentGradient} text-white transition-all hover:opacity-90 flex items-center gap-2`}
-          >
-            <Plus className="w-4 h-4" />
-            إضافة مستخدم
-          </button>
-        )}
       </div>
 
-      {/* الإحصائيات */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <div className={`${card} p-4 rounded-xl border ${darkMode ? 'border-blue-500/30' : 'border-blue-200'} bg-blue-500/10`}>
           <p className={`text-sm ${txtSm} mb-1`}>إجمالي</p>
@@ -120,7 +91,6 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
         </div>
       </div>
 
-      {/* التنبيهات */}
       {pendingApprovals > 0 && (
         <div className={`${card} p-4 rounded-xl border border-orange-500/30 bg-orange-500/10`}>
           <h3 className={`font-bold ${txt} mb-2 flex items-center gap-2`}>
@@ -128,12 +98,11 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
             طلبات جديدة
           </h3>
           <p className={`text-sm text-orange-400`}>
-            لديك {pendingApprovals} طلب{pendingApprovals > 1 ? 'ات' : ''} بانتظار الموافقة
+            لديك {pendingApprovals} طلب بانتظار الموافقة
           </p>
         </div>
       )}
 
-      {/* البحث والتصفية */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 relative">
           <Search className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 ${txtSm}`} />
@@ -173,7 +142,6 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
         </select>
       </div>
 
-      {/* قائمة المستخدمين */}
       {filteredUsers.length === 0 ? (
         <div className={`${card} p-12 rounded-2xl text-center border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
           <UsersIcon className={`w-16 h-16 mx-auto mb-4 ${txtSm}`} />
@@ -196,7 +164,6 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
                     : darkMode ? 'border-gray-700' : 'border-gray-200'
                 } hover:shadow-lg transition-all`}
               >
-                {/* رأس المستخدم */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3 flex-1">
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${accentGradient} flex items-center justify-center text-white font-bold text-lg`}>
@@ -219,7 +186,6 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
                   </div>
                 </div>
 
-                {/* الحالة */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between">
                     <span className={`text-sm ${txtSm}`}>الحالة:</span>
@@ -239,25 +205,9 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
                       <Clock className="w-5 h-5 text-orange-400" />
                     )}
                   </div>
-                  {user.createdAt && (
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm ${txtSm}`}>تاريخ الإنشاء:</span>
-                      <span className={`text-sm ${txt}`}>
-                        {new Date(user.createdAt).toLocaleDateString('ar-SA')}
-                      </span>
-                    </div>
-                  )}
-                  {user.createdBy && (
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm ${txtSm}`}>أنشئ بواسطة:</span>
-                      <span className={`text-sm ${txt}`}>{user.createdBy}</span>
-                    </div>
-                  )}
                 </div>
 
-                {/* الأزرار */}
                 <div className="flex gap-2 pt-4 border-t border-gray-700">
-                  {/* الموافقة */}
                   {!user.approved && (currentUser.role === 'owner' || currentUser.role === 'manager') && (
                     <button
                       onClick={() => onApprove(user.id)}
@@ -268,7 +218,6 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
                     </button>
                   )}
                   
-                  {/* تفعيل/تعطيل */}
                   {canModifyUser(user) && user.role !== 'owner' && !isCurrentUser && (
                     <button
                       onClick={() => onToggleActive(user.id)}
@@ -282,18 +231,6 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
                     </button>
                   )}
                   
-                  {/* تعديل */}
-                  {canModifyUser(user) && (
-                    <button
-                      onClick={() => onEdit(user)}
-                      className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} ${txt} transition-colors`}
-                      title="تعديل"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                  )}
-                  
-                  {/* حذف */}
                   {canDeleteUser(user) && (
                     <button
                       onClick={() => onDelete(user.id)}
@@ -314,4 +251,3 @@ const Users = ({ users, currentUser, onAdd, onApprove, onToggleActive, onDelete,
 };
 
 export default Users;
-```
