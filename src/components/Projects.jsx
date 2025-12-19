@@ -5,25 +5,18 @@ import { FolderKanban, Plus, Search, Edit, Trash2, FolderPlus, Upload, FileText,
 const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile, onDeleteFile, darkMode, txt, txtSm, card, accentGradient }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [showFolderModal, setShowFolderModal] = useState(false);
-  const [selectedFolder, setSelectedFolder] = useState(null);
 
-  // تصفية المشاريع
   const filteredProjects = projects.filter(project => {
     const matchSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchStatus = filterStatus === 'all' || project.status === filterStatus;
     return matchSearch && matchStatus;
   });
 
-  // حساب الإحصائيات
   const activeCount = projects.filter(p => p.status === 'active').length;
   const pausedCount = projects.filter(p => p.status === 'paused').length;
   const completedCount = projects.filter(p => p.status === 'completed').length;
   const totalBudget = projects.reduce((sum, p) => sum + (parseFloat(p.budget) || 0), 0);
 
-  // ألوان الحالة
   const getStatusColor = (status) => {
     switch (status) {
       case 'active': return { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30' };
@@ -42,7 +35,6 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
     }
   };
 
-  // معالجة رفع الملفات
   const handleFileUpload = async (projectId, folderId, files) => {
     for (const file of files) {
       await onUploadFile(projectId, folderId, file);
@@ -51,7 +43,6 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
 
   return (
     <div className="p-4 space-y-6 pb-20 md:pb-6">
-      {/* العنوان */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className={`text-2xl font-bold ${txt} flex items-center gap-2`}>
@@ -61,7 +52,7 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
           <p className={`text-sm ${txtSm} mt-1`}>إدارة المشاريع والملفات</p>
         </div>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {}}
           className={`px-4 py-2 rounded-xl bg-gradient-to-r ${accentGradient} text-white transition-all hover:opacity-90 flex items-center gap-2`}
         >
           <Plus className="w-4 h-4" />
@@ -69,7 +60,6 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
         </button>
       </div>
 
-      {/* الإحصائيات */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className={`${card} p-4 rounded-xl border ${darkMode ? 'border-blue-500/30' : 'border-blue-200'} bg-blue-500/10`}>
           <p className={`text-sm ${txtSm} mb-1`}>نشط</p>
@@ -89,7 +79,6 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
         </div>
       </div>
 
-      {/* البحث والتصفية */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 relative">
           <Search className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 ${txtSm}`} />
@@ -117,7 +106,6 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
         </select>
       </div>
 
-      {/* قائمة المشاريع */}
       {filteredProjects.length === 0 ? (
         <div className={`${card} p-12 rounded-2xl text-center border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
           <FolderKanban className={`w-16 h-16 mx-auto mb-4 ${txtSm}`} />
@@ -135,7 +123,6 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
                 key={project.id}
                 className={`${card} p-5 rounded-2xl border ${darkMode ? 'border-gray-700' : 'border-gray-200'} hover:shadow-lg transition-all`}
               >
-                {/* رأس المشروع */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h3 className={`font-bold ${txt} text-xl mb-2`}>{project.name}</h3>
@@ -156,11 +143,8 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => {
-                        setSelectedProject(project);
-                        setShowFolderModal(true);
-                      }}
-                      className={`p-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors`}
+                      onClick={() => {}}
+                      className="p-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
                       title="إضافة مجلد"
                     >
                       <FolderPlus className="w-4 h-4" />
@@ -182,7 +166,6 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
                   </div>
                 </div>
 
-                {/* معلومات المشروع */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                   {project.budget && (
                     <div className={`${darkMode ? 'bg-gray-700/50' : 'bg-gray-100'} p-3 rounded-xl`}>
@@ -208,7 +191,6 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
                   </div>
                 </div>
 
-                {/* المجلدات */}
                 {project.folders && project.folders.length > 0 && (
                   <div className="space-y-3">
                     <h4 className={`text-sm font-bold ${txt} flex items-center gap-2`}>
@@ -237,7 +219,6 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
                             {folder.files?.length || 0} ملف
                           </p>
                           
-                          {/* الملفات */}
                           {folder.files && folder.files.length > 0 && (
                             <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
                               {folder.files.map((file) => (
@@ -280,6 +261,3 @@ const Projects = ({ projects, onAdd, onEdit, onDelete, onAddFolder, onUploadFile
 };
 
 export default Projects;
-```
-
----
