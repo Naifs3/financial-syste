@@ -14,18 +14,21 @@ import {
 } from './config/constants';
 
 import Login from './components/Login';
+import SignUp from './components/SignUp';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import Expenses from './components/Expenses';
 import Tasks from './components/Tasks';
 import Projects from './components/Projects';
 import Accounts from './components/Accounts';
+import Users from './components/Users';
 import Settings from './components/Settings';
 import { LogOut, Sun, Moon, Monitor } from 'lucide-react';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showSignup, setShowSignup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState('dashboard');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -151,6 +154,11 @@ function App() {
     setCurrentUser(user);
     setSessionStart(loginTime);
     setIsLoggedIn(true);
+  };
+
+  const handleSignupSuccess = () => {
+    setShowSignup(false);
+    alert('تم إنشاء حسابك بنجاح! سيتم مراجعة طلبك من قبل المدير.');
   };
 
   const handleLogout = async () => {
@@ -409,7 +417,20 @@ function App() {
   }
 
   if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
+    if (showSignup) {
+      return (
+        <SignUp 
+          onBack={() => setShowSignup(false)}
+          onSuccess={handleSignupSuccess}
+        />
+      );
+    }
+    return (
+      <Login 
+        onLogin={handleLogin}
+        onShowSignup={() => setShowSignup(true)}
+      />
+    );
   }
 
   return (
@@ -554,6 +575,17 @@ function App() {
             onAdd={handleAddAccount}
             onEdit={handleEditAccount}
             onDelete={handleDeleteAccount}
+            darkMode={darkMode}
+            txt={txt}
+            txtSm={txtSm}
+            card={card}
+            accentGradient={accentGradient}
+          />
+        )}
+
+        {currentView === 'users' && (
+          <Users
+            currentUser={currentUser}
             darkMode={darkMode}
             txt={txt}
             txtSm={txtSm}
