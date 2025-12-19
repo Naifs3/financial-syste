@@ -159,8 +159,6 @@ export default Login;
 
 ---
 
-## ✅ الآن:
-
-احفظه بـ Commit مثل:
+## ✅ احفظه:
 ```
-Fix Login - remove firebase imports
+Fix Login.jsx - add missing semicolon
