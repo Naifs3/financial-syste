@@ -1,12 +1,4 @@
-🚀 Navigation.jsx - المكون الثالث!
-
-📝 الخطوة التالية:
-Add file → Create new file
-اكتب:
-src/components/Navigation.jsx
-
-📄 الصق هذا الكود:
-javascript// src/components/Navigation.jsx
+// src/components/Navigation.jsx
 import React from 'react';
 import { LayoutDashboard, Receipt, CheckSquare, FolderKanban, Shield, Users, Settings } from 'lucide-react';
 
@@ -23,7 +15,6 @@ const Navigation = ({ currentView, setCurrentView, darkMode, accentColor }) => {
 
   return (
     <>
-      {/* Desktop Navigation */}
       <nav className={`hidden md:block sticky top-[73px] z-40 ${darkMode ? 'bg-gray-800/80' : 'bg-white/80'} backdrop-blur-sm border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-2 overflow-x-auto py-2">
@@ -52,8 +43,7 @@ const Navigation = ({ currentView, setCurrentView, darkMode, accentColor }) => {
         </div>
       </nav>
 
-      {/* Mobile Navigation */}
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${darkMode ? 'bg-gray-800/95' : 'bg-white/95'} backdrop-blur-sm border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} safe-area-bottom`}>
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${darkMode ? 'bg-gray-800/95' : 'bg-white/95'} backdrop-blur-sm border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         <div className="flex items-center justify-around py-2 px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -83,14 +73,3 @@ const Navigation = ({ currentView, setCurrentView, darkMode, accentColor }) => {
 };
 
 export default Navigation;
-```
-
----
-
-## ✅ الآن:
-
-1. الصق الكود
-2. اكتب: `Add Navigation component`
-3. **Commit new file**
-
----
