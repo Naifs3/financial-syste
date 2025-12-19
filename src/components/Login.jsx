@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { LogIn, Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { LogIn, Eye, EyeOff, Mail, Lock, UserPlus } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
-const Login = ({ onLogin }) => {
+const Login = ({ onLogin, onShowSignup }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,14 +30,14 @@ const Login = ({ onLogin }) => {
 
       const userData = userDoc.data();
 
-      if (!userData.active) {
-        setError('هذا الحساب غير نشط');
+      if (!userData.approved) {
+        setError('حسابك في انتظار موافقة المدير');
         setLoading(false);
         return;
       }
 
-      if (!userData.approved) {
-        setError('حسابك في انتظار الموافقة');
+      if (!userData.active) {
+        setError('هذا الحساب غير نشط');
         setLoading(false);
         return;
       }
@@ -153,7 +153,17 @@ const Login = ({ onLogin }) => {
 
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-700 text-center">
+          <div className="mt-6 pt-6 border-t border-gray-700">
+            <button
+              onClick={onShowSignup}
+              className="w-full py-3 bg-gray-700/50 hover:bg-gray-700 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              <UserPlus className="w-5 h-5" />
+              إنشاء حساب جديد
+            </button>
+          </div>
+
+          <div className="mt-6 text-center">
             <p className="text-xs text-gray-500">نظام الإدارة المالية v6.0</p>
             <p className="text-xs text-gray-600 mt-1">جميع الحقوق محفوظة © 2024</p>
           </div>
