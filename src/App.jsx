@@ -6,29 +6,21 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from './config/firebase';
 import {
-  generateId, compressImage, calculateSessionDuration
+  generateId, compressImage
 } from './utils/helpers';
 import {
   THEMES, FONTS, ACCENT_COLORS, HEADER_COLORS
 } from './config/constants';
 
-import Login from './components/Login';
-import Header from './components/Header';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import Expenses from './components/Expenses';
 import Tasks from './components/Tasks';
 import Projects from './components/Projects';
 import Accounts from './components/Accounts';
-import Users from './components/Users';
 import Settings from './components/Settings';
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('currentUser');
-    return saved ? JSON.parse(saved) : null;
-  });
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState('dashboard');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -47,10 +39,7 @@ function App() {
   const [fontSize, setFontSize] = useState(16);
   const [fontIndex, setFontIndex] = useState(0);
 
-  const [sessionStart, setSessionStart] = useState(() => {
-    const saved = localStorage.getItem('sessionStart');
-    return saved ? parseInt(saved) : null;
-  });
+  const currentUser = { username: 'مستخدم النظام', role: 'owner' };
 
   useEffect(() => {
     const savedThemeMode = localStorage.getItem('themeMode') || 'dark';
@@ -92,8 +81,6 @@ function App() {
   useEffect(() => { localStorage.setItem('fontIndex', fontIndex); }, [fontIndex]);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
-
     const unsubscribes = [
       onSnapshot(
         query(collection(db, 'expenses'), orderBy('createdAt', 'desc')),
@@ -123,33 +110,12 @@ function App() {
     ];
 
     return () => unsubscribes.forEach(unsub => unsub());
-  }, [isLoggedIn]);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  const handleLogin = (user) => {
-    const loginTime = Date.now();
-    
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    localStorage.setItem('sessionStart', loginTime.toString());
-    
-    setCurrentUser(user);
-    setSessionStart(loginTime);
-    setIsLoggedIn(true);
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentUser(null);
-    setSessionStart(null);
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('sessionStart');
-  };
 
   const handleAddExpense = async (expense) => {
     try {
@@ -373,9 +339,6 @@ function App() {
   const txt = darkMode ? 'text-white' : 'text-gray-900';
   const txtSm = darkMode ? 'text-gray-400' : 'text-gray-600';
   const accentGradient = ACCENT_COLORS[accentIndex].gradient;
-  const headerClass = darkMode 
-    ? HEADER_COLORS[headerColorIndex].dark 
-    : HEADER_COLORS[headerColorIndex].light;
 
   if (loading) {
     return (
@@ -388,10 +351,6 @@ function App() {
     );
   }
 
-  if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
-  }
-
   return (
     <div 
       className={`min-h-screen ${bg} transition-all duration-300`}
@@ -402,18 +361,24 @@ function App() {
     >
       <link href={FONTS[fontIndex].url} rel="stylesheet" />
 
-      <Header
-        currentUser={currentUser}
-        currentTime={currentTime}
-        darkMode={darkMode}
-        themeMode={themeMode}
-        setThemeMode={setThemeMode}
-        onLogout={handleLogout}
-        sessionMinutes={calculateSessionDuration(sessionStart)}
-        headerClass={headerClass}
-        txtClass={txt}
-        txtSmClass={txtSm}
-      />
+      <header className="bg-gray-800/90 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center">
+                <span className="text-xl font-bold text-white">RKZ</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white">نظام الإدارة المالية</h1>
+                <p className="text-sm text-gray-400">ركائز الأولى للتعمير</p>
+              </div>
+            </div>
+            <div className="text-gray-400 text-sm">
+              {currentTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+        </div>
+      </header>
 
       <Navigation
         currentView={currentView}
@@ -492,22 +457,6 @@ function App() {
             onAdd={handleAddAccount}
             onEdit={handleEditAccount}
             onDelete={handleDeleteAccount}
-            darkMode={darkMode}
-            txt={txt}
-            txtSm={txtSm}
-            card={card}
-            accentGradient={accentGradient}
-          />
-        )}
-
-        {currentView === 'users' && (
-          <Users
-            users={[]}
-            currentUser={currentUser}
-            onAdd={() => {}}
-            onApprove={() => {}}
-            onToggleActive={() => {}}
-            onDelete={() => {}}
             darkMode={darkMode}
             txt={txt}
             txtSm={txtSm}
