@@ -1,39 +1,32 @@
 // src/config/constants.js
 
-// إصدار التطبيق
 export const APP_VERSION = 'v6.0.0';
 
-// مفتاح Google Maps (اختياري)
 export const GOOGLE_MAPS_API_KEY = '';
 
-// أنواع المصروفات
 export const EXPENSE_TYPES = {
   monthly: { name: 'شهري', days: 30 },
   yearly: { name: 'سنوي', days: 365 }
 };
 
-// أولويات المهام
 export const TASK_PRIORITIES = {
   urgent: { name: 'مستعجل', color: 'red' },
   medium: { name: 'متوسط', color: 'yellow' },
   normal: { name: 'عادي', color: 'green' }
 };
 
-// حالات المشاريع
 export const PROJECT_STATUS = {
   active: { name: 'نشط', color: 'blue' },
   paused: { name: 'متوقف', color: 'orange' },
   completed: { name: 'مكتمل', color: 'green' }
 };
 
-// أدوار المستخدمين
 export const USER_ROLES = {
   owner: { name: 'مالك', level: 3 },
   manager: { name: 'مدير', level: 2 },
   member: { name: 'عضو', level: 1 }
 };
 
-// ألوان الحالات
 export const STATUS_COLORS = {
   red: {
     bg: 'bg-red-500/20',
@@ -79,7 +72,6 @@ export const STATUS_COLORS = {
   }
 };
 
-// الخطوط العربية
 export const FONTS = [
   { id: 0, name: 'Cairo', value: 'Cairo', url: 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap' },
   { id: 1, name: 'Tajawal', value: 'Tajawal', url: 'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap' },
@@ -88,7 +80,6 @@ export const FONTS = [
   { id: 4, name: 'Rubik', value: 'Rubik', url: 'https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap' }
 ];
 
-// ثيمات الخلفية
 export const THEMES = [
   { id: 0, name: 'أسود', dark: 'from-gray-900 via-gray-800 to-gray-900', light: 'from-gray-50 via-white to-gray-50' },
   { id: 1, name: 'كلاسيكي', dark: 'from-slate-900 via-slate-800 to-slate-900', light: 'from-slate-50 via-white to-slate-50' },
@@ -99,7 +90,6 @@ export const THEMES = [
   { id: 6, name: 'طوكيو الليلي', dark: 'from-slate-950 via-cyan-950 to-purple-950', light: 'from-slate-50 via-cyan-50 to-purple-50' }
 ];
 
-// ألوان التمييز
 export const ACCENT_COLORS = [
   { id: 0, name: 'أزرق', gradient: 'from-blue-600 to-cyan-600' },
   { id: 1, name: 'بنفسجي', gradient: 'from-purple-600 to-pink-600' },
@@ -109,7 +99,6 @@ export const ACCENT_COLORS = [
   { id: 5, name: 'سماوي', gradient: 'from-cyan-600 to-blue-600' }
 ];
 
-// ألوان الهيدر
 export const HEADER_COLORS = [
   { id: 0, name: 'شفاف', dark: 'bg-transparent', light: 'bg-transparent' },
   { id: 1, name: 'أسود', dark: 'bg-gray-900/95', light: 'bg-white/95' },
@@ -119,27 +108,23 @@ export const HEADER_COLORS = [
   { id: 5, name: 'أخضر', dark: 'bg-emerald-900/95', light: 'bg-emerald-50/95' }
 ];
 
-// حدود الملفات
 export const FILE_LIMITS = {
-  image: 5 * 1024 * 1024, // 5MB
-  video: 50 * 1024 * 1024 // 50MB
+  image: 5 * 1024 * 1024,
+  video: 50 * 1024 * 1024
 };
 
-// إعدادات ضغط الصور
 export const IMAGE_COMPRESSION = {
   maxWidth: 1920,
   maxHeight: 1080,
   quality: 0.8
 };
 
-// إعدادات ضغط الفيديو
 export const VIDEO_COMPRESSION = {
   maxWidth: 1280,
   maxHeight: 720,
   quality: 0.7
 };
 
-// اقتباسات تحفيزية
 export const QUOTES = [
   'النجاح لا يأتي من الفراغ، بل من العمل الجاد والإصرار',
   'كل إنجاز عظيم بدأ بخطوة صغيرة',
@@ -151,7 +136,6 @@ export const QUOTES = [
   'لا تدخر ما تبقى بعد الإنفاق، بل أنفق ما تبقى بعد الادخار'
 ];
 
-// تحيات متنوعة
 export const GREETINGS = [
   'مرحباً',
   'أهلاً',
@@ -169,28 +153,3 @@ export const GREETINGS = [
   'يوم سعيد',
   'وقت ممتع'
 ];
-```
-
----
-
-## ✅ الآن:
-
-1. الصق الكود
-2. اكتب: `Add constants configuration`
-3. **Commit new file**
-
----
-
-## ⏭️ التالي: helpers.js
-
-**أخبرني عند الانتهاء! 🚀**
-
----
-
-## 📊 التقدم:
-```
-✅ .gitignore (1/13)
-✅ firebase.js (2/13)
-⏳ constants.js (3/13) ← أنت هنا
-⬜ helpers.js (4/13)
-⬜ 9 مكونات (5-13)
