@@ -23,6 +23,7 @@ import Projects from './components/Projects';
 import Accounts from './components/Accounts';
 import Users from './components/Users';
 import Settings from './components/Settings';
+import QuantityCalculator from './components/QuantityCalculator';
 import { LogOut, Sun, Moon, Monitor } from 'lucide-react';
 
 function App() {
@@ -613,6 +614,10 @@ function App() {
             txtSm={txtSm}
             card={card}
           />
+        )}
+
+        {currentView === 'calculator' && (
+          <QuantityCalculator />
         )}
       </main>
 
