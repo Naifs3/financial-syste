@@ -776,56 +776,6 @@ const QuantityCalculator = ({ darkMode = true }) => {
             </div>
           </div>
         )}
- style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 11, color: placeTypes[editingPlaceItems].enabled ? placeTypes[editingPlaceItems].color : t.muted }}>{placeTypes[editingPlaceItems].enabled ? 'مفعّل' : 'معطّل'}</span>
-                    <button onClick={() => togglePlaceEnabled(editingPlaceItems)} style={{ width: 40, height: 22, borderRadius: 11, border: 'none', background: placeTypes[editingPlaceItems].enabled ? placeTypes[editingPlaceItems].color : t.border, cursor: 'pointer', position: 'relative' }}><div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, right: placeTypes[editingPlaceItems].enabled ? 2 : 20, transition: 'right 0.2s' }} /></button>
-                  </div>
-                  {!placeTypes[editingPlaceItems].isCore && <button onClick={() => { deletePlace(editingPlaceItems); setShowPlaceItemsModal(false); setEditingPlaceItems(null); }} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: `${t.danger}15`, color: t.danger, fontSize: 11, cursor: 'pointer' }}>🗑️ حذف المكان</button>}
-                </div>
-                <div style={{ marginBottom: 10 }}><label style={{ fontSize: 10, color: t.muted, marginBottom: 4, display: 'block' }}>اسم المكان</label><input type="text" value={placeTypes[editingPlaceItems].name} onChange={(e) => updatePlaceSettings(editingPlaceItems, { name: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${placeTypes[editingPlaceItems].color}40`, background: t.card, color: t.text, fontSize: 14, fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} /></div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <div><label style={{ fontSize: 10, color: t.muted, marginBottom: 4, display: 'block' }}>الأيقونة</label><div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>{['🏠', '🚿', '🌳', '🏢', '🏬', '🏭', '⛺', '📍'].map(icon => (<button key={icon} onClick={() => updatePlaceSettings(editingPlaceItems, { icon })} style={{ width: 32, height: 32, borderRadius: 6, border: placeTypes[editingPlaceItems].icon === icon ? `2px solid ${placeTypes[editingPlaceItems].color}` : `1px solid ${t.border}`, background: placeTypes[editingPlaceItems].icon === icon ? `${placeTypes[editingPlaceItems].color}20` : t.card, fontSize: 14, cursor: 'pointer' }}>{icon}</button>))}</div></div>
-                  <div><label style={{ fontSize: 10, color: t.muted, marginBottom: 4, display: 'block' }}>اللون</label><div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>{['#818cf8', '#22d3ee', '#4ade80', '#fbbf24', '#f87171', '#a78bfa'].map(color => (<button key={color} onClick={() => updatePlaceSettings(editingPlaceItems, { color })} style={{ width: 28, height: 28, borderRadius: 6, border: placeTypes[editingPlaceItems].color === color ? `2px solid ${t.text}` : `1px solid ${t.border}`, background: color, cursor: 'pointer' }} />))}</div></div>
-                </div>
-              </div>
-
-              {/* قائمة البنود */}
-              <div style={{ flex: 1, overflowY: 'auto' }}>
-                {Object.entries(workItems).map(([ck, cat]) => {
-                  const enabledItems = programming[editingPlaceItems]?.[ck] || [];
-                  return (
-                    <div key={ck} style={{ marginBottom: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', borderRadius: 6, background: t.cardAlt, marginBottom: 4 }}>
-                        <span style={{ fontSize: 12 }}>{cat.icon}</span><span style={{ fontSize: 11, fontWeight: 600, flex: 1 }}>{cat.name}</span>
-                        <span style={{ fontSize: 9, color: placeTypes[editingPlaceItems].color }}>{enabledItems.length}/{cat.items.length}</span>
-                        <button onClick={() => toggleAllCategory(editingPlaceItems, ck, enabledItems.length !== cat.items.length)} style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: enabledItems.length === cat.items.length ? `${t.danger}15` : `${placeTypes[editingPlaceItems].color}15`, color: enabledItems.length === cat.items.length ? t.danger : placeTypes[editingPlaceItems].color, fontSize: 9, cursor: 'pointer' }}>{enabledItems.length === cat.items.length ? 'إلغاء الكل' : 'تفعيل الكل'}</button>
-                      </div>
-                      <div style={{ display: 'grid', gap: 2 }}>
-                        {cat.items.map(item => {
-                          const isEnabled = enabledItems.includes(item.id);
-                          const typeColor = item.type === 'floor' ? t.success : item.type === 'wall' ? t.info : t.warning;
-                          return (
-                            <div key={item.id} onClick={() => toggleProgramming(editingPlaceItems, ck, item.id)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', borderRadius: 6, background: isEnabled ? `${placeTypes[editingPlaceItems].color}08` : t.card, border: `1px solid ${isEnabled ? placeTypes[editingPlaceItems].color + '30' : t.border}`, cursor: 'pointer' }}>
-                              <div style={{ width: 14, height: 14, borderRadius: 3, border: `2px solid ${isEnabled ? placeTypes[editingPlaceItems].color : t.border}`, background: isEnabled ? placeTypes[editingPlaceItems].color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8 }}>{isEnabled && '✓'}</div>
-                              <span style={{ fontSize: 11, flex: 1, color: isEnabled ? t.text : t.muted }}>{item.name}</span>
-                              <span style={{ fontSize: 8, color: typeColor, background: `${typeColor}15`, padding: '2px 4px', borderRadius: 3 }}>{item.type === 'floor' ? 'أرضية' : item.type === 'wall' ? 'جدران' : 'أسقف'}</span>
-                              <span style={{ fontSize: 9, color: t.warning }}>{item.exec}</span>
-                              <span style={{ fontSize: 9, color: t.info }}>{item.cont}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.border}`, flexShrink: 0 }}>
-                <button onClick={() => { setShowPlaceItemsModal(false); setEditingPlaceItems(null); }} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: placeTypes[editingPlaceItems].color, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✓ حفظ وإغلاق</button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* نافذة تحرير البند المضاف */}
         {showAddedItemModal && editingAddedItem && (
