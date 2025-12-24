@@ -222,7 +222,7 @@ const QuantityCalculator = ({ darkMode = true }) => {
         <div style={{ width: 40, height: 40, border: `3px solid ${t.accent}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
         <p>جاري التحميل...</p>
       </div>
-      <style>{\`@keyframes spin { to { transform: rotate(360deg); } }\`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 
