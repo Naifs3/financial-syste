@@ -2,21 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
-const QuantityCalculator = ({ 
-  darkMode = true,
-  txt = 'text-white',
-  txtSm = 'text-gray-400',
-  card = 'bg-gray-800/80 backdrop-blur-sm',
-  accentGradient = 'from-blue-500 to-purple-600'
-}) => {
+const QuantityCalculator = ({ darkMode = true }) => {
   const [mainTab, setMainTab] = useState('calculator');
   const [loading, setLoading] = useState(true);
-
-  // ============ البيانات الافتراضية ============
-  const defaultPlaces = {
-    dry: ['صالة', 'مجلس', 'مكتب', 'غرفة طعام', 'ممر', 'غرفة نوم رئيسية', 'غرفة نوم 1', 'غرفة نوم 2'],
-    wet: ['مطبخ', 'دورة مياه رئيسية', 'دورة مياه 1', 'دورة مياه 2', 'غرفة غسيل'],
-    outdoor: ['حوش', 'سطح', 'موقف', 'حديقة']
+  
+  const t = {
+    bg: darkMode ? '#12121a' : '#f8fafc',
+    card: darkMode ? '#1e1e2a' : '#ffffff',
+    cardAlt: darkMode ? '#252535' : '#f1f5f9',
+    border: darkMode ? '#3a3a4a' : '#e2e8f0',
+    text: darkMode ? '#f1f1f1' : '#1e293b',
+    muted: darkMode ? '#9ca3af' : '#64748b',
+    accent: '#818cf8',
+    accentDark: '#6366f1',
+    success: '#4ade80',
+    warning: '#fbbf24',
+    danger: '#f87171',
+    info: '#22d3ee',
   };
 
   const defaultWorkItems = {
@@ -54,10 +56,6 @@ const QuantityCalculator = ({
       { id: 'pl1', name: 'قدة وزاوية', exec: 13, cont: 8, type: 'wall' },
       { id: 'pl2', name: 'ودع وقدة', exec: 20, cont: 13, type: 'wall' },
     ]},
-    construction: { name: 'الإنشائيات', icon: '🏗️', items: [
-      { id: 'c1', name: 'عظم + مواد', exec: 998, cont: 750, type: 'floor' },
-      { id: 'c2', name: 'عظم فقط', exec: 665, cont: 500, type: 'floor' },
-    ]},
     electrical: { name: 'الكهرباء', icon: '⚡', items: [
       { id: 'e1', name: 'تأسيس شامل', exec: 45, cont: 30, type: 'floor' },
       { id: 'e2', name: 'تشطيب', exec: 25, cont: 18, type: 'floor' },
@@ -66,12 +64,12 @@ const QuantityCalculator = ({
     plumbing: { name: 'السباكة', icon: '🔧', items: [
       { id: 'pb1', name: 'تأسيس شامل', exec: 80, cont: 55, type: 'floor' },
       { id: 'pb2', name: 'تشطيب', exec: 40, cont: 28, type: 'floor' },
-      { id: 'pb3', name: 'صيانة', exec: 20, cont: 12, type: 'floor' },
+      { id: 'pb3', name: 'صيانة', exec: 25, cont: 18, type: 'floor' },
     ]},
     insulation: { name: 'العزل', icon: '🛡️', items: [
-      { id: 'i1', name: 'عزل مائي', exec: 35, cont: 25, type: 'floor' },
-      { id: 'i2', name: 'عزل حراري', exec: 30, cont: 20, type: 'floor' },
-      { id: 'i3', name: 'عزل صوتي', exec: 40, cont: 28, type: 'wall' },
+      { id: 'i1', name: 'عزل مائي', exec: 20, cont: 13, type: 'floor' },
+      { id: 'i2', name: 'عزل حراري', exec: 25, cont: 17, type: 'floor' },
+      { id: 'i3', name: 'عزل صوتي', exec: 30, cont: 20, type: 'wall' },
     ]},
     doors: { name: 'الأبواب', icon: '🚪', items: [
       { id: 'd1', name: 'باب خشب', exec: 800, cont: 600, type: 'unit' },
@@ -88,26 +86,35 @@ const QuantityCalculator = ({
       { id: 'ac2', name: 'تأسيس مركزي', exec: 150, cont: 100, type: 'floor' },
       { id: 'ac3', name: 'تركيب وحدة', exec: 250, cont: 180, type: 'unit' },
     ]},
+    construction: { name: 'الإنشائيات', icon: '🏗️', items: [
+      { id: 'c1', name: 'عظم + مواد', exec: 998, cont: 750, type: 'floor' },
+      { id: 'c2', name: 'عظم فقط', exec: 665, cont: 500, type: 'floor' },
+    ]}
   };
 
-  const defaultPlaceTypes = {
-    dry: { name: 'جاف', icon: '🏠', color: 'indigo', enabled: true, isCore: true },
-    wet: { name: 'رطب', icon: '🚿', color: 'cyan', enabled: true, isCore: true },
-    outdoor: { name: 'خارجي', icon: '🌳', color: 'emerald', enabled: true, isCore: true }
+  const defaultPlaces = {
+    dry: { name: 'جاف', icon: '🏠', color: '#818cf8', enabled: true, isCore: true },
+    wet: { name: 'رطب', icon: '🚿', color: '#22d3ee', enabled: true, isCore: true },
+    outdoor: { name: 'خارجي', icon: '🌳', color: '#4ade80', enabled: true, isCore: true }
   };
 
   const defaultProgramming = {
-    dry: { tiles: ['t1','t2','t3','t4','t5','t6','t7'], paint: ['p1','p2','p3','p4'], paintRenew: ['pr1','pr2','pr3'], gypsum: ['g1','g2','g3'], plaster: ['pl1','pl2'], electrical: ['e1','e2','e3'], insulation: ['i3'], doors: ['d1','d2','d3'], ac: ['ac1','ac2','ac3'] },
-    wet: { tiles: ['t1','t2','t3','t4','t5','t6'], paint: ['p5'], gypsum: ['g1','g3'], plaster: ['pl1','pl2'], plumbing: ['pb1','pb2','pb3'], electrical: ['e1','e2'], insulation: ['i1'], doors: ['d1','d3'] },
-    outdoor: { tiles: ['t5','t8','t9'], paint: ['p5','p6','p7'], plaster: ['pl1','pl2'], construction: ['c1','c2'], insulation: ['i1','i2'], doors: ['d2'], windows: ['w1','w2','w3'] }
+    dry: { tiles: ['t1','t2','t3','t4','t5','t6','t7'], paint: ['p1','p2','p3','p4','p6','p7'], paintRenew: ['pr1','pr2','pr3'], gypsum: ['g1','g2','g3'], plaster: ['pl1','pl2'], electrical: ['e1','e2','e3'], insulation: ['i3'], doors: ['d1','d2','d3'], ac: ['ac1','ac2','ac3'] },
+    wet: { tiles: ['t1','t2','t3','t4','t5','t6','t7'], paint: ['p1','p2','p3','p4'], paintRenew: ['pr1','pr2','pr3'], gypsum: ['g1','g2','g3'], plaster: ['pl1','pl2'], electrical: ['e1','e2','e3'], plumbing: ['pb1','pb2','pb3'], insulation: ['i1','i2'], doors: ['d1','d3'] },
+    outdoor: { tiles: ['t1','t2','t3','t4','t8','t9'], paint: ['p5'], plaster: ['pl1','pl2'], electrical: ['e1','e2'], plumbing: ['pb1','pb2'], insulation: ['i1','i2'], doors: ['d2'], windows: ['w1','w2','w3'], construction: ['c1','c2'] }
   };
 
-  // ============ الحالات ============
+  const calcPlaces = {
+    dry: ['صالة', 'مجلس', 'مكتب', 'غرفة طعام', 'ممر', 'غرفة نوم رئيسية', 'غرفة نوم 1', 'غرفة نوم 2'],
+    wet: ['مطبخ', 'دورة مياه رئيسية', 'دورة مياه 1', 'دورة مياه 2', 'غرفة غسيل'],
+    outdoor: ['حوش', 'سطح', 'موقف', 'حديقة']
+  };
+
   const [workItems, setWorkItems] = useState(defaultWorkItems);
-  const [placeTypes, setPlaceTypes] = useState(defaultPlaceTypes);
+  const [places, setPlaces] = useState(defaultPlaces);
   const [programming, setProgramming] = useState(defaultProgramming);
-  const [locationType, setLocationType] = useState('');
-  const [location, setLocation] = useState('');
+  const [selectedPlaceType, setSelectedPlaceType] = useState('');
+  const [selectedPlace, setSelectedPlace] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
   const [addedItems, setAddedItems] = useState({});
   const [inputMethod, setInputMethod] = useState('direct');
@@ -115,34 +122,22 @@ const QuantityCalculator = ({
   const [length, setLength] = useState(0);
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(4);
-  
-  const [showProfitModal, setShowProfitModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('tiles');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [showPlaceItemsModal, setShowPlaceItemsModal] = useState(false);
+  const [showPlaceModal, setShowPlaceModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('tiles');
   const [editingItem, setEditingItem] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', exec: 0, cont: 0, type: 'floor' });
-  const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [addItemForm, setAddItemForm] = useState({ name: '', exec: 0, cont: 0, type: 'floor', category: 'tiles' });
-  const [showPlaceModal, setShowPlaceModal] = useState(false);
-  const [placeForm, setPlaceForm] = useState({ name: '', icon: '📍', color: 'indigo' });
-  const [showPlaceItemsModal, setShowPlaceItemsModal] = useState(false);
   const [editingPlaceItems, setEditingPlaceItems] = useState(null);
-  const [showAddedItemModal, setShowAddedItemModal] = useState(false);
-  const [editingAddedItem, setEditingAddedItem] = useState(null);
+  const [placeForm, setPlaceForm] = useState({ name: '', icon: '📍', color: '#818cf8' });
 
-  // ============ Firebase ============
   useEffect(() => {
     const unsubs = [];
-    unsubs.push(onSnapshot(doc(db, 'calculator', 'workItems'), (snap) => { 
-      if (snap.exists()) setWorkItems(snap.data()); 
-      setLoading(false); 
-    }, () => setLoading(false)));
-    unsubs.push(onSnapshot(doc(db, 'calculator', 'placeTypes'), (snap) => { 
-      if (snap.exists()) setPlaceTypes(snap.data()); 
-    }));
-    unsubs.push(onSnapshot(doc(db, 'calculator', 'programming'), (snap) => { 
-      if (snap.exists()) setProgramming(snap.data()); 
-    }));
+    unsubs.push(onSnapshot(doc(db, 'calculator', 'workItems'), (snap) => { if (snap.exists()) setWorkItems(snap.data()); setLoading(false); }, () => setLoading(false)));
+    unsubs.push(onSnapshot(doc(db, 'calculator', 'placeTypes'), (snap) => { if (snap.exists()) setPlaces(snap.data()); }));
+    unsubs.push(onSnapshot(doc(db, 'calculator', 'programming'), (snap) => { if (snap.exists()) setProgramming(snap.data()); }));
     return () => unsubs.forEach(u => u());
   }, []);
 
@@ -150,52 +145,39 @@ const QuantityCalculator = ({
   const savePlaceTypes = async (d) => { try { await setDoc(doc(db, 'calculator', 'placeTypes'), d); } catch (e) { console.error(e); } };
   const saveProgramming = async (d) => { try { await setDoc(doc(db, 'calculator', 'programming'), d); } catch (e) { console.error(e); } };
 
-  // ============ دوال مساعدة ============
   const quickAreas = [5, 10, 15, 20, 25, 30];
   const calcFloorArea = () => length * width;
   const calcWallArea = () => 2 * (length + width) * height;
   const getArea = () => inputMethod === 'direct' ? area : calcFloorArea();
   const getWallArea = () => inputMethod === 'dimensions' ? calcWallArea() : 0;
-  const getFloorFormula = () => inputMethod === 'dimensions' && length > 0 && width > 0 ? `${length}×${width}=${calcFloorArea()}` : '';
-  const getWallFormula = () => inputMethod === 'dimensions' && length > 0 && width > 0 ? `2(${length}+${width})×${height}=${calcWallArea()}` : '';
   const adjustValue = (setter, value, delta, min = 0) => { const nv = Math.max(min, value + delta); setter(Number.isInteger(nv) ? nv : parseFloat(nv.toFixed(1))); };
-  const fmt = (n) => n.toLocaleString('ar-SA');
 
-  // ============ دوال البرمجة ============
-  const toggleProgramming = (pt, ck, iid) => {
+  const toggleProgramming = (pk, ck, iid) => {
     const np = JSON.parse(JSON.stringify(programming));
-    if (!np[pt]) np[pt] = {};
-    if (!np[pt][ck]) np[pt][ck] = [];
-    np[pt][ck] = np[pt][ck].includes(iid) ? np[pt][ck].filter(id => id !== iid) : [...np[pt][ck], iid];
+    if (!np[pk]) np[pk] = {};
+    if (!np[pk][ck]) np[pk][ck] = [];
+    np[pk][ck] = np[pk][ck].includes(iid) ? np[pk][ck].filter(id => id !== iid) : [...np[pk][ck], iid];
     setProgramming(np);
     saveProgramming(np);
   };
 
-  const toggleAllCategory = (pt, ck, en) => {
+  const isItemEnabled = (pk, ck, iid) => programming[pk]?.[ck]?.includes(iid) || false;
+  const isCategoryFullyEnabled = (pk, ck) => { const items = workItems[ck]?.items || []; const en = programming[pk]?.[ck] || []; return items.length > 0 && items.every(i => en.includes(i.id)); };
+
+  const toggleAllCategory = (pk, ck, en) => {
     const np = JSON.parse(JSON.stringify(programming));
-    if (!np[pt]) np[pt] = {};
-    np[pt][ck] = en ? workItems[ck].items.map(i => i.id) : [];
+    if (!np[pk]) np[pk] = {};
+    np[pk][ck] = en ? workItems[ck].items.map(i => i.id) : [];
     setProgramming(np);
     saveProgramming(np);
   };
 
-  const isItemEnabled = (pt, ck, iid) => programming[pt]?.[ck]?.includes(iid) || false;
-  const isCategoryFullyEnabled = (pt, ck) => (programming[pt]?.[ck] || []).length === (workItems[ck]?.items?.length || 0);
-  const isCategoryPartiallyEnabled = (pt, ck) => { const e = programming[pt]?.[ck] || []; return e.length > 0 && e.length < (workItems[ck]?.items?.length || 0); };
-
-  // ============ دوال تحرير البنود ============
-  const openEditModal = (ck, item) => {
-    setEditingItem({ catKey: ck, itemId: item.id });
-    setEditForm({ name: item.name, exec: item.exec, cont: item.cont, type: item.type });
-    setShowEditModal(true);
-  };
+  const openEditModal = (ck, item) => { setEditingItem({ catKey: ck, itemId: item.id }); setEditForm({ name: item.name, exec: item.exec, cont: item.cont, type: item.type }); setShowEditModal(true); };
 
   const saveEdit = () => {
     if (!editingItem) return;
     const nw = JSON.parse(JSON.stringify(workItems));
-    nw[editingItem.catKey].items = nw[editingItem.catKey].items.map(i => 
-      i.id === editingItem.itemId ? { ...i, ...editForm } : i
-    );
+    nw[editingItem.catKey].items = nw[editingItem.catKey].items.map(i => i.id === editingItem.itemId ? { ...i, ...editForm } : i);
     setWorkItems(nw);
     saveWorkItems(nw);
     setShowEditModal(false);
@@ -208,401 +190,340 @@ const QuantityCalculator = ({
     setWorkItems(nw);
     saveWorkItems(nw);
     const np = JSON.parse(JSON.stringify(programming));
-    Object.keys(np).forEach(pk => { if (np[pk]?.[ck]) np[pk][ck] = np[pk][ck].filter(id => id !== iid); });
+    Object.keys(np).forEach(pk => { if (np[pk][ck]) np[pk][ck] = np[pk][ck].filter(id => id !== iid); });
     setProgramming(np);
     saveProgramming(np);
   };
 
-  const openAddItemModal = (ck = null) => {
-    setAddItemForm({ name: '', exec: 0, cont: 0, type: 'floor', category: ck || selectedCategory });
-    setShowAddItemModal(true);
-  };
+  const openAddItemModal = (ck = null) => { setAddItemForm({ name: '', exec: 0, cont: 0, type: 'floor', category: ck || selectedCategory }); setShowAddItemModal(true); };
 
   const saveNewItem = () => {
     if (!addItemForm.name.trim()) return;
     const nw = JSON.parse(JSON.stringify(workItems));
-    nw[addItemForm.category].items.push({ id: `item_${Date.now()}`, name: addItemForm.name, exec: Number(addItemForm.exec), cont: Number(addItemForm.cont), type: addItemForm.type });
+    nw[addItemForm.category].items.push({ id: `item_${Date.now()}`, name: addItemForm.name, exec: addItemForm.exec, cont: addItemForm.cont, type: addItemForm.type });
     setWorkItems(nw);
     saveWorkItems(nw);
     setShowAddItemModal(false);
   };
 
-  // ============ دوال الأماكن ============
-  const openPlaceModal = () => { setPlaceForm({ name: '', icon: '📍', color: 'indigo' }); setShowPlaceModal(true); };
+  const openPlaceModal = () => { setPlaceForm({ name: '', icon: '📍', color: '#818cf8' }); setShowPlaceModal(true); };
 
   const savePlace = () => {
     if (!placeForm.name.trim()) return;
-    const npt = JSON.parse(JSON.stringify(placeTypes));
-    npt[`place_${Date.now()}`] = { ...placeForm, enabled: true, isCore: false };
-    setPlaceTypes(npt);
-    savePlaceTypes(npt);
-    const np = JSON.parse(JSON.stringify(programming));
-    np[`place_${Date.now()}`] = {};
-    setProgramming(np);
-    saveProgramming(np);
+    const nk = `place_${Date.now()}`;
+    const np = JSON.parse(JSON.stringify(places));
+    np[nk] = { ...placeForm, enabled: true, isCore: false };
+    setPlaces(np);
+    savePlaceTypes(np);
+    const npr = JSON.parse(JSON.stringify(programming));
+    npr[nk] = {};
+    setProgramming(npr);
+    saveProgramming(npr);
     setShowPlaceModal(false);
   };
 
-  const togglePlaceEnabled = (pk) => {
-    const npt = JSON.parse(JSON.stringify(placeTypes));
-    npt[pk].enabled = !npt[pk].enabled;
-    setPlaceTypes(npt);
-    savePlaceTypes(npt);
-  };
+  const togglePlaceEnabled = (pk) => { const np = JSON.parse(JSON.stringify(places)); np[pk].enabled = !np[pk].enabled; setPlaces(np); savePlaceTypes(np); };
 
   const deletePlace = (pk) => {
-    if (placeTypes[pk]?.isCore) return;
-    const npt = JSON.parse(JSON.stringify(placeTypes));
-    delete npt[pk];
-    setPlaceTypes(npt);
-    savePlaceTypes(npt);
-    const np = JSON.parse(JSON.stringify(programming));
-    delete np[pk];
-    setProgramming(np);
-    saveProgramming(np);
+    if (places[pk]?.isCore) return;
+    const np = JSON.parse(JSON.stringify(places)); delete np[pk]; setPlaces(np); savePlaceTypes(np);
+    const npr = JSON.parse(JSON.stringify(programming)); delete npr[pk]; setProgramming(npr); saveProgramming(npr);
   };
 
   const openPlaceItemsModal = (pk) => { setEditingPlaceItems(pk); setShowPlaceItemsModal(true); };
-
-  // ============ دوال الحاسبة ============
   const toggleItem = (id) => setSelectedItems(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  
+
   const getAvailableItems = () => {
-    if (!locationType) return [];
+    if (!selectedPlaceType) return [];
     const items = [];
     Object.entries(workItems).forEach(([ck, cat]) => {
-      const eids = programming[locationType]?.[ck] || [];
-      cat.items.forEach(i => { if (eids.includes(i.id)) items.push({ ...i, cat: cat.name, catKey: ck }); });
+      const eids = programming[selectedPlaceType]?.[ck] || [];
+      cat.items.forEach(i => { if (eids.includes(i.id)) items.push({ ...i, category: cat.name, catKey: ck }); });
     });
     return items;
   };
 
   const addItems = () => {
     const fa = getArea(), wa = getWallArea();
-    if (!location || fa <= 0 || selectedItems.length === 0) return;
-    const ff = getFloorFormula(), wf = getWallFormula();
-    const nai = JSON.parse(JSON.stringify(addedItems));
+    if (!selectedPlace || fa <= 0 || selectedItems.length === 0) return;
     const avail = getAvailableItems();
+    const nai = { ...addedItems };
     selectedItems.forEach(id => {
       const item = avail.find(w => w.id === id);
       if (!item) return;
       const isWall = item.type === 'wall' || item.type === 'ceiling';
       const finalArea = isWall && wa > 0 ? wa : fa;
-      const formula = isWall && wf ? wf : ff;
       const key = `${item.id}`;
       if (!nai[key]) nai[key] = { ...item, places: [] };
-      const ep = nai[key].places.find(p => p.name === location);
-      if (ep) { ep.area += finalArea; if (formula && !ep.formula?.includes(formula)) ep.formula = ep.formula ? `${ep.formula} + ${formula}` : formula; }
-      else { nai[key].places.push({ name: location, area: finalArea, formula, areaType: isWall ? 'wall' : 'floor' }); }
+      const ep = nai[key].places.find(p => p.name === selectedPlace);
+      if (ep) ep.area += finalArea;
+      else nai[key].places.push({ name: selectedPlace, area: finalArea, type: selectedPlaceType });
     });
     setAddedItems(nai);
     setSelectedItems([]);
+    setArea(0); setLength(0); setWidth(0);
   };
 
-  const removeItem = (key) => { const ni = { ...addedItems }; delete ni[key]; setAddedItems(ni); };
-  const removePlace = (key, pn) => { const ni = JSON.parse(JSON.stringify(addedItems)); ni[key].places = ni[key].places.filter(p => p.name !== pn); if (ni[key].places.length === 0) delete ni[key]; setAddedItems(ni); };
-  const clearAll = () => setAddedItems({});
-
-  const openAddedItemModal = (key, item) => { setEditingAddedItem({ key, item: JSON.parse(JSON.stringify(item)) }); setShowAddedItemModal(true); };
-  const saveAddedItemEdit = () => { if (!editingAddedItem) return; const nai = { ...addedItems }; nai[editingAddedItem.key] = editingAddedItem.item; setAddedItems(nai); setShowAddedItemModal(false); setEditingAddedItem(null); };
-  const updateAddedItemPlace = (idx, val) => { if (!editingAddedItem) return; const u = { ...editingAddedItem }; u.item.places[idx].area = Number(val) || 0; setEditingAddedItem(u); };
-
-  const getTotals = () => {
-    let e = 0, c = 0, totalArea = 0;
-    Object.values(addedItems).forEach(i => { const ta = i.places.reduce((s, p) => s + p.area, 0); totalArea += ta; e += ta * i.exec; c += ta * i.cont; });
-    return { exec: e, cont: c, profit: e - c, totalArea };
+  const removePlace = (ik, pn) => {
+    const ni = { ...addedItems };
+    if (ni[ik]) { ni[ik].places = ni[ik].places.filter(p => p.name !== pn); if (ni[ik].places.length === 0) delete ni[ik]; }
+    setAddedItems(ni);
   };
 
-  const totals = getTotals();
-  const itemCount = Object.keys(addedItems).length;
-  const canAdd = location && getArea() > 0 && selectedItems.length > 0;
-  const totalItemsCount = Object.values(workItems).reduce((s, c) => s + c.items.length, 0);
+  const calcTotals = () => {
+    let te = 0, tc = 0;
+    Object.values(addedItems).forEach(i => { const ta = i.places.reduce((s, p) => s + p.area, 0); te += ta * i.exec; tc += ta * i.cont; });
+    return { totalExec: te, totalCont: tc, profit: te - tc };
+  };
 
-  // ============ التحميل ============
+  const { totalExec, totalCont, profit } = calcTotals();
+  const canAdd = selectedPlace && getArea() > 0 && selectedItems.length > 0;
+
   if (loading) return (
-    <div className="min-h-[50vh] flex items-center justify-center" dir="rtl">
-      <div className="text-center">
-        <div className={`w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4 ${darkMode ? 'border-blue-500' : 'border-blue-600'}`} />
-        <p className={txt}>جاري التحميل...</p>
+    <div dir="rtl" style={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.text }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 40, height: 40, border: `3px solid ${t.accent}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+        <p>جاري التحميل...</p>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 
-  const border = darkMode ? 'border-gray-700' : 'border-gray-200';
-  const cardAlt = darkMode ? 'bg-gray-700/50' : 'bg-gray-100';
-  const input = `w-full p-3 rounded-xl border outline-none ${darkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-white'} ${txt}`;
-
-  // ============ الواجهة ============
   return (
-    <div className="p-4 md:p-6" dir="rtl">
-      <div className="max-w-4xl mx-auto space-y-4">
-        
-        {/* Header */}
-        <div className={`${card} rounded-2xl p-5 border ${border}`}>
-          <div className="flex justify-between items-center flex-wrap gap-3">
-            <div>
-              <h1 className={`text-xl font-bold ${txt}`}>حاسبة الكميات</h1>
-              <p className={`text-sm ${txtSm}`}>إجمالي {totalItemsCount} بند في {Object.keys(workItems).length} تصنيف</p>
-            </div>
-            <button onClick={() => setShowProfitModal(true)} className={`px-4 py-2 bg-gradient-to-r ${accentGradient} text-white rounded-xl font-medium text-sm`}>📊 الأرباح</button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className={`${card} rounded-xl p-1.5 border ${border}`}>
-          <div className="flex gap-1">
-            {[{ key: 'calculator', label: '🧮 الحاسبة' }, { key: 'items', label: '📋 البنود' }, { key: 'programming', label: '⚙️ البرمجة' }].map(tab => (
-              <button key={tab.key} onClick={() => setMainTab(tab.key)} className={`flex-1 py-3 px-4 rounded-lg font-medium text-sm transition-all ${mainTab === tab.key ? `bg-gradient-to-r ${accentGradient} text-white` : `${txtSm} hover:bg-gray-700/50`}`}>{tab.label}</button>
+    <div dir="rtl" style={{ minHeight: '100vh', background: t.bg, color: t.text, fontFamily: 'system-ui' }}>
+      <style>{`
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: ${t.cardAlt}; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: ${t.border}; border-radius: 4px; }
+      `}</style>
+      
+      <div style={{ background: t.card, borderBottom: `1px solid ${t.border}`, padding: '12px 16px', position: 'sticky', top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ filter: 'grayscale(100%)', opacity: 0.7 }}>🧮</span>حاسبة الكميات
+          </h1>
+          <div style={{ display: 'flex', gap: 4, background: t.cardAlt, padding: 4, borderRadius: 10 }}>
+            {[{ id: 'calculator', label: 'الحاسبة', icon: '🧮' }, { id: 'items', label: 'البنود', icon: '📋' }, { id: 'programming', label: 'البرمجة', icon: '⚙️' }].map(tab => (
+              <button key={tab.id} onClick={() => setMainTab(tab.id)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: mainTab === tab.id ? t.accent : 'transparent', color: mainTab === tab.id ? '#fff' : t.muted, fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ filter: 'grayscale(100%)', opacity: 0.7 }}>{tab.icon}</span>{tab.label}
+              </button>
             ))}
           </div>
         </div>
+      </div>
 
-        {/* ==================== تاب الحاسبة ==================== */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 16 }}>
         {mainTab === 'calculator' && (
-          <>
-            <div className={`${card} rounded-2xl p-5 border ${border} space-y-4`}>
-              
-              {/* نوع المكان */}
-              <div>
-                <label className={`block text-sm font-medium mb-3 ${txt}`}>📍 نوع المكان</label>
-                <div className="grid grid-cols-3 gap-3">
-                  {Object.entries(placeTypes).filter(([_, p]) => p.enabled).map(([key, place]) => (
-                    <button key={key} onClick={() => { setLocationType(key); setLocation(''); setSelectedItems([]); }} className={`p-4 rounded-xl border-2 text-center transition-all ${locationType === key ? `border-${place.color}-500 bg-${place.color}-500/15` : `${darkMode ? 'border-gray-600 bg-gray-700/30' : 'border-gray-300 bg-gray-100'}`}`}>
-                      <div className="text-2xl mb-1">{place.icon}</div>
-                      <div className={`text-sm font-medium ${txt}`}>{place.name}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* المكان */}
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${txt}`}>🏷️ المكان</label>
-                <select value={location} onChange={(e) => setLocation(e.target.value)} disabled={!locationType} className={input}>
-                  <option value="">اختر المكان</option>
-                  {locationType && defaultPlaces[locationType]?.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-
-              {/* المساحة */}
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${txt}`}>📐 المساحة</label>
-                <div className={`${cardAlt} rounded-xl p-4 space-y-4`}>
-                  <div className="flex gap-2">
-                    <button onClick={() => setInputMethod('direct')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${inputMethod === 'direct' ? `bg-gradient-to-r ${accentGradient} text-white` : txtSm}`}>مساحة مباشرة</button>
-                    <button onClick={() => setInputMethod('dimensions')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${inputMethod === 'dimensions' ? `bg-gradient-to-r ${accentGradient} text-white` : txtSm}`}>أبعاد الغرفة</button>
+          <div>
+            <div style={{ background: t.card, borderRadius: 16, border: `1px solid ${t.border}`, padding: 20, marginBottom: 16 }}>
+              <div style={{ fontSize: 14, color: t.text, marginBottom: 12, fontWeight: 500 }}>📍 نوع المكان</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+                {Object.entries(places).filter(([_, p]) => p.enabled).map(([key, place]) => (
+                  <div key={key} onClick={() => { setSelectedPlaceType(key); setSelectedPlace(''); setSelectedItems([]); }} style={{ padding: '16px 12px', borderRadius: 14, border: selectedPlaceType === key ? `2px solid ${place.color}` : `1px solid ${t.border}`, background: selectedPlaceType === key ? `${place.color}18` : t.cardAlt, cursor: 'pointer', textAlign: 'center' }}>
+                    <div style={{ fontSize: 24, marginBottom: 6, filter: 'grayscale(100%)', opacity: 0.7 }}>{place.icon}</div>
+                    <div style={{ fontSize: 14, fontWeight: 500 }}>{place.name}</div>
                   </div>
+                ))}
+              </div>
 
-                  {inputMethod === 'direct' ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-center gap-4">
-                        <button onClick={() => adjustValue(setArea, area, -1)} className={`w-12 h-12 rounded-xl border text-xl font-bold ${darkMode ? 'border-gray-600 bg-gray-800 hover:bg-gray-700' : 'border-gray-300 bg-white hover:bg-gray-50'} ${txt}`}>−</button>
-                        <div className="text-center">
-                          <input type="number" value={area || ''} onChange={(e) => setArea(parseFloat(e.target.value) || 0)} className={`w-24 text-center text-3xl font-bold bg-transparent border-none outline-none ${txt}`} placeholder="0" />
-                          <div className={`text-sm ${txtSm}`}>م²</div>
-                        </div>
-                        <button onClick={() => adjustValue(setArea, area, 1)} className={`w-12 h-12 rounded-xl border text-xl font-bold ${darkMode ? 'border-gray-600 bg-gray-800 hover:bg-gray-700' : 'border-gray-300 bg-white hover:bg-gray-50'} ${txt}`}>+</button>
+              <div style={{ fontSize: 14, color: t.text, marginBottom: 12, fontWeight: 500 }}>🏷️ المكان</div>
+              <select value={selectedPlace} onChange={(e) => setSelectedPlace(e.target.value)} disabled={!selectedPlaceType} style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: `1px solid ${t.border}`, background: t.cardAlt, color: t.text, fontSize: 14, outline: 'none', marginBottom: 16, cursor: 'pointer' }}>
+                <option value="">اختر المكان</option>
+                {selectedPlaceType && calcPlaces[selectedPlaceType]?.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+
+              <div style={{ fontSize: 14, color: t.text, marginBottom: 12, fontWeight: 500 }}>📐 المساحة</div>
+              <div style={{ background: t.cardAlt, borderRadius: 14, padding: 16, marginBottom: 16, border: `1px solid ${t.border}` }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  <button onClick={() => setInputMethod('direct')} style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', background: inputMethod === 'direct' ? t.accent : 'transparent', color: inputMethod === 'direct' ? '#fff' : t.muted, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>مساحة مباشرة</button>
+                  <button onClick={() => setInputMethod('dimensions')} style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', background: inputMethod === 'dimensions' ? t.accent : 'transparent', color: inputMethod === 'dimensions' ? '#fff' : t.muted, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>أبعاد الغرفة</button>
+                </div>
+
+                {inputMethod === 'direct' ? (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 16 }}>
+                      <button onClick={() => adjustValue(setArea, area, -1)} style={{ width: 56, height: 56, borderRadius: 14, border: `1px solid ${t.border}`, background: t.card, color: t.text, fontSize: 28, cursor: 'pointer', fontWeight: 600 }}>−</button>
+                      <div style={{ textAlign: 'center' }}>
+                        <input type="number" value={area || ''} onChange={(e) => setArea(parseFloat(e.target.value) || 0)} style={{ width: 100, background: 'transparent', border: 'none', color: t.text, fontSize: 42, fontWeight: 600, textAlign: 'center', outline: 'none' }} />
+                        <div style={{ fontSize: 14, color: t.accent }}>م²</div>
                       </div>
-                      <div className="flex gap-2 justify-center flex-wrap">
-                        {quickAreas.map(v => (<button key={v} onClick={() => setArea(v)} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${area === v ? `bg-gradient-to-r ${accentGradient} text-white` : `${cardAlt} ${txt} hover:opacity-80`}`}>{v}</button>))}
+                      <button onClick={() => adjustValue(setArea, area, 1)} style={{ width: 56, height: 56, borderRadius: 14, border: `1px solid ${t.border}`, background: t.card, color: t.text, fontSize: 28, cursor: 'pointer', fontWeight: 600 }}>+</button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                      {quickAreas.map(val => (<button key={val} onClick={() => setArea(val)} style={{ padding: '10px 18px', borderRadius: 10, border: area === val ? `2px solid ${t.accent}` : `1px solid ${t.border}`, background: area === val ? `${t.accent}20` : t.card, color: area === val ? t.accent : t.text, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{val}</button>))}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
+                      {[{ l: 'الطول', v: length, s: setLength, c: t.text }, { l: 'العرض', v: width, s: setWidth, c: t.text }, { l: 'الارتفاع', v: height, s: setHeight, c: t.warning }].map(({ l, v, s, c }) => (
+                        <div key={l} style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: 14, color: c, marginBottom: 10, fontWeight: 500 }}>{l}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                            <button onClick={() => adjustValue(s, v, -0.5)} style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${c === t.warning ? `${t.warning}50` : t.border}`, background: c === t.warning ? `${t.warning}20` : t.card, color: c, fontSize: 22, cursor: 'pointer', fontWeight: 600 }}>−</button>
+                            <input type="number" value={v || ''} onChange={(e) => s(parseFloat(e.target.value) || 0)} style={{ width: 55, background: 'transparent', border: 'none', color: c, fontSize: 22, fontWeight: 600, textAlign: 'center', outline: 'none' }} />
+                            <button onClick={() => adjustValue(s, v, 0.5)} style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${c === t.warning ? `${t.warning}50` : t.border}`, background: c === t.warning ? `${t.warning}20` : t.card, color: c, fontSize: 22, cursor: 'pointer', fontWeight: 600 }}>+</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                      <div style={{ flex: 1, padding: 12, borderRadius: 12, background: `${t.success}15`, border: `1px solid ${t.success}30`, textAlign: 'center' }}>
+                        <div style={{ fontSize: 20, fontWeight: 600, color: t.success }}>{calcFloorArea()}</div>
+                        <div style={{ fontSize: 12, color: t.success, opacity: 0.8, marginTop: 4 }}>م² أرضية</div>
+                      </div>
+                      <div style={{ flex: 1, padding: 12, borderRadius: 12, background: `${t.info}15`, border: `1px solid ${t.info}30`, textAlign: 'center' }}>
+                        <div style={{ fontSize: 20, fontWeight: 600, color: t.info }}>{calcWallArea()}</div>
+                        <div style={{ fontSize: 12, color: t.info, opacity: 0.8, marginTop: 4 }}>م² جدران</div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-3 gap-3">
-                        {[{ l: 'الطول', v: length, s: setLength }, { l: 'العرض', v: width, s: setWidth }, { l: 'الارتفاع', v: height, s: setHeight, c: 'yellow' }].map(({ l, v, s, c }) => (
-                          <div key={l} className="text-center">
-                            <label className={`text-xs font-medium mb-1 block ${c ? 'text-yellow-400' : txtSm}`}>{l}</label>
-                            <div className="flex items-center justify-center gap-1">
-                              <button onClick={() => adjustValue(s, v, -0.5)} className={`w-8 h-8 rounded-lg border text-sm font-bold ${c ? 'border-yellow-500/40 bg-yellow-500/20 text-yellow-400' : `${darkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-300 bg-white'} ${txt}`}`}>−</button>
-                              <input type="number" value={v || ''} onChange={(e) => s(parseFloat(e.target.value) || 0)} className={`w-12 text-center text-lg font-bold bg-transparent border-none outline-none ${c ? 'text-yellow-400' : txt}`} />
-                              <button onClick={() => adjustValue(s, v, 0.5)} className={`w-8 h-8 rounded-lg border text-sm font-bold ${c ? 'border-yellow-500/40 bg-yellow-500/20 text-yellow-400' : `${darkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-300 bg-white'} ${txt}`}`}>+</button>
-                            </div>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ fontSize: 14, color: t.text, marginBottom: 12, fontWeight: 500 }}>🔧 بنود العمل</div>
+              <div style={{ display: 'grid', gap: 8, marginBottom: 16, maxHeight: 300, overflowY: 'auto' }}>
+                {getAvailableItems().map(item => (
+                  <div key={item.id} onClick={() => toggleItem(item.id)} style={{ padding: '14px 16px', borderRadius: 12, border: selectedItems.includes(item.id) ? `2px solid ${t.accent}` : `1px solid ${t.border}`, background: selectedItems.includes(item.id) ? `${t.accent}15` : t.cardAlt, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 500 }}>{item.category} - {item.name}</span>
+                      <span style={{ fontSize: 11, color: item.type === 'wall' ? t.info : item.type === 'ceiling' ? t.warning : t.success, background: item.type === 'wall' ? `${t.info}20` : item.type === 'ceiling' ? `${t.warning}20` : `${t.success}20`, padding: '2px 8px', borderRadius: 6 }}>{item.type === 'wall' ? 'جدران' : item.type === 'ceiling' ? 'أسقف' : 'أرضية'}</span>
+                    </div>
+                    <span style={{ fontSize: 13, color: t.muted, background: t.card, padding: '4px 10px', borderRadius: 8 }}>{item.exec} ر.س</span>
+                  </div>
+                ))}
+                {getAvailableItems().length === 0 && <div style={{ textAlign: 'center', padding: '30px 20px', color: t.muted }}><div style={{ fontSize: 32, marginBottom: 8, opacity: 0.4 }}>📋</div><div style={{ fontSize: 13 }}>اختر نوع المكان لعرض البنود</div></div>}
+              </div>
+
+              <button onClick={addItems} disabled={!canAdd} style={{ width: '100%', padding: 16, borderRadius: 14, border: 'none', background: canAdd ? `linear-gradient(135deg, ${t.accentDark}, ${t.accent})` : t.cardAlt, color: canAdd ? '#fff' : t.muted, fontSize: 15, fontWeight: 600, cursor: canAdd ? 'pointer' : 'not-allowed' }}>
+                {selectedItems.length > 0 ? `➕ إضافة ${selectedItems.length} بند` : 'اختر بنود للإضافة'}
+              </button>
+            </div>
+
+            <div style={{ background: t.card, borderRadius: 16, border: `1px solid ${t.border}`, padding: 20, marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>📋 البنود المضافة <span style={{ color: t.muted }}>({Object.keys(addedItems).length})</span></div>
+                {Object.keys(addedItems).length > 0 && <button onClick={() => setAddedItems({})} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', background: `${t.danger}15`, color: t.danger, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>مسح الكل</button>}
+              </div>
+              {Object.keys(addedItems).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '50px 20px', color: t.muted }}><div style={{ fontSize: 48, marginBottom: 12, opacity: 0.4 }}>📭</div><div style={{ fontSize: 14 }}>لا توجد بنود</div></div>
+              ) : (
+                Object.entries(addedItems).map(([key, item]) => {
+                  const ta = item.places.reduce((s, p) => s + p.area, 0);
+                  const ex = ta * item.exec, co = ta * item.cont;
+                  return (
+                    <div key={key} style={{ padding: 16, borderRadius: 14, border: `1px solid ${t.border}`, marginBottom: 10, background: t.cardAlt }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{item.category} - {item.name}</div>
+                          <div style={{ fontSize: 12, color: t.muted }}>إجمالي: {ta} م² • {item.exec} ر.س/م²</div>
+                        </div>
+                        <button onClick={() => { const ni = { ...addedItems }; delete ni[key]; setAddedItems(ni); }} style={{ width: 32, height: 32, borderRadius: 10, border: 'none', background: `${t.danger}15`, color: t.danger, cursor: 'pointer', fontSize: 14 }}>✕</button>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                        {item.places.map((place, idx) => (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6, background: place.type === 'wet' ? `${t.info}15` : place.type === 'outdoor' ? `${t.success}15` : `${t.accent}15`, padding: '6px 12px', borderRadius: 10, border: `1px solid ${place.type === 'wet' ? t.info : place.type === 'outdoor' ? t.success : t.accent}30` }}>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: t.text }}>{place.name}</span>
+                            <span style={{ fontSize: 12, color: place.type === 'wet' ? t.info : place.type === 'outdoor' ? t.success : t.accent }}>{place.area}م²</span>
+                            <button onClick={(e) => { e.stopPropagation(); removePlace(key, place.name); }} style={{ background: 'none', border: 'none', color: t.danger, cursor: 'pointer', fontSize: 12, padding: 0 }}>✕</button>
                           </div>
                         ))}
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                          <div className="text-lg font-bold text-emerald-400">{calcFloorArea()}</div>
-                          <div className={`text-xs ${txtSm}`}>م² أرضية</div>
-                        </div>
-                        <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-center">
-                          <div className="text-lg font-bold text-cyan-400">{calcWallArea()}</div>
-                          <div className={`text-xs ${txtSm}`}>م² جدران</div>
-                        </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                        <div style={{ padding: 10, borderRadius: 10, background: `${t.warning}12`, textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 600, color: t.warning }}>{ex.toLocaleString()}</div><div style={{ fontSize: 11, color: t.muted, marginTop: 2 }}>تنفيذ</div></div>
+                        <div style={{ padding: 10, borderRadius: 10, background: `${t.info}12`, textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 600, color: t.info }}>{co.toLocaleString()}</div><div style={{ fontSize: 11, color: t.muted, marginTop: 2 }}>مقاول</div></div>
+                        <div style={{ padding: 10, borderRadius: 10, background: `${t.success}12`, textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 600, color: t.success }}>{(ex - co).toLocaleString()}</div><div style={{ fontSize: 11, color: t.muted, marginTop: 2 }}>ربح</div></div>
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* بنود العمل */}
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${txt}`}>🔧 بنود العمل</label>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {getAvailableItems().map(item => (
-                    <div key={item.id} onClick={() => toggleItem(item.id)} className={`p-3 rounded-xl border cursor-pointer transition-all ${selectedItems.includes(item.id) ? 'border-indigo-500 bg-indigo-500/10' : `${darkMode ? 'border-gray-600 bg-gray-700/30' : 'border-gray-300 bg-gray-100'}`}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm font-medium ${txt}`}>{item.cat} - {item.name}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded ${item.type === 'floor' ? 'bg-emerald-500/20 text-emerald-400' : item.type === 'wall' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{item.type === 'wall' ? 'جدران' : item.type === 'ceiling' ? 'أسقف' : 'أرضية'}</span>
-                        </div>
-                        <span className={`text-sm ${txtSm} ${cardAlt} px-2 py-1 rounded-lg`}>{item.exec} ر.س</span>
-                      </div>
-                    </div>
-                  ))}
-                  {locationType && getAvailableItems().length === 0 && <div className={`text-center py-8 ${txtSm}`}>لا توجد بنود مبرمجة</div>}
-                </div>
-                <button onClick={addItems} disabled={!canAdd} className={`w-full mt-3 py-3 rounded-xl font-semibold transition-all ${canAdd ? `bg-gradient-to-r ${accentGradient} text-white` : `${cardAlt} ${txtSm} cursor-not-allowed`}`}>
-                  {selectedItems.length > 0 ? `➕ إضافة ${selectedItems.length} بند` : 'اختر بنود للإضافة'}
-                </button>
-              </div>
-            </div>
-
-            {/* البنود المضافة */}
-            <div className={`${card} rounded-2xl p-5 border ${border}`}>
-              <div className="flex justify-between items-center mb-4">
-                <span className={`font-semibold ${txt}`}>📋 البنود المضافة ({itemCount})</span>
-                {itemCount > 0 && <button onClick={clearAll} className="px-3 py-1 rounded-lg bg-red-500/15 text-red-400 text-sm font-medium">مسح الكل</button>}
-              </div>
-              {itemCount === 0 ? (
-                <div className={`text-center py-12 ${txtSm}`}><div className="text-4xl mb-2 opacity-40">📭</div>لا توجد بنود</div>
-              ) : (
-                <div className="space-y-3">
-                  {Object.entries(addedItems).map(([key, item]) => {
-                    const ta = item.places.reduce((s, p) => s + p.area, 0);
-                    const ex = ta * item.exec, co = ta * item.cont;
-                    return (
-                      <div key={key} className={`${cardAlt} rounded-xl p-4`}>
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <div className={`font-semibold ${txt}`}>{item.cat} - {item.name}</div>
-                            <div className={`text-sm ${txtSm}`}>{ta} م² × {item.exec} = {fmt(ex)} ر.س</div>
-                          </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => openAddedItemModal(key, item)} className={`w-8 h-8 rounded-lg ${darkMode ? 'bg-gray-600' : 'bg-gray-300'} ${txt} text-xs`}>✎</button>
-                            <button onClick={() => removeItem(key)} className="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 text-xs">✕</button>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {item.places.map((p, i) => (
-                            <div key={i} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${p.areaType === 'wall' ? 'bg-cyan-500/15 border border-cyan-500/25' : 'bg-emerald-500/15 border border-emerald-500/25'}`}>
-                              <span className={`text-sm font-medium ${txt}`}>{p.name}</span>
-                              <span className={`text-sm font-bold ${p.areaType === 'wall' ? 'text-cyan-400' : 'text-emerald-400'}`}>{p.area}م²</span>
-                              {p.formula && <span className={`text-xs ${txtSm} ${cardAlt} px-1.5 py-0.5 rounded`}>{p.formula}</span>}
-                              <button onClick={(e) => { e.stopPropagation(); removePlace(key, p.name); }} className="text-red-400 text-xs">✕</button>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="p-2 rounded-lg bg-yellow-500/10 text-center"><div className="text-yellow-400 font-bold">{fmt(ex)}</div><div className={`text-xs ${txtSm}`}>تنفيذ</div></div>
-                          <div className="p-2 rounded-lg bg-cyan-500/10 text-center"><div className="text-cyan-400 font-bold">{fmt(co)}</div><div className={`text-xs ${txtSm}`}>مقاول</div></div>
-                          <div className="p-2 rounded-lg bg-emerald-500/10 text-center"><div className="text-emerald-400 font-bold">{fmt(ex - co)}</div><div className={`text-xs ${txtSm}`}>ربح</div></div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                  );
+                })
               )}
             </div>
 
-            {/* الملخص */}
-            {itemCount > 0 && (
-              <div className={`${card} rounded-2xl p-5 border ${border}`}>
-                <div className={`font-semibold mb-4 ${txt}`}>💰 الملخص المالي</div>
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div className={`${cardAlt} p-3 rounded-xl text-center`}><div className={`text-2xl font-bold ${txt}`}>{totals.totalArea}</div><div className={`text-xs ${txtSm}`}>م² إجمالي</div></div>
-                  <div className={`${cardAlt} p-3 rounded-xl text-center`}><div className={`text-2xl font-bold ${txt}`}>{itemCount}</div><div className={`text-xs ${txtSm}`}>بند</div></div>
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  <div className="p-3 rounded-xl bg-yellow-500/10 text-center"><div className="text-lg font-bold text-yellow-400">{fmt(totals.exec)}</div><div className={`text-xs ${txtSm}`}>تنفيذ</div></div>
-                  <div className="p-3 rounded-xl bg-cyan-500/10 text-center"><div className="text-lg font-bold text-cyan-400">{fmt(totals.cont)}</div><div className={`text-xs ${txtSm}`}>مقاول</div></div>
-                  <div className="p-3 rounded-xl bg-emerald-500/10 text-center"><div className="text-lg font-bold text-emerald-400">{fmt(totals.profit)}</div><div className={`text-xs ${txtSm}`}>ربح</div></div>
-                  <div className={`p-3 rounded-xl bg-gradient-to-br ${accentGradient} text-center`}><div className="text-lg font-bold text-white">{fmt(Math.round(totals.exec * 1.15))}</div><div className="text-xs text-white/70">+ضريبة</div></div>
+            {Object.keys(addedItems).length > 0 && (
+              <div style={{ background: t.card, borderRadius: 16, border: `1px solid ${t.border}`, padding: 20 }}>
+                <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 14 }}>💰 الملخص</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                  <div style={{ padding: 18, borderRadius: 14, background: `${t.warning}12`, textAlign: 'center' }}><div style={{ fontSize: 22, fontWeight: 700, color: t.warning }}>{totalExec.toLocaleString()}</div><div style={{ fontSize: 12, color: t.muted, marginTop: 6 }}>تنفيذ</div></div>
+                  <div style={{ padding: 18, borderRadius: 14, background: `${t.info}12`, textAlign: 'center' }}><div style={{ fontSize: 22, fontWeight: 700, color: t.info }}>{totalCont.toLocaleString()}</div><div style={{ fontSize: 12, color: t.muted, marginTop: 6 }}>مقاول</div></div>
+                  <div style={{ padding: 18, borderRadius: 14, background: `${t.success}12`, textAlign: 'center' }}><div style={{ fontSize: 22, fontWeight: 700, color: t.success }}>{profit.toLocaleString()}</div><div style={{ fontSize: 12, color: t.muted, marginTop: 6 }}>ربح</div></div>
+                  <div style={{ padding: 18, borderRadius: 14, background: `${t.accent}15`, textAlign: 'center' }}><div style={{ fontSize: 22, fontWeight: 700, color: t.accent }}>{Math.round(totalExec * 1.15).toLocaleString()}</div><div style={{ fontSize: 12, color: t.muted, marginTop: 6 }}>+ ضريبة</div></div>
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
-
-        {/* ==================== تاب البنود ==================== */}
         {mainTab === 'items' && (
-          <div className="grid md:grid-cols-4 gap-4">
-            <div className={`${card} rounded-xl p-3 border ${border} md:col-span-1`}>
-              <div className={`text-xs ${txtSm} mb-2 px-2`}>التصنيفات</div>
-              {Object.entries(workItems).map(([k, c]) => (
-                <button key={k} onClick={() => setSelectedCategory(k)} className={`w-full p-3 rounded-lg mb-1 text-right flex items-center gap-2 transition-all ${selectedCategory === k ? `bg-gradient-to-r ${accentGradient} text-white` : `${txtSm} hover:bg-gray-700/50`}`}>
-                  <span className="text-lg">{c.icon}</span>
-                  <div><div className={`text-sm font-medium ${selectedCategory === k ? 'text-white' : txt}`}>{c.name}</div><div className={`text-xs ${selectedCategory === k ? 'text-white/70' : txtSm}`}>{c.items.length} بند</div></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 16 }}>
+            <div style={{ background: t.card, borderRadius: 16, padding: 12, border: `1px solid ${t.border}`, height: 'fit-content' }}>
+              <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, padding: '0 8px' }}>التصنيفات</h3>
+              {Object.entries(workItems).map(([key, cat]) => (
+                <button key={key} onClick={() => setSelectedCategory(key)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: 'none', background: selectedCategory === key ? `${t.accent}15` : 'transparent', color: selectedCategory === key ? t.accent : t.text, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, textAlign: 'right' }}>
+                  <span style={{ filter: 'grayscale(100%)', opacity: 0.7 }}>{cat.icon}</span>
+                  <span style={{ flex: 1 }}>{cat.name}</span>
+                  <span style={{ fontSize: 11, color: t.muted }}>{cat.items.length}</span>
                 </button>
               ))}
             </div>
-            <div className={`${card} rounded-xl p-4 border ${border} md:col-span-3`}>
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-2"><span className="text-xl">{workItems[selectedCategory]?.icon}</span><h2 className={`text-lg font-bold ${txt}`}>{workItems[selectedCategory]?.name}</h2></div>
-                <button onClick={() => openAddItemModal()} className={`px-4 py-2 bg-gradient-to-r ${accentGradient} text-white rounded-lg text-sm font-medium`}>+ إضافة</button>
+            <div style={{ background: t.card, borderRadius: 16, padding: 16, border: `1px solid ${t.border}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ filter: 'grayscale(100%)', opacity: 0.7 }}>{workItems[selectedCategory]?.icon}</span>
+                  {workItems[selectedCategory]?.name}
+                </h3>
+                <button onClick={() => openAddItemModal(selectedCategory)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: t.accent, color: '#fff', fontSize: 13, cursor: 'pointer' }}>+ إضافة بند</button>
               </div>
-              <div className="space-y-2">
-                {workItems[selectedCategory]?.items.map(item => (
-                  <div key={item.id} className={`${cardAlt} p-3 rounded-xl`}>
-                    <div className="flex items-center justify-between">
-                      <div className={`font-medium ${txt}`}>{item.name}</div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-1 rounded ${item.type === 'floor' ? 'bg-emerald-500/20 text-emerald-400' : item.type === 'wall' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{item.type === 'wall' ? 'جدران' : item.type === 'ceiling' ? 'أسقف' : 'أرضية'}</span>
-                        <span className="text-yellow-400 text-sm font-semibold">{item.exec}</span>
-                        <span className="text-cyan-400 text-sm font-semibold">{item.cont}</span>
-                        <button onClick={() => openEditModal(selectedCategory, item)} className={`w-7 h-7 rounded-lg ${darkMode ? 'bg-gray-600' : 'bg-gray-300'} ${txt} text-xs`}>✎</button>
-                        <button onClick={() => deleteItem(selectedCategory, item.id)} className="w-7 h-7 rounded-lg bg-red-500/20 text-red-400 text-xs">×</button>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {workItems[selectedCategory]?.items.map(item => {
+                  const enabledPlaces = Object.entries(places).filter(([k, p]) => p.enabled && programming[k]?.[selectedCategory]?.includes(item.id)).map(([_, p]) => p.name);
+                  const typeColor = item.type === 'floor' ? t.success : item.type === 'wall' ? t.info : t.warning;
+                  return (
+                    <div key={item.id} style={{ padding: '12px 14px', background: t.cardAlt, borderRadius: 10, border: `1px solid ${t.border}` }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>{item.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 10, color: typeColor, background: `${typeColor}15`, padding: '3px 8px', borderRadius: 4 }}>{item.type === 'floor' ? 'أرضية' : item.type === 'wall' ? 'جدران' : 'أسقف'}</span>
+                        <span style={{ fontSize: 10, color: t.muted, background: t.card, padding: '3px 8px', borderRadius: 4 }}>{enabledPlaces.length > 0 ? enabledPlaces.join(' • ') : '—'}</span>
+                        <div style={{ flex: 1 }} />
+                        <span style={{ fontSize: 11, color: t.warning, fontWeight: 600 }}>{item.exec}</span>
+                        <span style={{ fontSize: 11, color: t.info, fontWeight: 600 }}>{item.cont}</span>
+                        <span style={{ fontSize: 11, color: t.success, fontWeight: 600 }}>{item.exec - item.cont}</span>
+                        <button onClick={() => openEditModal(selectedCategory, item)} style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: `${t.accent}15`, color: t.text, cursor: 'pointer', fontSize: 12 }}>✎</button>
+                        <button onClick={() => deleteItem(selectedCategory, item.id)} style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: `${t.danger}15`, color: t.danger, cursor: 'pointer', fontSize: 14 }}>×</button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
         )}
 
-        {/* ==================== تاب البرمجة ==================== */}
         {mainTab === 'programming' && (
-          <div className={`${card} rounded-xl p-4 border ${border}`}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className={`font-bold ${txt}`}>إدارة الأماكن والبرمجة</h2>
-              <button onClick={openPlaceModal} className={`px-4 py-2 bg-gradient-to-r ${accentGradient} text-white rounded-lg text-sm font-medium`}>+ إضافة مكان</button>
+          <div style={{ background: t.card, borderRadius: 16, border: `1px solid ${t.border}`, padding: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>إدارة الأماكن والبرمجة</h2>
+              <button onClick={openPlaceModal} style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: t.accent, color: '#fff', fontSize: 13, cursor: 'pointer' }}>+ إضافة مكان</button>
             </div>
-            <div className="grid md:grid-cols-3 gap-4">
-              {Object.entries(placeTypes).map(([pk, place]) => (
-                <div key={pk} className={`${cardAlt} rounded-xl overflow-hidden ${!place.enabled && 'opacity-50'}`}>
-                  <div className={`p-3 border-b ${border} flex items-center gap-2 bg-${place.color}-500/10`}>
-                    <span className="text-lg">{place.icon}</span>
-                    <span className={`font-semibold flex-1 ${txt}`}>{place.name}</span>
-                    <button onClick={() => togglePlaceEnabled(pk)} className={`w-10 h-5 rounded-full relative transition-all ${place.enabled ? `bg-${place.color}-500` : 'bg-gray-600'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all ${place.enabled ? 'right-0.5' : 'right-5'}`} />
-                    </button>
-                    <button onClick={() => openPlaceItemsModal(pk)} className={`w-7 h-7 rounded-lg ${darkMode ? 'bg-gray-600' : 'bg-gray-300'} ${txt} text-xs`}>✎</button>
-                    {!place.isCore && <button onClick={() => deletePlace(pk)} className="w-7 h-7 rounded-lg bg-red-500/20 text-red-400 text-xs">×</button>}
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Object.keys(places).length}, 1fr)`, gap: 16 }}>
+              {Object.entries(places).map(([pk, place]) => (
+                <div key={pk} style={{ background: t.cardAlt, borderRadius: 14, border: `1px solid ${t.border}`, overflow: 'hidden', opacity: place.enabled ? 1 : 0.5 }}>
+                  <div style={{ padding: '12px 16px', background: `${place.color}15`, borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 20, filter: 'grayscale(100%)', opacity: 0.7 }}>{place.icon}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, flex: 1 }}>{place.name}</span>
+                    <button onClick={() => togglePlaceEnabled(pk)} style={{ width: 40, height: 22, borderRadius: 11, border: 'none', background: place.enabled ? place.color : t.border, cursor: 'pointer', position: 'relative' }}><div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, right: place.enabled ? 2 : 20, transition: 'right 0.2s' }} /></button>
+                    <button onClick={() => openPlaceItemsModal(pk)} style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: `${t.accent}20`, color: t.text, cursor: 'pointer', fontSize: 12 }}>✎</button>
+                    {!place.isCore && <button onClick={() => deletePlace(pk)} style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: `${t.danger}15`, color: t.danger, cursor: 'pointer', fontSize: 14 }}>×</button>}
                   </div>
-                  <div className="p-3 max-h-80 overflow-y-auto space-y-2">
+                  <div style={{ padding: 12, maxHeight: 450, overflowY: 'auto' }}>
                     {Object.entries(workItems).map(([ck, cat]) => {
-                      const full = isCategoryFullyEnabled(pk, ck), partial = isCategoryPartiallyEnabled(pk, ck);
+                      const ec = (programming[pk]?.[ck] || []).length;
                       return (
-                        <div key={ck}>
-                          <button onClick={() => place.enabled && toggleAllCategory(pk, ck, !full)} className={`w-full p-2 rounded-lg flex items-center gap-2 text-sm ${full ? `bg-${place.color}-500/20 border border-${place.color}-500/40` : partial ? `bg-${place.color}-500/10 border border-${place.color}-500/20` : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}`}>
-                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center text-xs ${full ? `border-${place.color}-500 bg-${place.color}-500 text-white` : `border-gray-500`}`}>{full && '✓'}{partial && '−'}</div>
-                            <span>{cat.icon}</span>
-                            <span className={`flex-1 text-right ${txt}`}>{cat.name}</span>
-                            <span className={txtSm}>{(programming[pk]?.[ck] || []).length}/{cat.items.length}</span>
-                          </button>
-                          <div className="mr-4 mt-1 space-y-1">
-                            {cat.items.map(item => {
-                              const en = isItemEnabled(pk, ck, item.id);
-                              return (
-                                <button key={item.id} onClick={() => place.enabled && toggleProgramming(pk, ck, item.id)} className={`w-full p-1.5 rounded-lg flex items-center gap-2 text-xs ${en ? `bg-${place.color}-500/10` : ''}`}>
-                                  <div className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center ${en ? `border-${place.color}-500 bg-${place.color}-500 text-white` : 'border-gray-500'}`} style={{ fontSize: 8 }}>{en && '✓'}</div>
-                                  <span className={en ? txt : txtSm}>{item.name}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
+                        <div key={ck} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, marginBottom: 4, background: ec > 0 ? `${place.color}08` : 'transparent' }}>
+                          <span style={{ fontSize: 14, filter: 'grayscale(100%)', opacity: 0.7 }}>{cat.icon}</span>
+                          <span style={{ fontSize: 12, flex: 1 }}>{cat.name}</span>
+                          <span style={{ fontSize: 10, color: place.color, fontWeight: 600 }}>{ec}/{cat.items.length}</span>
                         </div>
                       );
                     })}
@@ -612,129 +533,147 @@ const QuantityCalculator = ({
             </div>
           </div>
         )}
-
-        {/* ==================== Modals ==================== */}
-        
-        {/* Profit Modal */}
-        {showProfitModal && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-            <div className={`${card} rounded-2xl p-6 max-w-md w-full border ${border}`}>
-              <div className="flex justify-between items-center mb-4"><h2 className={`text-lg font-bold ${txt}`}>📊 تقرير الأرباح</h2><button onClick={() => setShowProfitModal(false)} className={`text-2xl ${txtSm}`}>×</button></div>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-4 rounded-xl bg-yellow-500/10 text-center"><div className="text-2xl font-bold text-yellow-400">{fmt(totals.exec)}</div><div className={`text-sm ${txtSm}`}>تنفيذ</div></div>
-                <div className="p-4 rounded-xl bg-cyan-500/10 text-center"><div className="text-2xl font-bold text-cyan-400">{fmt(totals.cont)}</div><div className={`text-sm ${txtSm}`}>مقاول</div></div>
-                <div className="p-4 rounded-xl bg-emerald-500/10 text-center"><div className="text-2xl font-bold text-emerald-400">{fmt(totals.profit)}</div><div className={`text-sm ${txtSm}`}>ربح</div></div>
-                <div className={`p-4 rounded-xl bg-gradient-to-br ${accentGradient} text-center`}><div className="text-2xl font-bold text-white">{totals.cont > 0 ? ((totals.profit / totals.cont) * 100).toFixed(0) : 0}%</div><div className="text-sm text-white/70">نسبة</div></div>
-              </div>
-              <div className={`${cardAlt} p-4 rounded-xl mb-4`}>
-                <div className="flex justify-between mb-2"><span className={txtSm}>المساحة</span><span className={txt}>{totals.totalArea} م²</span></div>
-                <div className="flex justify-between mb-2"><span className={txtSm}>البنود</span><span className={txt}>{itemCount}</span></div>
-                <div className="flex justify-between"><span className={txtSm}>+ ضريبة 15%</span><span className={`font-bold text-lg ${txt}`}>{fmt(Math.round(totals.exec * 1.15))}</span></div>
-              </div>
-              <button onClick={() => setShowProfitModal(false)} className={`w-full py-3 bg-gradient-to-r ${accentGradient} text-white rounded-xl font-semibold`}>إغلاق</button>
-            </div>
-          </div>
-        )}
-
-        {/* Edit Item Modal */}
-        {showEditModal && editingItem && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-            <div className={`${card} rounded-2xl p-6 max-w-md w-full border ${border}`}>
-              <div className="flex justify-between items-center mb-4"><h2 className={`text-lg font-bold ${txt}`}>✏️ تحرير البند</h2><button onClick={() => { setShowEditModal(false); setEditingItem(null); }} className={`text-2xl ${txtSm}`}>×</button></div>
-              <div className="space-y-4">
-                <div><label className={`text-sm ${txtSm} block mb-1`}>الاسم</label><input type="text" value={editForm.name} onChange={(e) => setEditForm(p => ({ ...p, name: e.target.value }))} className={input} /></div>
-                <div className="grid grid-cols-3 gap-2">
-                  {['floor', 'wall', 'ceiling'].map(t => (<button key={t} onClick={() => setEditForm(p => ({ ...p, type: t }))} className={`p-2 rounded-lg border text-sm ${editForm.type === t ? 'border-indigo-500 bg-indigo-500/20 text-indigo-400' : `${darkMode ? 'border-gray-600' : 'border-gray-300'} ${txt}`}`}>{t === 'floor' ? 'أرضية' : t === 'wall' ? 'جدران' : 'أسقف'}</button>))}
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><label className={`text-sm ${txtSm} block mb-1`}>تنفيذ</label><input type="number" value={editForm.exec} onChange={(e) => setEditForm(p => ({ ...p, exec: parseFloat(e.target.value) || 0 }))} className={`${input} text-yellow-400 border-yellow-500/40 bg-yellow-500/10`} /></div>
-                  <div><label className={`text-sm ${txtSm} block mb-1`}>مقاول</label><input type="number" value={editForm.cont} onChange={(e) => setEditForm(p => ({ ...p, cont: parseFloat(e.target.value) || 0 }))} className={`${input} text-cyan-400 border-cyan-500/40 bg-cyan-500/10`} /></div>
-                </div>
-                <div className="p-3 rounded-xl bg-emerald-500/10 flex justify-between"><span className={txtSm}>الربح</span><span className="text-emerald-400 font-bold text-lg">{editForm.exec - editForm.cont}</span></div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button onClick={() => { deleteItem(editingItem.catKey, editingItem.itemId); setShowEditModal(false); }} className="px-4 py-2 bg-red-500/20 text-red-400 rounded-xl text-sm">حذف</button>
-                <div className="flex-1" />
-                <button onClick={() => { setShowEditModal(false); setEditingItem(null); }} className={`px-4 py-2 border rounded-xl text-sm ${border} ${txt}`}>إلغاء</button>
-                <button onClick={saveEdit} className={`px-4 py-2 bg-gradient-to-r ${accentGradient} text-white rounded-xl text-sm font-medium`}>حفظ</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Add Item Modal */}
-        {showAddItemModal && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-            <div className={`${card} rounded-2xl p-6 max-w-md w-full border ${border}`}>
-              <div className="flex justify-between items-center mb-4"><h2 className={`text-lg font-bold ${txt}`}>+ إضافة بند</h2><button onClick={() => setShowAddItemModal(false)} className={`text-2xl ${txtSm}`}>×</button></div>
-              <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-2">
-                  {Object.entries(workItems).map(([k, c]) => (<button key={k} onClick={() => setAddItemForm(p => ({ ...p, category: k }))} className={`p-2 rounded-lg text-center text-xs ${addItemForm.category === k ? `bg-gradient-to-r ${accentGradient} text-white` : cardAlt}`}><div className="text-lg">{c.icon}</div><div className={addItemForm.category === k ? 'text-white' : txtSm}>{c.name}</div></button>))}
-                </div>
-                <div><label className={`text-sm ${txtSm} block mb-1`}>الاسم</label><input type="text" value={addItemForm.name} onChange={(e) => setAddItemForm(p => ({ ...p, name: e.target.value }))} className={input} placeholder="اسم البند..." /></div>
-                <div className="grid grid-cols-3 gap-2">
-                  {['floor', 'wall', 'ceiling'].map(t => (<button key={t} onClick={() => setAddItemForm(p => ({ ...p, type: t }))} className={`p-2 rounded-lg border text-sm ${addItemForm.type === t ? 'border-indigo-500 bg-indigo-500/20 text-indigo-400' : `${darkMode ? 'border-gray-600' : 'border-gray-300'} ${txt}`}`}>{t === 'floor' ? 'أرضية' : t === 'wall' ? 'جدران' : 'أسقف'}</button>))}
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><label className={`text-sm ${txtSm} block mb-1`}>تنفيذ</label><input type="number" value={addItemForm.exec} onChange={(e) => setAddItemForm(p => ({ ...p, exec: parseFloat(e.target.value) || 0 }))} className={`${input} text-yellow-400 border-yellow-500/40 bg-yellow-500/10`} /></div>
-                  <div><label className={`text-sm ${txtSm} block mb-1`}>مقاول</label><input type="number" value={addItemForm.cont} onChange={(e) => setAddItemForm(p => ({ ...p, cont: parseFloat(e.target.value) || 0 }))} className={`${input} text-cyan-400 border-cyan-500/40 bg-cyan-500/10`} /></div>
-                </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button onClick={() => setShowAddItemModal(false)} className={`flex-1 py-2 border rounded-xl text-sm ${border} ${txt}`}>إلغاء</button>
-                <button onClick={saveNewItem} className={`flex-1 py-2 bg-gradient-to-r ${accentGradient} text-white rounded-xl text-sm font-medium`}>إضافة</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Add Place Modal */}
-        {showPlaceModal && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-            <div className={`${card} rounded-2xl p-6 max-w-sm w-full border ${border}`}>
-              <div className="flex justify-between items-center mb-4"><h2 className={`text-lg font-bold ${txt}`}>+ إضافة مكان</h2><button onClick={() => setShowPlaceModal(false)} className={`text-2xl ${txtSm}`}>×</button></div>
-              <div className="space-y-4">
-                <div><label className={`text-sm ${txtSm} block mb-1`}>الاسم</label><input type="text" value={placeForm.name} onChange={(e) => setPlaceForm(p => ({ ...p, name: e.target.value }))} className={input} placeholder="اسم المكان..." /></div>
-                <div><label className={`text-sm ${txtSm} block mb-1`}>الأيقونة</label><div className="flex gap-2 flex-wrap">{['🏠', '🚿', '🌳', '🏢', '🏬', '📍', '⛺', '🏪'].map(i => (<button key={i} onClick={() => setPlaceForm(p => ({ ...p, icon: i }))} className={`w-10 h-10 rounded-lg text-lg ${placeForm.icon === i ? 'bg-indigo-500/30 border-2 border-indigo-500' : cardAlt}`}>{i}</button>))}</div></div>
-                <div><label className={`text-sm ${txtSm} block mb-1`}>اللون</label><div className="flex gap-2">{['indigo', 'cyan', 'emerald', 'yellow', 'red', 'purple'].map(c => (<button key={c} onClick={() => setPlaceForm(p => ({ ...p, color: c }))} className={`w-8 h-8 rounded-lg bg-${c}-500 ${placeForm.color === c ? 'ring-2 ring-white' : ''}`} />))}</div></div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button onClick={() => setShowPlaceModal(false)} className={`flex-1 py-2 border rounded-xl text-sm ${border} ${txt}`}>إلغاء</button>
-                <button onClick={savePlace} className={`flex-1 py-2 bg-gradient-to-r ${accentGradient} text-white rounded-xl text-sm font-medium`}>إضافة</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Edit Added Item Modal */}
-        {showAddedItemModal && editingAddedItem && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-            <div className={`${card} rounded-2xl p-6 max-w-md w-full border ${border}`}>
-              <div className="flex justify-between items-center mb-4"><h2 className={`text-lg font-bold ${txt}`}>✏️ تحرير البند</h2><button onClick={() => { setShowAddedItemModal(false); setEditingAddedItem(null); }} className={`text-2xl ${txtSm}`}>×</button></div>
-              <div className={`font-semibold mb-2 ${txt}`}>{editingAddedItem.item.cat} - {editingAddedItem.item.name}</div>
-              <div className={`text-sm mb-4 ${txtSm}`}>تنفيذ: {editingAddedItem.item.exec} | مقاول: {editingAddedItem.item.cont}</div>
-              <div className="space-y-2 mb-4">
-                {editingAddedItem.item.places.map((p, i) => (
-                  <div key={i} className={`${cardAlt} p-3 rounded-xl flex items-center gap-3`}>
-                    <span className={`flex-1 ${txt}`}>{p.name}</span>
-                    {p.formula && <span className={`text-xs ${txtSm}`}>{p.formula}</span>}
-                    <input type="number" value={p.area} onChange={(e) => updateAddedItemPlace(i, e.target.value)} className={`w-20 p-2 rounded-lg text-center border border-indigo-500/40 bg-indigo-500/10 text-indigo-400 font-semibold`} />
-                    <span className={txtSm}>م²</span>
-                    <button onClick={() => { const u = { ...editingAddedItem }; u.item.places = u.item.places.filter((_, x) => x !== i); if (u.item.places.length === 0) { removeItem(editingAddedItem.key); setShowAddedItemModal(false); setEditingAddedItem(null); } else setEditingAddedItem(u); }} className="text-red-400 text-xs">✕</button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => { removeItem(editingAddedItem.key); setShowAddedItemModal(false); setEditingAddedItem(null); }} className="px-4 py-2 bg-red-500/20 text-red-400 rounded-xl text-sm">حذف الكل</button>
-                <div className="flex-1" />
-                <button onClick={() => { setShowAddedItemModal(false); setEditingAddedItem(null); }} className={`px-4 py-2 border rounded-xl text-sm ${border} ${txt}`}>إلغاء</button>
-                <button onClick={saveAddedItemEdit} className={`px-4 py-2 bg-gradient-to-r ${accentGradient} text-white rounded-xl text-sm font-medium`}>حفظ</button>
-              </div>
-            </div>
-          </div>
-        )}
-
       </div>
+
+      {showEditModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: t.bg, borderRadius: 20, padding: 24, maxWidth: 500, width: '100%', border: `1px solid ${t.border}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>✏️ تحرير البند</h2>
+              <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', fontSize: 24, color: t.muted, cursor: 'pointer' }}>×</button>
+            </div>
+            <div style={{ display: 'grid', gap: 16 }}>
+              <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>اسم البند</label><input type="text" value={editForm.name} onChange={(e) => setEditForm(p => ({ ...p, name: e.target.value }))} style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: `1px solid ${t.border}`, background: t.card, color: t.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>تخصص البند</label><div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>{[{ k: 'floor', l: 'أرضية', c: t.success }, { k: 'wall', l: 'جدران', c: t.info }, { k: 'ceiling', l: 'أسقف', c: t.warning }].map(ty => (<button key={ty.k} onClick={() => setEditForm(p => ({ ...p, type: ty.k }))} style={{ padding: 12, borderRadius: 10, border: editForm.type === ty.k ? `2px solid ${ty.c}` : `1px solid ${t.border}`, background: editForm.type === ty.k ? `${ty.c}15` : t.card, color: editForm.type === ty.k ? ty.c : t.text, fontSize: 13, cursor: 'pointer' }}>{ty.l}</button>))}</div></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>سعر التنفيذ</label><input type="number" value={editForm.exec} onChange={(e) => setEditForm(p => ({ ...p, exec: parseFloat(e.target.value) || 0 }))} style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: `1px solid ${t.warning}40`, background: `${t.warning}10`, color: t.warning, fontSize: 16, fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} /></div>
+                <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>سعر المقاول</label><input type="number" value={editForm.cont} onChange={(e) => setEditForm(p => ({ ...p, cont: parseFloat(e.target.value) || 0 }))} style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: `1px solid ${t.info}40`, background: `${t.info}10`, color: t.info, fontSize: 16, fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} /></div>
+              </div>
+              <div style={{ padding: 16, borderRadius: 12, background: `${t.success}10`, border: `1px solid ${t.success}30`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span style={{ color: t.muted, fontSize: 13 }}>الربح المتوقع</span><span style={{ color: t.success, fontSize: 20, fontWeight: 700 }}>{editForm.exec - editForm.cont} ر.س</span></div>
+            </div>
+            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+              <button onClick={() => { if (editingItem) { deleteItem(editingItem.catKey, editingItem.itemId); setShowEditModal(false); } }} style={{ padding: '14px 20px', borderRadius: 12, border: 'none', background: `${t.danger}15`, color: t.danger, fontSize: 14, cursor: 'pointer' }}>🗑️ حذف</button>
+              <div style={{ flex: 1 }} />
+              <button onClick={() => setShowEditModal(false)} style={{ padding: '14px 20px', borderRadius: 12, border: `1px solid ${t.border}`, background: 'transparent', color: t.text, fontSize: 14, cursor: 'pointer' }}>إلغاء</button>
+              <button onClick={saveEdit} style={{ padding: '14px 20px', borderRadius: 12, border: 'none', background: t.accent, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>💾 حفظ</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddItemModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: t.bg, borderRadius: 20, padding: 24, maxWidth: 500, width: '100%', border: `1px solid ${t.border}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>+ إضافة بند جديد</h2>
+              <button onClick={() => setShowAddItemModal(false)} style={{ background: 'none', border: 'none', fontSize: 24, color: t.muted, cursor: 'pointer' }}>×</button>
+            </div>
+            <div style={{ display: 'grid', gap: 16 }}>
+              <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>التصنيف</label><div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>{Object.entries(workItems).map(([ck, cat]) => (<button key={ck} onClick={() => setAddItemForm(p => ({ ...p, category: ck }))} style={{ padding: 8, borderRadius: 8, border: addItemForm.category === ck ? `2px solid ${t.accent}` : `1px solid ${t.border}`, background: addItemForm.category === ck ? `${t.accent}15` : t.card, color: addItemForm.category === ck ? t.accent : t.text, fontSize: 10, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}><span style={{ fontSize: 14 }}>{cat.icon}</span><span>{cat.name}</span></button>))}</div></div>
+              <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>اسم البند</label><input type="text" value={addItemForm.name} onChange={(e) => setAddItemForm(p => ({ ...p, name: e.target.value }))} placeholder="مثال: تركيب سيراميك..." style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: `1px solid ${t.border}`, background: t.card, color: t.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>تخصص البند</label><div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>{[{ k: 'floor', l: 'أرضية', c: t.success }, { k: 'wall', l: 'جدران', c: t.info }, { k: 'ceiling', l: 'أسقف', c: t.warning }].map(ty => (<button key={ty.k} onClick={() => setAddItemForm(p => ({ ...p, type: ty.k }))} style={{ padding: 12, borderRadius: 10, border: addItemForm.type === ty.k ? `2px solid ${ty.c}` : `1px solid ${t.border}`, background: addItemForm.type === ty.k ? `${ty.c}15` : t.card, color: addItemForm.type === ty.k ? ty.c : t.text, fontSize: 13, cursor: 'pointer' }}>{ty.l}</button>))}</div></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>سعر التنفيذ</label><input type="number" value={addItemForm.exec} onChange={(e) => setAddItemForm(p => ({ ...p, exec: parseFloat(e.target.value) || 0 }))} style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: `1px solid ${t.warning}40`, background: `${t.warning}10`, color: t.warning, fontSize: 16, fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} /></div>
+                <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>سعر المقاول</label><input type="number" value={addItemForm.cont} onChange={(e) => setAddItemForm(p => ({ ...p, cont: parseFloat(e.target.value) || 0 }))} style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: `1px solid ${t.info}40`, background: `${t.info}10`, color: t.info, fontSize: 16, fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} /></div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+              <button onClick={() => setShowAddItemModal(false)} style={{ flex: 1, padding: 14, borderRadius: 12, border: `1px solid ${t.border}`, background: 'transparent', color: t.text, fontSize: 14, cursor: 'pointer' }}>إلغاء</button>
+              <button onClick={saveNewItem} style={{ flex: 1, padding: 14, borderRadius: 12, border: 'none', background: t.accent, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>+ إضافة</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPlaceModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: t.bg, borderRadius: 20, padding: 24, maxWidth: 450, width: '100%', border: `1px solid ${t.border}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>+ إضافة مكان جديد</h2>
+              <button onClick={() => setShowPlaceModal(false)} style={{ background: 'none', border: 'none', fontSize: 24, color: t.muted, cursor: 'pointer' }}>×</button>
+            </div>
+            <div style={{ display: 'grid', gap: 16 }}>
+              <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>اسم المكان</label><input type="text" value={placeForm.name} onChange={(e) => setPlaceForm(p => ({ ...p, name: e.target.value }))} placeholder="مثال: ملحق، استراحة..." style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: `1px solid ${t.border}`, background: t.card, color: t.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>الأيقونة</label><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{['🏠', '🚿', '🌳', '🏢', '🏬', '🏭', '⛺', '📍', '🏪', '🏨'].map(icon => (<button key={icon} onClick={() => setPlaceForm(p => ({ ...p, icon }))} style={{ width: 40, height: 40, borderRadius: 8, border: placeForm.icon === icon ? `2px solid ${placeForm.color}` : `1px solid ${t.border}`, background: placeForm.icon === icon ? `${placeForm.color}20` : t.card, fontSize: 18, cursor: 'pointer' }}>{icon}</button>))}</div></div>
+              <div><label style={{ fontSize: 13, color: t.muted, marginBottom: 8, display: 'block' }}>اللون</label><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{['#818cf8', '#22d3ee', '#4ade80', '#fbbf24', '#f87171', '#a78bfa'].map(color => (<button key={color} onClick={() => setPlaceForm(p => ({ ...p, color }))} style={{ width: 36, height: 36, borderRadius: 8, border: placeForm.color === color ? `3px solid ${t.text}` : `1px solid ${t.border}`, background: color, cursor: 'pointer' }} />))}</div></div>
+              <div style={{ padding: 14, borderRadius: 10, background: `${placeForm.color}10`, border: `1px solid ${placeForm.color}30`, display: 'flex', alignItems: 'center', gap: 10 }}><span style={{ fontSize: 22 }}>{placeForm.icon}</span><span style={{ fontSize: 15, fontWeight: 600, color: placeForm.color }}>{placeForm.name || 'اسم المكان'}</span></div>
+            </div>
+            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+              <button onClick={() => setShowPlaceModal(false)} style={{ flex: 1, padding: 14, borderRadius: 12, border: `1px solid ${t.border}`, background: 'transparent', color: t.text, fontSize: 14, cursor: 'pointer' }}>إلغاء</button>
+              <button onClick={savePlace} style={{ flex: 1, padding: 14, borderRadius: 12, border: 'none', background: placeForm.color, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>+ إضافة</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPlaceItemsModal && editingPlaceItems && places[editingPlaceItems] && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: t.bg, borderRadius: 20, padding: 24, maxWidth: 750, width: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: `1px solid ${t.border}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 28, filter: 'grayscale(100%)', opacity: 0.7 }}>{places[editingPlaceItems].icon}</span>
+                <div><h2 style={{ fontSize: 18, fontWeight: 600, margin: 0, color: places[editingPlaceItems].color }}>تحرير {places[editingPlaceItems].name}</h2><p style={{ fontSize: 12, color: t.muted, margin: '4px 0 0' }}>إعدادات المكان وإدارة البنود</p></div>
+              </div>
+              <button onClick={() => setShowPlaceItemsModal(false)} style={{ background: 'none', border: 'none', fontSize: 24, color: t.muted, cursor: 'pointer' }}>×</button>
+            </div>
+            <div style={{ background: t.cardAlt, borderRadius: 12, padding: 16, marginBottom: 16, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>⚙️ إعدادات المكان</span>
+                <div style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 12, color: places[editingPlaceItems].enabled ? places[editingPlaceItems].color : t.muted }}>{places[editingPlaceItems].enabled ? 'مفعّل' : 'معطّل'}</span>
+                  <button onClick={() => togglePlaceEnabled(editingPlaceItems)} style={{ width: 48, height: 26, borderRadius: 13, border: 'none', background: places[editingPlaceItems].enabled ? places[editingPlaceItems].color : t.border, cursor: 'pointer', position: 'relative' }}><div style={{ width: 22, height: 22, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, right: places[editingPlaceItems].enabled ? 2 : 24, transition: 'right 0.2s' }} /></button>
+                </div>
+                {!places[editingPlaceItems].isCore && <button onClick={() => { deletePlace(editingPlaceItems); setShowPlaceItemsModal(false); }} style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: `${t.danger}15`, color: t.danger, fontSize: 12, cursor: 'pointer' }}>🗑️ حذف المكان</button>}
+              </div>
+              <div style={{ marginBottom: 14 }}><label style={{ fontSize: 11, color: t.muted, marginBottom: 6, display: 'block' }}>اسم المكان</label><input type="text" value={places[editingPlaceItems].name} onChange={(e) => { const np = JSON.parse(JSON.stringify(places)); np[editingPlaceItems].name = e.target.value; setPlaces(np); savePlaceTypes(np); }} style={{ width: '100%', padding: '14px 16px', borderRadius: 10, border: `2px solid ${places[editingPlaceItems].color}40`, background: t.card, color: t.text, fontSize: 16, fontWeight: 600, outline: 'none', boxSizing: 'border-box' }} /></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div><label style={{ fontSize: 11, color: t.muted, marginBottom: 6, display: 'block' }}>الأيقونة</label><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{['🏠', '🚿', '🌳', '🏢', '🏬', '🏭', '⛺', '📍'].map(icon => (<button key={icon} onClick={() => { const np = JSON.parse(JSON.stringify(places)); np[editingPlaceItems].icon = icon; setPlaces(np); savePlaceTypes(np); }} style={{ width: 40, height: 40, borderRadius: 8, border: places[editingPlaceItems].icon === icon ? `2px solid ${places[editingPlaceItems].color}` : `1px solid ${t.border}`, background: places[editingPlaceItems].icon === icon ? `${places[editingPlaceItems].color}20` : t.card, fontSize: 18, cursor: 'pointer' }}>{icon}</button>))}</div></div>
+                <div><label style={{ fontSize: 11, color: t.muted, marginBottom: 6, display: 'block' }}>اللون</label><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{['#818cf8', '#22d3ee', '#4ade80', '#fbbf24', '#f87171', '#a78bfa'].map(color => (<button key={color} onClick={() => { const np = JSON.parse(JSON.stringify(places)); np[editingPlaceItems].color = color; setPlaces(np); savePlaceTypes(np); }} style={{ width: 32, height: 32, borderRadius: 8, border: places[editingPlaceItems].color === color ? `3px solid ${t.text}` : `1px solid ${t.border}`, background: color, cursor: 'pointer' }} />))}</div></div>
+              </div>
+            </div>
+            <div style={{ marginBottom: 12, flexShrink: 0 }}><button onClick={() => { setShowPlaceItemsModal(false); openAddItemModal(); }} style={{ width: '100%', padding: 12, borderRadius: 10, border: `2px dashed ${places[editingPlaceItems].color}40`, background: `${places[editingPlaceItems].color}05`, color: places[editingPlaceItems].color, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>+ إضافة بند جديد</button></div>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {Object.entries(workItems).map(([ck, cat]) => {
+                const ei = programming[editingPlaceItems]?.[ck] || [];
+                if (cat.items.length === 0) return null;
+                return (
+                  <div key={ck} style={{ marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, background: t.cardAlt, marginBottom: 6 }}>
+                      <span style={{ fontSize: 14, filter: 'grayscale(100%)', opacity: 0.7 }}>{cat.icon}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{cat.name}</span>
+                      <span style={{ fontSize: 10, color: places[editingPlaceItems].color, background: `${places[editingPlaceItems].color}15`, padding: '3px 8px', borderRadius: 4, fontWeight: 600 }}>{ei.length}/{cat.items.length}</span>
+                      <button onClick={() => toggleAllCategory(editingPlaceItems, ck, ei.length !== cat.items.length)} style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: ei.length === cat.items.length ? `${t.danger}15` : `${places[editingPlaceItems].color}15`, color: ei.length === cat.items.length ? t.danger : places[editingPlaceItems].color, fontSize: 10, cursor: 'pointer' }}>{ei.length === cat.items.length ? 'إلغاء الكل' : 'تفعيل الكل'}</button>
+                    </div>
+                    <div style={{ display: 'grid', gap: 4 }}>
+                      {cat.items.map(item => {
+                        const isEn = ei.includes(item.id);
+                        const tc = item.type === 'floor' ? t.success : item.type === 'wall' ? t.info : t.warning;
+                        return (
+                          <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: isEn ? `${places[editingPlaceItems].color}08` : t.card, border: `1px solid ${isEn ? places[editingPlaceItems].color + '30' : t.border}` }}>
+                            <button onClick={() => toggleProgramming(editingPlaceItems, ck, item.id)} style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${isEn ? places[editingPlaceItems].color : t.border}`, background: isEn ? places[editingPlaceItems].color : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10 }}>{isEn && '✓'}</button>
+                            <span style={{ fontSize: 12, fontWeight: 500, color: isEn ? t.text : t.muted, flex: 1 }}>{item.name}</span>
+                            <span style={{ fontSize: 9, color: tc, background: `${tc}15`, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>{item.type === 'floor' ? 'أرضية' : item.type === 'wall' ? 'جدران' : 'أسقف'}</span>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              <span style={{ fontSize: 10, color: t.warning, background: `${t.warning}10`, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>{item.exec}</span>
+                              <span style={{ fontSize: 10, color: t.info, background: `${t.info}10`, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>{item.cont}</span>
+                              <span style={{ fontSize: 10, color: t.success, background: `${t.success}10`, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>{item.exec - item.cont}</span>
+                            </div>
+                            <button onClick={() => { setShowPlaceItemsModal(false); openEditModal(ck, item); }} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: `${t.accent}20`, color: t.text, cursor: 'pointer', fontSize: 13 }}>✎</button>
+                            <button onClick={() => deleteItem(ck, item.id)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: `${t.danger}20`, color: t.danger, cursor: 'pointer', fontSize: 16 }}>×</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${t.border}`, flexShrink: 0 }}>
+              <button onClick={() => setShowPlaceItemsModal(false)} style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: places[editingPlaceItems].color, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>✓ حفظ وإغلاق</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
