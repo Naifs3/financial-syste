@@ -1,12 +1,33 @@
+// src/components/Accounts.jsx
 import React, { useState } from 'react';
-import { Shield, Plus, Search, Edit, Trash2, Eye, EyeOff, Copy, ExternalLink, Tag } from 'lucide-react';
+import { 
+  Shield, 
+  Plus, 
+  Search, 
+  Edit, 
+  Trash2, 
+  Eye, 
+  EyeOff, 
+  Copy, 
+  ExternalLink, 
+  Tag,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  User,
+  Key,
+  Link
+} from 'lucide-react';
 import { decrypt, calcDaysRemaining, getStatusColorByDays, copyToClipboard } from '../utils/helpers';
-import { STATUS_COLORS } from '../config/constants';
 
-const Accounts = ({ accounts, categories, onAdd, onEdit, onDelete, darkMode, txt, txtSm, card, accentGradient }) => {
+const Accounts = ({ accounts, categories, onAdd, onEdit, onDelete, darkMode, theme }) => {
+  const t = theme;
+  const colorKeys = t.colorKeys || Object.keys(t.colors);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [showPasswords, setShowPasswords] = useState({});
+  const [copiedField, setCopiedField] = useState(null);
 
   const filteredAccounts = accounts.filter(account => {
     const matchSearch = account.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -27,133 +48,531 @@ const Accounts = ({ accounts, categories, onAdd, onEdit, onDelete, darkMode, txt
     return days !== null && days >= 0 && days <= 30;
   }).length;
 
-  const handleCopy = async (text) => {
+  // البطاقات الإحصائية
+  const statCards = [
+    { label: 'إجمالي الحسابات', value: totalAccounts, colorKey: colorKeys[0], icon: Shield },
+    { label: 'منتهية الصلاحية', value: expiredAccounts, colorKey: colorKeys[1], icon: AlertTriangle },
+    { label: 'تنتهي قريباً', value: expiringSoon, colorKey: colorKeys[2], icon: Clock },
+  ];
+
+  const handleCopy = async (text, fieldId) => {
     await copyToClipboard(text);
+    setCopiedField(fieldId);
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
   const togglePasswordVisibility = (accountId) => {
     setShowPasswords(prev => ({ ...prev, [accountId]: !prev[accountId] }));
   };
 
+  // دالة للحصول على لون الحالة
+  const getExpiryStyle = (days) => {
+    if (days === null) return null;
+    if (days < 0) return { bg: t.status.danger.bg, text: t.status.danger.text, border: t.status.danger.border, label: 'منتهي' };
+    if (days <= 7) return { bg: t.status.danger.bg, text: t.status.danger.text, border: t.status.danger.border, label: `${days} يوم` };
+    if (days <= 30) return { bg: t.status.warning.bg, text: t.status.warning.text, border: t.status.warning.border, label: `${days} يوم` };
+    return { bg: t.status.success.bg, text: t.status.success.text, border: t.status.success.border, label: `${days} يوم` };
+  };
+
   return (
-    <div className="p-4 space-y-6 pb-20 md:pb-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div style={{ padding: 16, paddingBottom: 80 }}>
+      
+      {/* ═══════════════ العنوان والأزرار ═══════════════ */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 16,
+        marginBottom: 24,
+      }}>
         <div>
-          <h2 className={`text-2xl font-bold ${txt} flex items-center gap-2`}>
-            <Shield className="w-6 h-6" />
+          <h2 style={{ 
+            fontSize: 24, 
+            fontWeight: 700, 
+            color: t.text.primary,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            margin: 0,
+          }}>
+            <div style={{
+              width: 40,
+              height: 40,
+              borderRadius: t.radius.lg,
+              background: t.colors[colorKeys[3]]?.gradient || t.button.gradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: darkMode ? t.colors[colorKeys[3]]?.glow : 'none',
+            }}>
+              <Shield size={22} color="#fff" />
+            </div>
             الحسابات
           </h2>
-          <p className={`text-sm ${txtSm} mt-1`}>إدارة الحسابات المشفرة</p>
+          <p style={{ fontSize: 14, color: t.text.muted, marginTop: 6, marginRight: 50 }}>
+            إدارة الحسابات المشفرة
+          </p>
         </div>
-        <button className={`px-4 py-2 rounded-xl bg-gradient-to-r ${accentGradient} text-white hover:opacity-90 flex items-center gap-2`}>
-          <Plus className="w-4 h-4" />
+        
+        <button
+          onClick={() => {}}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 20px',
+            borderRadius: t.radius.lg,
+            border: 'none',
+            background: t.button.gradient,
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: 14,
+            fontWeight: 600,
+            fontFamily: 'inherit',
+            boxShadow: t.button.glow,
+            transition: 'all 0.2s',
+          }}
+        >
+          <Plus size={18} />
           إضافة حساب
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className={`${card} p-4 rounded-xl border border-blue-500/30 bg-blue-500/10`}>
-          <p className={`text-sm ${txtSm} mb-1`}>إجمالي الحسابات</p>
-          <p className="text-2xl font-bold text-blue-400">{totalAccounts}</p>
-        </div>
-        <div className={`${card} p-4 rounded-xl border border-red-500/30 bg-red-500/10`}>
-          <p className={`text-sm ${txtSm} mb-1`}>منتهية الصلاحية</p>
-          <p className="text-2xl font-bold text-red-400">{expiredAccounts}</p>
-        </div>
-        <div className={`${card} p-4 rounded-xl border border-orange-500/30 bg-orange-500/10`}>
-          <p className={`text-sm ${txtSm} mb-1`}>تنتهي قريباً</p>
-          <p className="text-2xl font-bold text-orange-400">{expiringSoon}</p>
-        </div>
+      {/* ═══════════════ البطاقات الإحصائية ═══════════════ */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: 16,
+        marginBottom: 24,
+      }}>
+        {statCards.map((card, index) => {
+          const color = t.colors[card.colorKey] || t.colors[colorKeys[0]];
+          const Icon = card.icon;
+          return (
+            <div
+              key={index}
+              style={{
+                background: t.bg.secondary,
+                borderRadius: t.radius.xl,
+                border: `1px solid ${color.main}30`,
+                padding: 20,
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: -20,
+                left: -20,
+                width: 80,
+                height: 80,
+                background: `radial-gradient(circle, ${color.main}20 0%, transparent 70%)`,
+                borderRadius: '50%',
+              }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <p style={{ fontSize: 13, color: t.text.muted, margin: 0 }}>{card.label}</p>
+                <Icon size={18} color={color.main} />
+              </div>
+              <p style={{ 
+                fontSize: 28, 
+                fontWeight: 700, 
+                color: color.main,
+                margin: 0,
+                textShadow: darkMode ? `0 0 20px ${color.main}40` : 'none',
+              }}>
+                {card.value}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex-1 relative">
-          <Search className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 ${txtSm}`} />
+      {/* ═══════════════ البحث والفلترة ═══════════════ */}
+      <div style={{ 
+        display: 'flex', 
+        flexWrap: 'wrap',
+        gap: 12,
+        marginBottom: 24,
+      }}>
+        <div style={{ flex: '1 1 250px', position: 'relative' }}>
+          <Search 
+            size={18} 
+            style={{ 
+              position: 'absolute', 
+              right: 14, 
+              top: '50%', 
+              transform: 'translateY(-50%)',
+              color: t.text.muted,
+            }} 
+          />
           <input
             type="text"
             placeholder="بحث في الحسابات..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pr-10 pl-4 py-2 rounded-xl border ${darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:ring-2 focus:ring-blue-500`}
+            style={{
+              width: '100%',
+              padding: '12px 44px 12px 16px',
+              borderRadius: t.radius.lg,
+              border: `1px solid ${t.border.primary}`,
+              background: t.bg.tertiary,
+              color: t.text.primary,
+              fontSize: 14,
+              fontFamily: 'inherit',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
           />
         </div>
-        <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className={`px-4 py-2 rounded-xl border ${darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
+        
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          style={{
+            padding: '12px 16px',
+            borderRadius: t.radius.lg,
+            border: `1px solid ${t.border.primary}`,
+            background: t.bg.tertiary,
+            color: t.text.primary,
+            fontSize: 14,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            minWidth: 130,
+          }}
+        >
           <option value="all">كل الفئات</option>
-          {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
         </select>
       </div>
 
+      {/* ═══════════════ قائمة الحسابات ═══════════════ */}
       {filteredAccounts.length === 0 ? (
-        <div className={`${card} p-12 rounded-2xl text-center border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <Shield className={`w-16 h-16 mx-auto mb-4 ${txtSm}`} />
-          <p className={`${txt} font-bold mb-2`}>لا توجد حسابات</p>
-          <p className={`${txtSm} text-sm`}>ابدأ بإضافة أول حساب</p>
+        <div style={{
+          background: t.bg.secondary,
+          borderRadius: t.radius['2xl'],
+          border: `1px solid ${t.border.primary}`,
+          padding: 60,
+          textAlign: 'center',
+        }}>
+          <div style={{
+            width: 80,
+            height: 80,
+            borderRadius: t.radius.xl,
+            background: `${t.button.primary}15`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+          }}>
+            <Shield size={40} color={t.text.muted} />
+          </div>
+          <p style={{ fontSize: 18, fontWeight: 700, color: t.text.primary, marginBottom: 8 }}>
+            لا توجد حسابات
+          </p>
+          <p style={{ fontSize: 14, color: t.text.muted }}>
+            ابدأ بإضافة أول حساب
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+          gap: 16,
+        }}>
           {filteredAccounts.map((account) => {
             const category = categories.find(c => c.id === account.categoryId);
             const days = account.expiryDate ? calcDaysRemaining(account.expiryDate) : null;
-            const statusColor = days !== null ? getStatusColorByDays(days) : 'gray';
-            const colors = STATUS_COLORS[statusColor];
+            const expiryStyle = getExpiryStyle(days);
             const showPassword = showPasswords[account.id];
+            const categoryColor = t.colors[colorKeys[2]] || t.colors[colorKeys[0]];
             
             return (
-              <div key={account.id} className={`${card} p-5 rounded-2xl border ${darkMode ? 'border-gray-700' : 'border-gray-200'} hover:shadow-lg transition-all`}>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className={`font-bold ${txt} text-lg mb-1`}>{account.name}</h3>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {category && <span className="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400">{category.name}</span>}
-                      {account.refNumber && <span className={`text-xs ${txtSm}`}>#{account.refNumber}</span>}
-                      {days !== null && <span className={`text-xs px-2 py-1 rounded ${colors.badge}`}>{days < 0 ? 'منتهي' : `${days} يوم`}</span>}
+              <div
+                key={account.id}
+                style={{
+                  background: t.bg.secondary,
+                  borderRadius: t.radius.xl,
+                  border: `1px solid ${t.border.primary}`,
+                  padding: 20,
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                {/* الهيدر */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'flex-start', 
+                  justifyContent: 'space-between',
+                  marginBottom: 16,
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ 
+                      fontSize: 18, 
+                      fontWeight: 700, 
+                      color: t.text.primary,
+                      margin: '0 0 10px 0',
+                    }}>
+                      {account.name}
+                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {/* شارة الفئة */}
+                      {category && (
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: '4px 10px',
+                          borderRadius: t.radius.md,
+                          background: `${categoryColor.main}20`,
+                          color: categoryColor.main,
+                          border: `1px solid ${categoryColor.main}30`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}>
+                          <Tag size={10} />
+                          {category.name}
+                        </span>
+                      )}
+                      {/* الرقم المرجعي */}
+                      {account.refNumber && (
+                        <span style={{ fontSize: 11, color: t.text.muted }}>
+                          #{account.refNumber}
+                        </span>
+                      )}
+                      {/* شارة الصلاحية */}
+                      {expiryStyle && (
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: '4px 10px',
+                          borderRadius: t.radius.md,
+                          background: expiryStyle.bg,
+                          color: expiryStyle.text,
+                          border: `1px solid ${expiryStyle.border}`,
+                        }}>
+                          {expiryStyle.label}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => onEdit(account)} className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} ${txt}`}>
-                      <Edit className="w-4 h-4" />
+                  
+                  {/* أزرار التحكم */}
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={() => onEdit(account)}
+                      title="تعديل"
+                      style={{
+                        padding: 8,
+                        borderRadius: t.radius.md,
+                        border: 'none',
+                        background: t.bg.tertiary,
+                        color: t.text.primary,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <Edit size={16} />
                     </button>
-                    <button onClick={() => onDelete(account.id)} className="p-2 rounded-lg bg-red-500/20 text-red-400">
-                      <Trash2 className="w-4 h-4" />
+                    <button
+                      onClick={() => onDelete(account.id)}
+                      title="حذف"
+                      style={{
+                        padding: 8,
+                        borderRadius: t.radius.md,
+                        border: 'none',
+                        background: t.status.danger.bg,
+                        color: t.status.danger.text,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div className={`${darkMode ? 'bg-gray-700/50' : 'bg-gray-100'} p-3 rounded-xl`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-xs ${txtSm}`}>اسم المستخدم</span>
-                      <button onClick={() => handleCopy(decrypt(account.username))} className={`p-1 rounded ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}>
-                        <Copy className={`w-3 h-3 ${txtSm}`} />
+                {/* بيانات الحساب */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  
+                  {/* اسم المستخدم */}
+                  <div style={{
+                    padding: 14,
+                    background: t.bg.tertiary,
+                    borderRadius: t.radius.lg,
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      marginBottom: 8,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <User size={14} color={t.text.muted} />
+                        <span style={{ fontSize: 11, color: t.text.muted }}>اسم المستخدم</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopy(decrypt(account.username), `${account.id}-user`)}
+                        title="نسخ"
+                        style={{
+                          padding: 6,
+                          borderRadius: t.radius.sm,
+                          border: 'none',
+                          background: copiedField === `${account.id}-user` ? t.status.success.bg : 'transparent',
+                          color: copiedField === `${account.id}-user` ? t.status.success.text : t.text.muted,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        {copiedField === `${account.id}-user` ? <CheckCircle size={14} /> : <Copy size={14} />}
                       </button>
                     </div>
-                    <p className={`text-sm font-mono ${txt}`}>{decrypt(account.username)}</p>
+                    <p style={{ 
+                      fontSize: 14, 
+                      fontFamily: 'monospace',
+                      color: t.text.primary,
+                      margin: 0,
+                    }}>
+                      {decrypt(account.username)}
+                    </p>
                   </div>
 
-                  <div className={`${darkMode ? 'bg-gray-700/50' : 'bg-gray-100'} p-3 rounded-xl`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-xs ${txtSm}`}>كلمة المرور</span>
-                      <div className="flex gap-1">
-                        <button onClick={() => togglePasswordVisibility(account.id)} className={`p-1 rounded ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}>
-                          {showPassword ? <EyeOff className={`w-3 h-3 ${txtSm}`} /> : <Eye className={`w-3 h-3 ${txtSm}`} />}
+                  {/* كلمة المرور */}
+                  <div style={{
+                    padding: 14,
+                    background: t.bg.tertiary,
+                    borderRadius: t.radius.lg,
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      marginBottom: 8,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Key size={14} color={t.text.muted} />
+                        <span style={{ fontSize: 11, color: t.text.muted }}>كلمة المرور</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button
+                          onClick={() => togglePasswordVisibility(account.id)}
+                          title={showPassword ? 'إخفاء' : 'إظهار'}
+                          style={{
+                            padding: 6,
+                            borderRadius: t.radius.sm,
+                            border: 'none',
+                            background: 'transparent',
+                            color: t.text.muted,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
-                        <button onClick={() => handleCopy(decrypt(account.password))} className={`p-1 rounded ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}>
-                          <Copy className={`w-3 h-3 ${txtSm}`} />
+                        <button
+                          onClick={() => handleCopy(decrypt(account.password), `${account.id}-pass`)}
+                          title="نسخ"
+                          style={{
+                            padding: 6,
+                            borderRadius: t.radius.sm,
+                            border: 'none',
+                            background: copiedField === `${account.id}-pass` ? t.status.success.bg : 'transparent',
+                            color: copiedField === `${account.id}-pass` ? t.status.success.text : t.text.muted,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          {copiedField === `${account.id}-pass` ? <CheckCircle size={14} /> : <Copy size={14} />}
                         </button>
                       </div>
                     </div>
-                    <p className={`text-sm font-mono ${txt}`}>{showPassword ? decrypt(account.password) : '••••••••'}</p>
+                    <p style={{ 
+                      fontSize: 14, 
+                      fontFamily: 'monospace',
+                      color: t.text.primary,
+                      margin: 0,
+                      letterSpacing: showPassword ? 'normal' : '2px',
+                    }}>
+                      {showPassword ? decrypt(account.password) : '••••••••••••'}
+                    </p>
                   </div>
 
+                  {/* الرابط */}
                   {account.url && (
-                    <div className={`${darkMode ? 'bg-gray-700/50' : 'bg-gray-100'} p-3 rounded-xl`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={`text-xs ${txtSm}`}>الرابط</span>
-                        <a href={account.url} target="_blank" rel="noopener noreferrer" className={`p-1 rounded ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}>
-                          <ExternalLink className={`w-3 h-3 ${txtSm}`} />
+                    <div style={{
+                      padding: 14,
+                      background: t.bg.tertiary,
+                      borderRadius: t.radius.lg,
+                    }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        marginBottom: 8,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Link size={14} color={t.text.muted} />
+                          <span style={{ fontSize: 11, color: t.text.muted }}>الرابط</span>
+                        </div>
+                        <a
+                          href={account.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="فتح الرابط"
+                          style={{
+                            padding: 6,
+                            borderRadius: t.radius.sm,
+                            background: `${t.button.primary}15`,
+                            color: t.button.primary,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          <ExternalLink size={14} />
                         </a>
                       </div>
-                      <p className={`text-sm ${txt} truncate`}>{account.url}</p>
+                      <p style={{ 
+                        fontSize: 13, 
+                        color: t.text.primary,
+                        margin: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {account.url}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* ملاحظات */}
+                  {account.notes && (
+                    <div style={{
+                      padding: 12,
+                      background: t.bg.tertiary,
+                      borderRadius: t.radius.md,
+                      fontSize: 12,
+                      color: t.text.muted,
+                      lineHeight: 1.6,
+                    }}>
+                      {account.notes}
                     </div>
                   )}
                 </div>
