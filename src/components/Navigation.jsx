@@ -1,43 +1,97 @@
 // src/components/Navigation.jsx
 import React from 'react';
-import { LayoutDashboard, Receipt, CheckSquare, FolderKanban, Shield, Users, Settings, Calculator } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Receipt, 
+  CheckSquare, 
+  FolderKanban, 
+  Shield, 
+  Users, 
+  Settings, 
+  Calculator 
+} from 'lucide-react';
 
-const Navigation = ({ currentView, setCurrentView, darkMode, accentColor }) => {
+const Navigation = ({ currentView, setCurrentView, darkMode, theme }) => {
+  const t = theme;
+  const colorKeys = t?.colorKeys || Object.keys(t?.colors || {});
+  
   const navItems = [
-    { id: 'dashboard', name: 'لوحة التحكم', icon: LayoutDashboard },
-    { id: 'expenses', name: 'المصروفات', icon: Receipt },
-    { id: 'tasks', name: 'المهام', icon: CheckSquare },
-    { id: 'projects', name: 'المشاريع', icon: FolderKanban },
-    { id: 'accounts', name: 'الحسابات', icon: Shield },
-    { id: 'calculator', name: 'حاسبة الكميات', icon: Calculator },
-    { id: 'users', name: 'المستخدمين', icon: Users },
-    { id: 'settings', name: 'الإعدادات', icon: Settings }
+    { id: 'dashboard', name: 'لوحة التحكم', icon: LayoutDashboard, colorKey: colorKeys[0] },
+    { id: 'expenses', name: 'المصروفات', icon: Receipt, colorKey: colorKeys[1] },
+    { id: 'tasks', name: 'المهام', icon: CheckSquare, colorKey: colorKeys[2] },
+    { id: 'projects', name: 'المشاريع', icon: FolderKanban, colorKey: colorKeys[3] },
+    { id: 'accounts', name: 'الحسابات', icon: Shield, colorKey: colorKeys[4] },
+    { id: 'calculator', name: 'حاسبة الكميات', icon: Calculator, colorKey: colorKeys[5] },
+    { id: 'users', name: 'المستخدمين', icon: Users, colorKey: colorKeys[0] },
+    { id: 'settings', name: 'الإعدادات', icon: Settings, colorKey: colorKeys[1] }
   ];
 
   return (
     <>
-      {/* Desktop Navigation */}
-      <nav className={`hidden md:block sticky top-[73px] z-40 ${darkMode ? 'bg-gray-800/80' : 'bg-white/80'} backdrop-blur-sm border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-        <div className="container mx-auto px-4">
-          <div className="flex items-center gap-2 overflow-x-auto py-2">
+      {/* ═══════════════ Desktop Navigation ═══════════════ */}
+      <nav 
+        style={{
+          display: 'none',
+          position: 'sticky',
+          top: 73,
+          zIndex: 40,
+          background: `${t.bg.secondary}dd`,
+          backdropFilter: 'blur(10px)',
+          borderBottom: `1px solid ${t.border.primary}`,
+        }}
+        className="desktop-nav"
+      >
+        <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 8,
+            overflowX: 'auto',
+            padding: '12px 0',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+          }}>
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
+              const color = t.colors[item.colorKey] || t.colors[colorKeys[0]];
               
               return (
                 <button
                   key={item.id}
                   onClick={() => setCurrentView(item.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap transition-all ${
-                    isActive
-                      ? `bg-gradient-to-r ${accentColor} text-white shadow-lg`
-                      : darkMode
-                      ? 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 18px',
+                    borderRadius: t.radius.lg,
+                    border: 'none',
+                    background: isActive ? t.button.gradient : 'transparent',
+                    color: isActive ? '#fff' : t.text.muted,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.25s ease',
+                    boxShadow: isActive ? t.button.glow : 'none',
+                    fontFamily: 'inherit',
+                    fontSize: 14,
+                    fontWeight: isActive ? 600 : 500,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = `${t.button.primary}15`;
+                      e.currentTarget.style.color = t.text.primary;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = t.text.muted;
+                    }
+                  }}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-sm font-medium">{item.name}</span>
+                  <Icon size={20} />
+                  <span>{item.name}</span>
                 </button>
               );
             })}
@@ -45,32 +99,86 @@ const Navigation = ({ currentView, setCurrentView, darkMode, accentColor }) => {
         </div>
       </nav>
 
-      {/* Mobile Navigation */}
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${darkMode ? 'bg-gray-800/95' : 'bg-white/95'} backdrop-blur-sm border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-        <div className="flex items-center justify-around py-2 px-2">
+      {/* ═══════════════ Mobile Navigation ═══════════════ */}
+      <nav 
+        style={{
+          display: 'none',
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          background: `${t.bg.secondary}f5`,
+          backdropFilter: 'blur(10px)',
+          borderTop: `1px solid ${t.border.primary}`,
+          padding: '8px 4px',
+        }}
+        className="mobile-nav"
+      >
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-around',
+        }}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
+            const color = t.colors[item.colorKey] || t.colors[colorKeys[0]];
             
             return (
               <button
                 key={item.id}
                 onClick={() => setCurrentView(item.id)}
-                className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all min-w-0 ${
-                  isActive
-                    ? `bg-gradient-to-r ${accentColor} text-white shadow-lg`
-                    : darkMode
-                    ? 'text-gray-400'
-                    : 'text-gray-600'
-                }`}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '8px 6px',
+                  borderRadius: t.radius.lg,
+                  border: 'none',
+                  background: isActive ? t.button.gradient : 'transparent',
+                  color: isActive ? '#fff' : t.text.muted,
+                  cursor: 'pointer',
+                  transition: 'all 0.25s ease',
+                  boxShadow: isActive ? t.button.glow : 'none',
+                  fontFamily: 'inherit',
+                  minWidth: 0,
+                  flex: '1 1 0',
+                  maxWidth: 70,
+                }}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                <span className="text-[10px] font-medium truncate max-w-full">{item.name}</span>
+                <Icon size={20} style={{ flexShrink: 0 }} />
+                <span style={{ 
+                  fontSize: 10, 
+                  fontWeight: isActive ? 600 : 500,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100%',
+                }}>
+                  {item.name}
+                </span>
               </button>
             );
           })}
         </div>
       </nav>
+
+      {/* ═══════════════ CSS للتجاوب ═══════════════ */}
+      <style>{`
+        @media (min-width: 768px) {
+          .desktop-nav { display: block !important; }
+          .mobile-nav { display: none !important; }
+        }
+        @media (max-width: 767px) {
+          .desktop-nav { display: none !important; }
+          .mobile-nav { display: block !important; }
+        }
+        .desktop-nav > div > div::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </>
   );
 };
