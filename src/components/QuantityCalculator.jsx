@@ -469,46 +469,47 @@ const QuantityCalculator = ({ darkMode = true }) => {
           </div>
         )}
         {mainTab === 'items' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 16 }}>
-            <div style={{ background: t.card, borderRadius: 16, padding: 12, border: `1px solid ${t.border}`, height: 'fit-content' }}>
-              <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, padding: '0 8px' }}>التصنيفات</h3>
-              {Object.entries(workItems).map(([key, cat]) => (
-                <button key={key} onClick={() => setSelectedCategory(key)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: 'none', background: selectedCategory === key ? `${t.accent}15` : 'transparent', color: selectedCategory === key ? t.accent : t.text, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, textAlign: 'right' }}>
-                  <span style={{ filter: 'grayscale(100%)', opacity: 0.7 }}>{cat.icon}</span>
-                  <span style={{ flex: 1 }}>{cat.name}</span>
-                  <span style={{ fontSize: 11, color: t.muted }}>{cat.items.length}</span>
-                </button>
-              ))}
+          <div style={{ background: t.card, borderRadius: 16, border: `1px solid ${t.border}`, padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>📋 إدارة البنود</h3>
+              <button onClick={() => openAddItemModal(selectedCategory)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: `linear-gradient(135deg, ${t.accentDark}, ${t.accent})`, color: '#fff', fontSize: 13, cursor: 'pointer' }}>+ إضافة بند</button>
             </div>
-            <div style={{ background: t.card, borderRadius: 16, padding: 16, border: `1px solid ${t.border}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ filter: 'grayscale(100%)', opacity: 0.7 }}>{workItems[selectedCategory]?.icon}</span>
-                  {workItems[selectedCategory]?.name}
-                </h3>
-                <button onClick={() => openAddItemModal(selectedCategory)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: t.accent, color: '#fff', fontSize: 13, cursor: 'pointer' }}>+ إضافة بند</button>
-              </div>
-              <div style={{ display: 'grid', gap: 8 }}>
-                {workItems[selectedCategory]?.items.map(item => {
-                  const enabledPlaces = Object.entries(places).filter(([k, p]) => p.enabled && programming[k]?.[selectedCategory]?.includes(item.id)).map(([_, p]) => p.name);
-                  const typeColor = item.type === 'floor' ? t.success : item.type === 'wall' ? t.info : t.warning;
-                  return (
-                    <div key={item.id} style={{ padding: '12px 14px', background: t.cardAlt, borderRadius: 10, border: `1px solid ${t.border}` }}>
-                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>{item.name}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 10, color: typeColor, background: `${typeColor}15`, padding: '3px 8px', borderRadius: 4 }}>{item.type === 'floor' ? 'أرضية' : item.type === 'wall' ? 'جدران' : 'أسقف'}</span>
-                        <span style={{ fontSize: 10, color: t.muted, background: t.card, padding: '3px 8px', borderRadius: 4 }}>{enabledPlaces.length > 0 ? enabledPlaces.join(' • ') : '—'}</span>
-                        <div style={{ flex: 1 }} />
-                        <span style={{ fontSize: 11, color: t.warning, fontWeight: 600 }}>{item.exec}</span>
-                        <span style={{ fontSize: 11, color: t.info, fontWeight: 600 }}>{item.cont}</span>
-                        <span style={{ fontSize: 11, color: t.success, fontWeight: 600 }}>{item.exec - item.cont}</span>
-                        <button onClick={() => openEditModal(selectedCategory, item)} style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: `${t.accent}15`, color: t.text, cursor: 'pointer', fontSize: 12 }}>✎</button>
-                        <button onClick={() => deleteItem(selectedCategory, item.id)} style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: `${t.danger}15`, color: t.danger, cursor: 'pointer', fontSize: 14 }}>×</button>
-                      </div>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {Object.entries(workItems).map(([key, cat]) => (
+                <div key={key} style={{ background: t.cardAlt, borderRadius: 12, border: `1px solid ${t.border}`, overflow: 'hidden' }}>
+                  <button onClick={() => setSelectedCategory(selectedCategory === key ? '' : key)} style={{ width: '100%', padding: '14px 16px', border: 'none', background: 'transparent', color: t.text, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'right' }}>
+                    <span style={{ fontSize: 20 }}>{cat.icon}</span>
+                    <span style={{ flex: 1, fontWeight: 600 }}>{cat.name}</span>
+                    <span style={{ fontSize: 12, color: t.muted, background: t.card, padding: '4px 10px', borderRadius: 6 }}>{cat.items.length} بند</span>
+                    <span style={{ fontSize: 18, color: t.muted, transition: 'transform 0.2s', transform: selectedCategory === key ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                  </button>
+                  {selectedCategory === key && (
+                    <div style={{ padding: '0 12px 12px', display: 'grid', gap: 6 }}>
+                      {cat.items.map(item => {
+                        const enabledPlaces = Object.entries(places).filter(([k, p]) => p.enabled && programming[k]?.[key]?.includes(item.id)).map(([_, p]) => p.name);
+                        const typeColor = item.type === 'floor' ? t.success : item.type === 'wall' ? t.info : t.warning;
+                        return (
+                          <div key={item.id} style={{ padding: '12px 14px', background: t.card, borderRadius: 10, border: `1px solid ${t.border}` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{item.name}</span>
+                              <button onClick={() => openEditModal(key, item)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: `${t.accent}15`, color: t.text, cursor: 'pointer', fontSize: 14 }}>✎</button>
+                              <button onClick={() => deleteItem(key, item.id)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: `${t.danger}15`, color: t.danger, cursor: 'pointer', fontSize: 16 }}>×</button>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 11, color: typeColor, background: `${typeColor}15`, padding: '4px 10px', borderRadius: 6 }}>{item.type === 'floor' ? 'أرضية' : item.type === 'wall' ? 'جدران' : 'أسقف'}</span>
+                              <span style={{ fontSize: 11, color: t.warning, background: `${t.warning}15`, padding: '4px 10px', borderRadius: 6 }}>تنفيذ: {item.exec}</span>
+                              <span style={{ fontSize: 11, color: t.info, background: `${t.info}15`, padding: '4px 10px', borderRadius: 6 }}>مقاول: {item.cont}</span>
+                              <span style={{ fontSize: 11, color: t.success, background: `${t.success}15`, padding: '4px 10px', borderRadius: 6 }}>ربح: {item.exec - item.cont}</span>
+                              {enabledPlaces.length > 0 && <span style={{ fontSize: 11, color: t.muted, background: t.cardAlt, padding: '4px 10px', borderRadius: 6 }}>{enabledPlaces.join(' • ')}</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {cat.items.length === 0 && <div style={{ textAlign: 'center', padding: 20, color: t.muted }}>لا توجد بنود</div>}
                     </div>
-                  );
-                })}
-              </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
