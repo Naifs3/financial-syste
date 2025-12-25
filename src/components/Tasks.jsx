@@ -1,8 +1,25 @@
 // src/components/Tasks.jsx
 import React, { useState } from 'react';
-import { CheckSquare, Plus, Search, Edit, Trash2, Play, Pause, Clock } from 'lucide-react';
+import { 
+  CheckSquare, 
+  Plus, 
+  Search, 
+  Edit, 
+  Trash2, 
+  Play, 
+  Pause, 
+  Clock,
+  AlertTriangle,
+  Target,
+  Calendar,
+  User,
+  FolderKanban
+} from 'lucide-react';
 
-const Tasks = ({ tasks, projects, onAdd, onEdit, onDelete, onToggleStatus, darkMode, txt, txtSm, card, accentGradient }) => {
+const Tasks = ({ tasks, projects, onAdd, onEdit, onDelete, onToggleStatus, darkMode, theme }) => {
+  const t = theme;
+  const colorKeys = t.colorKeys || Object.keys(t.colors);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -18,89 +35,266 @@ const Tasks = ({ tasks, projects, onAdd, onEdit, onDelete, onToggleStatus, darkM
   const completedCount = tasks.filter(t => t.status === 'مكتمل').length;
   const completionRate = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
-  const getPriorityColor = (priority) => {
+  // ألوان الأولوية
+  const getPriorityStyle = (priority) => {
     switch (priority) {
-      case 'urgent': return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' };
-      case 'medium': return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30' };
-      case 'normal': return { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/30' };
-      default: return { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500/30' };
+      case 'urgent': 
+        return { 
+          bg: t.status.danger.bg, 
+          text: t.status.danger.text, 
+          border: t.status.danger.border,
+          name: 'مستعجل'
+        };
+      case 'medium': 
+        return { 
+          bg: t.status.warning.bg, 
+          text: t.status.warning.text, 
+          border: t.status.warning.border,
+          name: 'متوسط'
+        };
+      case 'normal': 
+        return { 
+          bg: t.status.success.bg, 
+          text: t.status.success.text, 
+          border: t.status.success.border,
+          name: 'عادي'
+        };
+      default: 
+        return { 
+          bg: t.status.info.bg, 
+          text: t.status.info.text, 
+          border: t.status.info.border,
+          name: priority
+        };
     }
   };
 
-  const getPriorityName = (priority) => {
-    switch (priority) {
-      case 'urgent': return 'مستعجل';
-      case 'medium': return 'متوسط';
-      case 'normal': return 'عادي';
-      default: return priority;
+  // ألوان الحالة
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'مكتمل':
+        return { bg: t.status.success.bg, text: t.status.success.text, border: t.status.success.border };
+      case 'قيد التنفيذ':
+        return { bg: t.status.info.bg, text: t.status.info.text, border: t.status.info.border };
+      default:
+        return { bg: `${t.text.muted}15`, text: t.text.muted, border: `${t.text.muted}30` };
     }
   };
+
+  // البطاقات الإحصائية
+  const statCards = [
+    { 
+      label: 'مستعجل', 
+      value: urgentCount,
+      icon: AlertTriangle,
+      colorKey: colorKeys[0]
+    },
+    { 
+      label: 'مكتملة', 
+      value: `${completedCount}/${tasks.length}`,
+      icon: CheckSquare,
+      colorKey: colorKeys[1]
+    },
+    { 
+      label: 'نسبة الإنجاز', 
+      value: `${completionRate}%`,
+      icon: Target,
+      colorKey: colorKeys[2]
+    },
+  ];
 
   return (
-    <div className="p-4 space-y-6 pb-20 md:pb-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div style={{ padding: 16, paddingBottom: 80 }}>
+      
+      {/* ═══════════════ العنوان والأزرار ═══════════════ */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 16,
+        marginBottom: 24,
+      }}>
         <div>
-          <h2 className={`text-2xl font-bold ${txt} flex items-center gap-2`}>
-            <CheckSquare className="w-6 h-6" />
+          <h2 style={{ 
+            fontSize: 24, 
+            fontWeight: 700, 
+            color: t.text.primary,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            margin: 0,
+          }}>
+            <div style={{
+              width: 40,
+              height: 40,
+              borderRadius: t.radius.lg,
+              background: t.colors[colorKeys[1]]?.gradient || t.button.gradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: darkMode ? t.colors[colorKeys[1]]?.glow : 'none',
+            }}>
+              <CheckSquare size={22} color="#fff" />
+            </div>
             المهام
           </h2>
-          <p className={`text-sm ${txtSm} mt-1`}>إدارة المهام مع متابعة الوقت</p>
+          <p style={{ fontSize: 14, color: t.text.muted, marginTop: 6, marginRight: 50 }}>
+            إدارة المهام مع متابعة الوقت
+          </p>
         </div>
+        
         <button
           onClick={() => {}}
-          className={`px-4 py-2 rounded-xl bg-gradient-to-r ${accentGradient} text-white transition-all hover:opacity-90 flex items-center gap-2`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 20px',
+            borderRadius: t.radius.lg,
+            border: 'none',
+            background: t.button.gradient,
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: 14,
+            fontWeight: 600,
+            fontFamily: 'inherit',
+            boxShadow: t.button.glow,
+            transition: 'all 0.2s',
+          }}
         >
-          <Plus className="w-4 h-4" />
+          <Plus size={18} />
           إضافة مهمة
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className={`${card} p-4 rounded-xl border ${darkMode ? 'border-red-500/30' : 'border-red-200'} bg-red-500/10`}>
-          <p className={`text-sm ${txtSm} mb-1`}>مستعجل</p>
-          <p className="text-2xl font-bold text-red-400">{urgentCount}</p>
-        </div>
-        <div className={`${card} p-4 rounded-xl border ${darkMode ? 'border-green-500/30' : 'border-green-200'} bg-green-500/10`}>
-          <p className={`text-sm ${txtSm} mb-1`}>مكتملة</p>
-          <p className="text-2xl font-bold text-green-400">{completedCount}/{tasks.length}</p>
-        </div>
-        <div className={`${card} p-4 rounded-xl border ${darkMode ? 'border-blue-500/30' : 'border-blue-200'} bg-blue-500/10`}>
-          <p className={`text-sm ${txtSm} mb-1`}>نسبة الإنجاز</p>
-          <p className="text-2xl font-bold text-blue-400">{completionRate}%</p>
-        </div>
+      {/* ═══════════════ البطاقات الإحصائية ═══════════════ */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: 16,
+        marginBottom: 24,
+      }}>
+        {statCards.map((card, index) => {
+          const color = t.colors[card.colorKey] || t.colors[colorKeys[0]];
+          const Icon = card.icon;
+          return (
+            <div
+              key={index}
+              style={{
+                background: t.bg.secondary,
+                borderRadius: t.radius.xl,
+                border: `1px solid ${color.main}30`,
+                padding: 20,
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: -20,
+                left: -20,
+                width: 80,
+                height: 80,
+                background: `radial-gradient(circle, ${color.main}20 0%, transparent 70%)`,
+                borderRadius: '50%',
+              }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <p style={{ fontSize: 13, color: t.text.muted, margin: 0 }}>
+                  {card.label}
+                </p>
+                <Icon size={18} color={color.main} />
+              </div>
+              <p style={{ 
+                fontSize: 26, 
+                fontWeight: 700, 
+                color: color.main,
+                margin: 0,
+                textShadow: darkMode ? `0 0 20px ${color.main}40` : 'none',
+              }}>
+                {card.value}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex-1 relative">
-          <Search className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 ${txtSm}`} />
+      {/* ═══════════════ البحث والفلترة ═══════════════ */}
+      <div style={{ 
+        display: 'flex', 
+        flexWrap: 'wrap',
+        gap: 12,
+        marginBottom: 24,
+      }}>
+        {/* حقل البحث */}
+        <div style={{ flex: '1 1 250px', position: 'relative' }}>
+          <Search 
+            size={18} 
+            style={{ 
+              position: 'absolute', 
+              right: 14, 
+              top: '50%', 
+              transform: 'translateY(-50%)',
+              color: t.text.muted,
+            }} 
+          />
           <input
             type="text"
             placeholder="بحث في المهام..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full pr-10 pl-4 py-2 rounded-xl border ${
-              darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'
-            } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+            style={{
+              width: '100%',
+              padding: '12px 44px 12px 16px',
+              borderRadius: t.radius.lg,
+              border: `1px solid ${t.border.primary}`,
+              background: t.bg.tertiary,
+              color: t.text.primary,
+              fontSize: 14,
+              fontFamily: 'inherit',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
           />
         </div>
+        
+        {/* فلتر الأولوية */}
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
-          className={`px-4 py-2 rounded-xl border ${
-            darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'
-          }`}
+          style={{
+            padding: '12px 16px',
+            borderRadius: t.radius.lg,
+            border: `1px solid ${t.border.primary}`,
+            background: t.bg.tertiary,
+            color: t.text.primary,
+            fontSize: 14,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            minWidth: 130,
+          }}
         >
           <option value="all">كل الأولويات</option>
           <option value="urgent">مستعجل</option>
           <option value="medium">متوسط</option>
           <option value="normal">عادي</option>
         </select>
+        
+        {/* فلتر الحالة */}
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className={`px-4 py-2 rounded-xl border ${
-            darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'
-          }`}
+          style={{
+            padding: '12px 16px',
+            borderRadius: t.radius.lg,
+            border: `1px solid ${t.border.primary}`,
+            background: t.bg.tertiary,
+            color: t.text.primary,
+            fontSize: 14,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            minWidth: 130,
+          }}
         >
           <option value="all">كل الحالات</option>
           <option value="قيد الانتظار">قيد الانتظار</option>
@@ -109,117 +303,292 @@ const Tasks = ({ tasks, projects, onAdd, onEdit, onDelete, onToggleStatus, darkM
         </select>
       </div>
 
+      {/* ═══════════════ قائمة المهام ═══════════════ */}
       {filteredTasks.length === 0 ? (
-        <div className={`${card} p-12 rounded-2xl text-center border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <CheckSquare className={`w-16 h-16 mx-auto mb-4 ${txtSm}`} />
-          <p className={`${txt} font-bold mb-2`}>لا توجد مهام</p>
-          <p className={`${txtSm} text-sm`}>ابدأ بإضافة أول مهمة</p>
+        <div style={{
+          background: t.bg.secondary,
+          borderRadius: t.radius['2xl'],
+          border: `1px solid ${t.border.primary}`,
+          padding: 60,
+          textAlign: 'center',
+        }}>
+          <div style={{
+            width: 80,
+            height: 80,
+            borderRadius: t.radius.xl,
+            background: `${t.button.primary}15`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+          }}>
+            <CheckSquare size={40} color={t.text.muted} />
+          </div>
+          <p style={{ fontSize: 18, fontWeight: 700, color: t.text.primary, marginBottom: 8 }}>
+            لا توجد مهام
+          </p>
+          <p style={{ fontSize: 14, color: t.text.muted }}>
+            ابدأ بإضافة أول مهمة
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+          gap: 16,
+        }}>
           {filteredTasks.map((task) => {
-            const priorityColor = getPriorityColor(task.priority);
+            const priorityStyle = getPriorityStyle(task.priority);
+            const statusStyle = getStatusStyle(task.status);
             const project = projects.find(p => p.id === task.projectId);
+            const isCompleted = task.status === 'مكتمل';
             
             return (
               <div
                 key={task.id}
-                className={`${card} p-5 rounded-2xl border ${darkMode ? 'border-gray-700' : 'border-gray-200'} hover:shadow-lg transition-all ${
-                  task.status === 'مكتمل' ? 'opacity-60' : ''
-                }`}
+                style={{
+                  background: t.bg.secondary,
+                  borderRadius: t.radius.xl,
+                  border: `1px solid ${t.border.primary}`,
+                  padding: 20,
+                  transition: 'all 0.3s ease',
+                  opacity: isCompleted ? 0.7 : 1,
+                }}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className={`font-bold ${txt} text-lg mb-1 ${task.status === 'مكتمل' ? 'line-through' : ''}`}>
+                {/* الهيدر */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'flex-start', 
+                  justifyContent: 'space-between',
+                  marginBottom: 16,
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ 
+                      fontSize: 18, 
+                      fontWeight: 700, 
+                      color: t.text.primary,
+                      margin: '0 0 10px 0',
+                      textDecoration: isCompleted ? 'line-through' : 'none',
+                    }}>
                       {task.title}
                     </h3>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-xs px-2 py-1 rounded ${priorityColor.bg} ${priorityColor.text}`}>
-                        {getPriorityName(task.priority)}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {/* شارة الأولوية */}
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '4px 10px',
+                        borderRadius: t.radius.md,
+                        background: priorityStyle.bg,
+                        color: priorityStyle.text,
+                        border: `1px solid ${priorityStyle.border}`,
+                      }}>
+                        {priorityStyle.name}
                       </span>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        task.status === 'مكتمل' 
-                          ? 'bg-green-500/20 text-green-400' 
-                          : task.status === 'قيد التنفيذ'
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : 'bg-gray-500/20 text-gray-400'
-                      }`}>
+                      {/* شارة الحالة */}
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '4px 10px',
+                        borderRadius: t.radius.md,
+                        background: statusStyle.bg,
+                        color: statusStyle.text,
+                        border: `1px solid ${statusStyle.border}`,
+                      }}>
                         {task.status}
                       </span>
+                      {/* الرقم المرجعي */}
                       {task.refNumber && (
-                        <span className={`text-xs ${txtSm}`}>#{task.refNumber}</span>
+                        <span style={{ fontSize: 11, color: t.text.muted }}>
+                          #{task.refNumber}
+                        </span>
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  
+                  {/* أزرار التحكم */}
+                  <div style={{ display: 'flex', gap: 6 }}>
                     <button
                       onClick={() => onToggleStatus(task.id)}
-                      className={`p-2 rounded-lg ${
-                        task.status === 'مكتمل'
-                          ? 'bg-gray-500/20 text-gray-400'
-                          : 'bg-green-500/20 text-green-400'
-                      } hover:opacity-80 transition-colors`}
-                      title={task.status === 'مكتمل' ? 'إلغاء الاكتمال' : 'وضع علامة كمكتمل'}
+                      title={isCompleted ? 'إلغاء الاكتمال' : 'وضع علامة كمكتمل'}
+                      style={{
+                        padding: 8,
+                        borderRadius: t.radius.md,
+                        border: 'none',
+                        background: isCompleted ? `${t.text.muted}20` : t.status.success.bg,
+                        color: isCompleted ? t.text.muted : t.status.success.text,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                      }}
                     >
-                      <CheckSquare className="w-4 h-4" />
+                      <CheckSquare size={16} />
                     </button>
                     <button
                       onClick={() => onEdit(task)}
-                      className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} ${txt} transition-colors`}
                       title="تعديل"
+                      style={{
+                        padding: 8,
+                        borderRadius: t.radius.md,
+                        border: 'none',
+                        background: t.bg.tertiary,
+                        color: t.text.primary,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                      }}
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit size={16} />
                     </button>
                     <button
                       onClick={() => onDelete(task.id)}
-                      className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
                       title="حذف"
+                      style={{
+                        padding: 8,
+                        borderRadius: t.radius.md,
+                        border: 'none',
+                        background: t.status.danger.bg,
+                        color: t.status.danger.text,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                      }}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
 
+                {/* الوصف */}
                 {task.description && (
-                  <p className={`text-sm ${txtSm} mb-3`}>{task.description}</p>
+                  <p style={{ 
+                    fontSize: 13, 
+                    color: t.text.muted, 
+                    marginBottom: 16,
+                    lineHeight: 1.6,
+                  }}>
+                    {task.description}
+                  </p>
                 )}
 
-                <div className="space-y-2">
+                {/* التفاصيل */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {/* موعد الانتهاء */}
                   {task.dueDate && (
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm ${txtSm}`}>موعد الانتهاء:</span>
-                      <span className={`text-sm ${txt}`}>{task.dueDate}</span>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      background: t.bg.tertiary,
+                      borderRadius: t.radius.md,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Calendar size={16} color={t.text.muted} />
+                        <span style={{ fontSize: 13, color: t.text.muted }}>موعد الانتهاء</span>
+                      </div>
+                      <span style={{ fontSize: 14, color: t.text.primary }}>
+                        {task.dueDate}
+                      </span>
                     </div>
                   )}
+                  
+                  {/* المشروع */}
                   {project && (
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm ${txtSm}`}>المشروع:</span>
-                      <span className={`text-sm ${txt}`}>{project.name}</span>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      background: t.bg.tertiary,
+                      borderRadius: t.radius.md,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <FolderKanban size={16} color={t.text.muted} />
+                        <span style={{ fontSize: 13, color: t.text.muted }}>المشروع</span>
+                      </div>
+                      <span style={{ fontSize: 14, color: t.text.primary }}>
+                        {project.name}
+                      </span>
                     </div>
                   )}
+                  
+                  {/* المسؤول */}
                   {task.assignedTo && (
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm ${txtSm}`}>المسؤول:</span>
-                      <span className={`text-sm ${txt}`}>{task.assignedTo}</span>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      background: t.bg.tertiary,
+                      borderRadius: t.radius.md,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <User size={16} color={t.text.muted} />
+                        <span style={{ fontSize: 13, color: t.text.muted }}>المسؤول</span>
+                      </div>
+                      <span style={{ fontSize: 14, color: t.text.primary }}>
+                        {task.assignedTo}
+                      </span>
                     </div>
                   )}
                 </div>
 
+                {/* المؤقت */}
                 {task.timerSeconds !== undefined && (
-                  <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex items-center justify-between`}>
-                    <div className="flex items-center gap-2">
-                      <Clock className={`w-4 h-4 ${txtSm}`} />
-                      <span className={`text-sm font-mono ${txt}`}>
+                  <div style={{
+                    marginTop: 16,
+                    paddingTop: 16,
+                    borderTop: `1px solid ${t.border.primary}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: t.radius.md,
+                        background: `${t.button.primary}15`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <Clock size={18} color={t.button.primary} />
+                      </div>
+                      <span style={{ 
+                        fontSize: 18, 
+                        fontWeight: 600, 
+                        fontFamily: 'monospace',
+                        color: t.text.primary,
+                      }}>
                         {Math.floor(task.timerSeconds / 3600).toString().padStart(2, '0')}:
                         {Math.floor((task.timerSeconds % 3600) / 60).toString().padStart(2, '0')}:
                         {(task.timerSeconds % 60).toString().padStart(2, '0')}
                       </span>
                     </div>
                     <button
-                      className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} ${txt} transition-colors`}
                       title={task.timerRunning ? 'إيقاف' : 'تشغيل'}
+                      style={{
+                        padding: 10,
+                        borderRadius: t.radius.md,
+                        border: 'none',
+                        background: task.timerRunning ? t.status.warning.bg : t.status.success.bg,
+                        color: task.timerRunning ? t.status.warning.text : t.status.success.text,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                      }}
                     >
-                      {task.timerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      {task.timerRunning ? <Pause size={18} /> : <Play size={18} />}
                     </button>
                   </div>
                 )}
