@@ -1,10 +1,11 @@
+// src/components/SignUp.jsx
 import React, { useState } from 'react';
 import { UserPlus, Eye, EyeOff, Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
-const SignUp = ({ onBack, onSuccess }) => {
+const SignUp = ({ onBack, onSuccess, darkMode = true, theme }) => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -15,6 +16,24 @@ const SignUp = ({ onBack, onSuccess }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // استخدام ألوان القالب أو الافتراضية
+  const c = {
+    bg: theme?.bg?.primary || (darkMode ? '#0a0a0f' : '#f8fafc'),
+    card: theme?.bg?.secondary || (darkMode ? '#101018' : '#ffffff'),
+    cardAlt: theme?.bg?.tertiary || (darkMode ? '#1a1a28' : '#f1f5f9'),
+    border: theme?.border?.primary || (darkMode ? '#252538' : '#e2e8f0'),
+    text: theme?.text?.primary || (darkMode ? '#f0f0f8' : '#1e293b'),
+    secondary: theme?.text?.secondary || (darkMode ? '#b0b0c0' : '#475569'),
+    muted: theme?.text?.muted || (darkMode ? '#707088' : '#94a3b8'),
+    accent: theme?.button?.primary || '#00d4ff',
+    accentGlow: theme?.button?.glow || '0 0 20px #00d4ff40',
+    success: theme?.status?.success?.text || '#4ade80',
+    successGradient: 'linear-gradient(135deg, #16a34a, #22c55e)',
+    successGlow: '0 0 20px #22c55e40',
+    danger: theme?.status?.danger?.text || '#f87171',
+    dangerBg: theme?.status?.danger?.bg || '#f8717115',
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -74,32 +93,131 @@ const SignUp = ({ onBack, onSuccess }) => {
     }
   };
 
+  // الأنماط المشتركة
+  const inputStyle = {
+    width: '100%',
+    padding: '14px 44px 14px 44px',
+    background: c.cardAlt,
+    border: `1px solid ${c.border}`,
+    borderRadius: 12,
+    color: c.text,
+    fontSize: 14,
+    outline: 'none',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+    transition: 'all 0.2s',
+  };
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: 13,
+    fontWeight: 500,
+    color: c.secondary,
+    marginBottom: 8,
+  };
+
+  const iconWrapperStyle = {
+    position: 'absolute',
+    right: 14,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: c.muted,
+    display: 'flex',
+  };
+
+  const eyeButtonStyle = {
+    position: 'absolute',
+    left: 14,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    color: c.muted,
+    cursor: 'pointer',
+    padding: 0,
+    display: 'flex',
+    transition: 'color 0.2s',
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-700">
-          
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl shadow-lg mb-4">
-              <UserPlus className="w-10 h-10 text-white" />
+    <div 
+      dir="rtl" 
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: `linear-gradient(135deg, ${c.bg} 0%, ${c.card} 50%, ${c.bg} 100%)`,
+        padding: 16,
+        fontFamily: 'inherit',
+      }}
+    >
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div 
+          style={{
+            background: `${c.card}ee`,
+            backdropFilter: 'blur(12px)',
+            borderRadius: 24,
+            padding: 32,
+            border: `1px solid ${c.border}`,
+            boxShadow: darkMode ? `0 25px 50px -12px rgba(0,0,0,0.5), 0 0 40px ${c.success}10` : '0 25px 50px -12px rgba(0,0,0,0.1)',
+          }}
+        >
+          {/* الشعار والعنوان */}
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <div 
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 80,
+                height: 80,
+                background: c.successGradient,
+                borderRadius: 20,
+                marginBottom: 16,
+                boxShadow: darkMode ? c.successGlow : 'none',
+              }}
+            >
+              <UserPlus size={40} color="#fff" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">إنشاء حساب جديد</h1>
-            <p className="text-sm text-gray-400">سيتم مراجعة طلبك من قبل المدير</p>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 8px' }}>
+              إنشاء حساب جديد
+            </h1>
+            <p style={{ fontSize: 14, color: c.muted, margin: 0 }}>
+              سيتم مراجعة طلبك من قبل المدير
+            </p>
           </div>
 
+          {/* رسالة الخطأ */}
           {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-              <p className="text-red-400 text-sm text-center">{error}</p>
+            <div 
+              style={{
+                marginBottom: 20,
+                padding: 16,
+                background: c.dangerBg,
+                border: `1px solid ${c.danger}30`,
+                borderRadius: 12,
+              }}
+            >
+              <p style={{ color: c.danger, fontSize: 14, textAlign: 'center', margin: 0 }}>
+                {error}
+              </p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* النموذج */}
+          <form onSubmit={handleSubmit}>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">اسم المستخدم</label>
-              <div className="relative">
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  <User className="w-5 h-5" />
+            {/* اسم المستخدم */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>اسم المستخدم</label>
+              <div style={{ position: 'relative' }}>
+                <div style={iconWrapperStyle}>
+                  <User size={20} />
                 </div>
                 <input
                   type="text"
@@ -107,18 +225,19 @@ const SignUp = ({ onBack, onSuccess }) => {
                   value={formData.username}
                   onChange={handleChange}
                   placeholder="أدخل اسم المستخدم"
-                  className="w-full pr-11 pl-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  style={{ ...inputStyle, paddingLeft: 16 }}
                   required
                   disabled={loading}
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">البريد الإلكتروني</label>
-              <div className="relative">
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  <Mail className="w-5 h-5" />
+            {/* البريد الإلكتروني */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>البريد الإلكتروني</label>
+              <div style={{ position: 'relative' }}>
+                <div style={iconWrapperStyle}>
+                  <Mail size={20} />
                 </div>
                 <input
                   type="email"
@@ -126,18 +245,19 @@ const SignUp = ({ onBack, onSuccess }) => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="أدخل البريد الإلكتروني"
-                  className="w-full pr-11 pl-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  style={{ ...inputStyle, paddingLeft: 16 }}
                   required
                   disabled={loading}
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">كلمة المرور</label>
-              <div className="relative">
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  <Lock className="w-5 h-5" />
+            {/* كلمة المرور */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>كلمة المرور</label>
+              <div style={{ position: 'relative' }}>
+                <div style={iconWrapperStyle}>
+                  <Lock size={20} />
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -145,7 +265,7 @@ const SignUp = ({ onBack, onSuccess }) => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="أدخل كلمة المرور"
-                  className="w-full pr-11 pl-11 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  style={inputStyle}
                   required
                   disabled={loading}
                   minLength={6}
@@ -153,19 +273,20 @@ const SignUp = ({ onBack, onSuccess }) => {
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
                   disabled={loading}
+                  style={eyeButtonStyle}
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">تأكيد كلمة المرور</label>
-              <div className="relative">
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  <Lock className="w-5 h-5" />
+            {/* تأكيد كلمة المرور */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={labelStyle}>تأكيد كلمة المرور</label>
+              <div style={{ position: 'relative' }}>
+                <div style={iconWrapperStyle}>
+                  <Lock size={20} />
                 </div>
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
@@ -173,56 +294,109 @@ const SignUp = ({ onBack, onSuccess }) => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="أعد إدخال كلمة المرور"
-                  className="w-full pr-11 pl-11 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  style={inputStyle}
                   required
                   disabled={loading}
                 />
                 <button 
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
                   disabled={loading}
+                  style={eyeButtonStyle}
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
 
+            {/* زر إنشاء الحساب */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                width: '100%',
+                padding: 16,
+                background: c.successGradient,
+                border: 'none',
+                borderRadius: 14,
+                color: '#fff',
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                fontFamily: 'inherit',
+                boxShadow: darkMode ? c.successGlow : 'none',
+                transition: 'all 0.2s',
+              }}
             >
               {loading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div 
+                    style={{
+                      width: 20,
+                      height: 20,
+                      border: '2px solid #fff',
+                      borderTopColor: 'transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                    }}
+                  />
                   جاري إنشاء الحساب...
                 </>
               ) : (
                 <>
-                  <UserPlus className="w-5 h-5" />
+                  <UserPlus size={20} />
                   إنشاء حساب
                 </>
               )}
             </button>
-
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-700">
+          {/* زر العودة */}
+          <div 
+            style={{
+              marginTop: 24,
+              paddingTop: 24,
+              borderTop: `1px solid ${c.border}`,
+            }}
+          >
             <button
               onClick={onBack}
-              className="w-full py-3 bg-gray-700/50 hover:bg-gray-700 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
               disabled={loading}
+              style={{
+                width: '100%',
+                padding: 14,
+                background: c.cardAlt,
+                border: `1px solid ${c.border}`,
+                borderRadius: 14,
+                color: c.text,
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                fontFamily: 'inherit',
+                transition: 'all 0.2s',
+              }}
             >
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight size={20} />
               العودة لتسجيل الدخول
             </button>
           </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500">نظام الإدارة المالية v6.0</p>
+          {/* التذييل */}
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <p style={{ fontSize: 12, color: c.muted, margin: 0 }}>
+              نظام الإدارة المالية v7.0
+            </p>
           </div>
-
         </div>
       </div>
     </div>
