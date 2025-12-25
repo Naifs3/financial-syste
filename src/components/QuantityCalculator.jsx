@@ -290,7 +290,7 @@ const QuantityCalculator = ({ darkMode = true }) => {
   );
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: t.bg, color: t.text, fontFamily: 'system-ui' }}>
+    <div dir="rtl" style={{ minHeight: '100vh', color: t.text, fontFamily: 'system-ui' }}>
       <style>{`
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
