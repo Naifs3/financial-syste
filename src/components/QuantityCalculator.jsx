@@ -290,7 +290,7 @@ const QuantityCalculator = ({ darkMode = true }) => {
   );
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', color: t.text, fontFamily: 'system-ui' }}>
+    <div dir="rtl" style={{ color: t.text, fontFamily: 'system-ui' }}>
       <style>{`
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
@@ -299,22 +299,26 @@ const QuantityCalculator = ({ darkMode = true }) => {
         ::-webkit-scrollbar-thumb { background: ${t.border}; border-radius: 4px; }
       `}</style>
       
-      <div style={{ background: t.card, borderBottom: `1px solid ${t.border}`, padding: '12px 16px', position: 'sticky', top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ filter: 'grayscale(100%)', opacity: 0.7 }}>🧮</span>حاسبة الكميات
-          </h1>
-          <div style={{ display: 'flex', gap: 4, background: t.cardAlt, padding: 4, borderRadius: 10 }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 16 }}>
+        {/* العنوان بنفس تصميم الأقسام */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${t.accentDark}, ${t.accent})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🧮</div>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>حاسبة الكميات</h1>
+            <p style={{ fontSize: 13, color: t.muted, margin: 0 }}>احسب تكاليف المشاريع والأرباح</p>
+          </div>
+        </div>
+
+        {/* التابات داخل كارد */}
+        <div style={{ background: t.card, borderRadius: 16, border: `1px solid ${t.border}`, padding: 16, marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             {[{ id: 'calculator', label: 'الحاسبة', icon: '🧮' }, { id: 'items', label: 'البنود', icon: '📋' }, { id: 'programming', label: 'البرمجة', icon: '⚙️' }].map(tab => (
-              <button key={tab.id} onClick={() => setMainTab(tab.id)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: mainTab === tab.id ? t.accent : 'transparent', color: mainTab === tab.id ? '#fff' : t.muted, fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ filter: 'grayscale(100%)', opacity: 0.7 }}>{tab.icon}</span>{tab.label}
+              <button key={tab.id} onClick={() => setMainTab(tab.id)} style={{ flex: 1, padding: '12px 16px', borderRadius: 12, border: 'none', background: mainTab === tab.id ? `linear-gradient(135deg, ${t.accentDark}, ${t.accent})` : t.cardAlt, color: mainTab === tab.id ? '#fff' : t.muted, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <span>{tab.icon}</span>{tab.label}
               </button>
             ))}
           </div>
         </div>
-      </div>
-
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 16 }}>
         {mainTab === 'calculator' && (
           <div>
             <div style={{ background: t.card, borderRadius: 16, border: `1px solid ${t.border}`, padding: 20, marginBottom: 16 }}>
@@ -357,17 +361,26 @@ const QuantityCalculator = ({ darkMode = true }) => {
                   </div>
                 ) : (
                   <div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
-                      {[{ l: 'الطول', v: length, s: setLength, c: t.text }, { l: 'العرض', v: width, s: setWidth, c: t.text }, { l: 'الارتفاع', v: height, s: setHeight, c: t.warning }].map(({ l, v, s, c }) => (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 12 }}>
+                      {[{ l: 'الطول', v: length, s: setLength, c: t.text }, { l: 'العرض', v: width, s: setWidth, c: t.text }].map(({ l, v, s, c }) => (
                         <div key={l} style={{ textAlign: 'center' }}>
                           <div style={{ fontSize: 14, color: c, marginBottom: 10, fontWeight: 500 }}>{l}</div>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                            <button onClick={() => adjustValue(s, v, -0.5)} style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${c === t.warning ? `${t.warning}50` : t.border}`, background: c === t.warning ? `${t.warning}20` : t.card, color: c, fontSize: 22, cursor: 'pointer', fontWeight: 600 }}>−</button>
+                            <button onClick={() => adjustValue(s, v, -0.5)} style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${t.border}`, background: t.card, color: c, fontSize: 22, cursor: 'pointer', fontWeight: 600 }}>−</button>
                             <input type="number" value={v || ''} onChange={(e) => s(parseFloat(e.target.value) || 0)} style={{ width: 55, background: 'transparent', border: 'none', color: c, fontSize: 22, fontWeight: 600, textAlign: 'center', outline: 'none' }} />
-                            <button onClick={() => adjustValue(s, v, 0.5)} style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${c === t.warning ? `${t.warning}50` : t.border}`, background: c === t.warning ? `${t.warning}20` : t.card, color: c, fontSize: 22, cursor: 'pointer', fontWeight: 600 }}>+</button>
+                            <button onClick={() => adjustValue(s, v, 0.5)} style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${t.border}`, background: t.card, color: c, fontSize: 22, cursor: 'pointer', fontWeight: 600 }}>+</button>
                           </div>
                         </div>
                       ))}
+                    </div>
+                    {/* الارتفاع في صف منفصل */}
+                    <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                      <div style={{ fontSize: 14, color: t.warning, marginBottom: 10, fontWeight: 500 }}>الارتفاع</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <button onClick={() => adjustValue(setHeight, height, -0.5)} style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${t.warning}50`, background: `${t.warning}20`, color: t.warning, fontSize: 22, cursor: 'pointer', fontWeight: 600 }}>−</button>
+                        <input type="number" value={height || ''} onChange={(e) => setHeight(parseFloat(e.target.value) || 0)} style={{ width: 55, background: 'transparent', border: 'none', color: t.warning, fontSize: 22, fontWeight: 600, textAlign: 'center', outline: 'none' }} />
+                        <button onClick={() => adjustValue(setHeight, height, 0.5)} style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${t.warning}50`, background: `${t.warning}20`, color: t.warning, fontSize: 22, cursor: 'pointer', fontWeight: 600 }}>+</button>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
                       <div style={{ flex: 1, padding: 12, borderRadius: 12, background: `${t.success}15`, border: `1px solid ${t.success}30`, textAlign: 'center' }}>
