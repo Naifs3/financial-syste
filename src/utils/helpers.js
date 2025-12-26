@@ -1,87 +1,101 @@
 // src/utils/helpers.js
-import CryptoJS from 'crypto-js';
 
-const SECRET_KEY = 'RKZ-FINANCIAL-SYSTEM-2024-SECRET-KEY';
-
-export const encrypt = (text) => {
-  if (!text) return '';
-  return CryptoJS.AES.encrypt(text, SECRET_KEY).toString();
-};
-
-export const decrypt = (ciphertext) => {
-  if (!ciphertext) return '';
-  try {
-    const bytes = CryptoJS.AES.decrypt(ciphertext, SECRET_KEY);
-    return bytes.toString(CryptoJS.enc.Utf8);
-  } catch (error) {
-    console.error('Decryption error:', error);
-    return '';
+/**
+ * تحويل الأرقام العربية إلى إنجليزية
+ */
+export const toEnglishNumbers = (str) => {
+  if (str === null || str === undefined) return str;
+  const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  let result = String(str);
+  for (let i = 0; i < 10; i++) {
+    result = result.replace(new RegExp(arabicNumbers[i], 'g'), i);
+    result = result.replace(new RegExp(persianNumbers[i], 'g'), i);
   }
+  return result;
 };
 
-export const generateRefNumber = (prefix, number) => {
-  return `${prefix}-${String(number).padStart(4, '0')}`;
-};
-
+/**
+ * تنسيق الأرقام مع الفواصل (أرقام إنجليزية)
+ */
 export const formatNumber = (num) => {
-  return new Intl.NumberFormat('ar-SA').format(num);
+  if (num === null || num === undefined || isNaN(num)) return '0';
+  return new Intl.NumberFormat('en-US').format(num);
 };
 
-export const formatCurrency = (amount) => {
-  return `${formatNumber(amount)} ريال`;
+/**
+ * تنسيق المبالغ المالية
+ */
+export const formatCurrency = (num, currency = 'ريال') => {
+  return `${formatNumber(num)} ${currency}`;
 };
 
+/**
+ * تنسيق التاريخ بأرقام إنجليزية
+ */
+export const formatDate = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return date;
+  
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * تنسيق التاريخ والوقت
+ */
+export const formatDateTime = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return date;
+  
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+};
+
+/**
+ * حساب الأيام المتبقية
+ */
 export const calcDaysRemaining = (dueDate) => {
   if (!dueDate) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const due = new Date(dueDate);
   due.setHours(0, 0, 0, 0);
-  const diffTime = due - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
+  const diff = due - today;
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 };
 
-export const calcNextDueDate = (currentDate, type) => {
-  const date = new Date(currentDate);
-  if (type === 'monthly') {
-    date.setMonth(date.getMonth() + 1);
-  } else if (type === 'yearly') {
-    date.setFullYear(date.getFullYear() + 1);
-  }
-  return date.toISOString().split('T')[0];
-};
-
+/**
+ * الحصول على لون الحالة حسب الأيام
+ */
 export const getStatusColorByDays = (days) => {
-  if (days === null) return 'green';
-  if (days < 0) return 'red';
-  if (days <= 7) return 'orange';
-  if (days <= 14) return 'yellow';
-  return 'green';
+  if (days === null) return 'info';
+  if (days < 0) return 'danger';
+  if (days <= 7) return 'warning';
+  return 'success';
 };
 
-export const formatDateTime = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('ar-SA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+/**
+ * توليد معرف فريد
+ */
+export const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
-export const formatTime12 = (date) => {
-  return date.toLocaleTimeString('ar-SA', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true
-  });
-};
-
-export const compressImage = (file, maxWidth = 1920, maxHeight = 1080, quality = 0.8) => {
+/**
+ * ضغط الصورة
+ */
+export const compressImage = (file, maxWidth = 1200, quality = 0.8) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -92,28 +106,20 @@ export const compressImage = (file, maxWidth = 1920, maxHeight = 1080, quality =
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-
-        if (width > height) {
-          if (width > maxWidth) {
-            height *= maxWidth / width;
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
-          }
+        
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
         }
-
+        
         canvas.width = width;
         canvas.height = height;
+        
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-
+        
         canvas.toBlob(
-          (blob) => {
-            resolve(blob);
-          },
+          (blob) => resolve(blob),
           file.type,
           quality
         );
@@ -124,74 +130,56 @@ export const compressImage = (file, maxWidth = 1920, maxHeight = 1080, quality =
   });
 };
 
-export const blobToBase64 = (blob) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+/**
+ * تنسيق حجم الملف
+ */
+export const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-export const validateFileType = (file, allowedTypes) => {
-  return allowedTypes.some(type => file.type.startsWith(type));
-};
-
-export const validateFileSize = (file, maxSize) => {
-  return file.size <= maxSize;
-};
-
-export const calculateProgress = (project) => {
-  if (!project.folders || project.folders.length === 0) return 0;
-  const totalFiles = project.folders.reduce((sum, folder) => sum + (folder.files?.length || 0), 0);
-  return Math.min(100, Math.round(totalFiles * 10));
-};
-
-export const hasPermission = (userRole, requiredLevel) => {
-  const roles = {
-    owner: 3,
-    manager: 2,
-    member: 1
-  };
-  return roles[userRole] >= requiredLevel;
-};
-
-export const copyToClipboard = async (text) => {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch (error) {
-    console.error('Copy failed:', error);
-    return false;
-  }
-};
-
-export const calculateSessionDuration = (startTime) => {
-  if (!startTime) return 0;
-  const now = Date.now();
-  const diff = now - startTime;
-  return Math.floor(diff / 60000);
-};
-
-export const generateId = () => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
-
+/**
+ * التحقق من صحة البريد الإلكتروني
+ */
 export const isValidEmail = (email) => {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
 };
 
-export const isValidPhone = (phone) => {
-  const regex = /^(05|5)[0-9]{8}$/;
-  return regex.test(phone);
+/**
+ * اختصار النص الطويل
+ */
+export const truncateText = (text, maxLength = 50) => {
+  if (!text || text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
 };
 
-export const getRandomGreeting = (greetings, username) => {
-  const greeting = greetings[Math.floor(Math.random() * greetings.length)];
-  return `${greeting} ${username}`;
+/**
+ * تنسيق النسبة المئوية
+ */
+export const formatPercent = (value, decimals = 0) => {
+  if (value === null || value === undefined || isNaN(value)) return '0%';
+  return `${Number(value).toFixed(decimals)}%`;
 };
 
-export const getRandomQuote = (quotes) => {
-  return quotes[Math.floor(Math.random() * quotes.length)];
+/**
+ * الحصول على الوقت المنقضي
+ */
+export const getTimeAgo = (date) => {
+  if (!date) return '';
+  const now = new Date();
+  const past = new Date(date);
+  const diffMs = now - past;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'الآن';
+  if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
+  if (diffHours < 24) return `منذ ${diffHours} ساعة`;
+  if (diffDays < 7) return `منذ ${diffDays} يوم`;
+  return formatDate(date);
 };
