@@ -455,6 +455,27 @@ function App() {
       }}
     >
       <link href={SHARED.font.url} rel="stylesheet" />
+      
+      {/* ═══════════════ Global Styles - أرقام إنجليزية ═══════════════ */}
+      <style>{`
+        * {
+          font-feature-settings: "tnum";
+        }
+        input, select, textarea {
+          font-family: inherit;
+        }
+        input[type="number"], 
+        input[type="date"], 
+        input[type="time"],
+        input[type="tel"] {
+          direction: ltr;
+          text-align: right;
+        }
+        /* إجبار الأرقام الإنجليزية في كل مكان */
+        .en-nums, [data-en-nums] {
+          font-variant-numeric: tabular-nums;
+        }
+      `}</style>
 
       {/* ═══════════════ Header ═══════════════ */}
       <header 
@@ -505,7 +526,7 @@ function App() {
                   {currentUser.username}
                 </p>
                 <p style={{ fontSize: 12, color: t.text.muted, margin: 0 }}>
-                  {currentTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                  {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
               
