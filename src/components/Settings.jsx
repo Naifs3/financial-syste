@@ -1,150 +1,161 @@
-// src/components/Settings.jsx
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Sun, Moon, Monitor, Palette, Type, Check, MapPin } from 'lucide-react';
+import { User, Bell, Palette, Shield, ChevronLeft } from 'lucide-react';
+import AppearanceSettings from './AppearanceSettings';
 
-const Settings = ({ 
-  darkMode, themeMode, setThemeMode, currentThemeId, setCurrentThemeId,
-  fontSize, setFontSize, city, setCity, theme, themeList
-}) => {
-  const t = theme;
+export default function Settings() {
+  const [activeTab, setActiveTab] = useState('appearance');
 
-  const cities = [
-    { value: 'Riyadh', label: 'الرياض' },
-    { value: 'Jeddah', label: 'جدة' },
-    { value: 'Mecca', label: 'مكة المكرمة' },
-    { value: 'Medina', label: 'المدينة المنورة' },
-    { value: 'Dammam', label: 'الدمام' },
-    { value: 'Khobar', label: 'الخبر' },
-    { value: 'Dhahran', label: 'الظهران' },
-    { value: 'Al Ahsa', label: 'الأحساء' },
-    { value: 'Tabuk', label: 'تبوك' },
-    { value: 'Abha', label: 'أبها' },
-    { value: 'Taif', label: 'الطائف' },
-    { value: 'Buraidah', label: 'بريدة' },
-    { value: 'Khamis Mushait', label: 'خميس مشيط' },
-    { value: 'Hail', label: 'حائل' },
-    { value: 'Najran', label: 'نجران' },
-    { value: 'Yanbu', label: 'ينبع' },
-    { value: 'Al Jubail', label: 'الجبيل' }
+  // ألوان الثيم
+  const colors = {
+    bgPrimary: '#0a0a0f',
+    bgSecondary: '#12121a',
+    bgTertiary: '#1a1a24',
+    textPrimary: '#ffffff',
+    textSecondary: '#a0a0b0',
+    textMuted: '#6b6b80',
+    border: '#2a2a3a',
+    primary: '#6366f1',
+  };
+
+  const c = colors;
+
+  // التبويبات
+  const tabs = [
+    { id: 'account', name: 'الحساب', icon: User },
+    { id: 'notifications', name: 'الإشعارات', icon: Bell },
+    { id: 'appearance', name: 'المظهر', icon: Palette },
+    { id: 'privacy', name: 'الخصوصية', icon: Shield },
   ];
 
-  const inputStyle = {
-    width: '100%', padding: '12px 16px', borderRadius: t.radius.lg,
-    border: `1px solid ${t.border.primary}`, background: t.bg.tertiary,
-    color: t.text.primary, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer'
-  };
-
-  const sectionStyle = {
-    background: t.bg.secondary, borderRadius: t.radius.xl,
-    border: `1px solid ${t.border.primary}`, padding: 24, marginBottom: 20
-  };
-
-  const titleStyle = {
-    fontSize: 16, fontWeight: 700, color: t.text.primary, marginBottom: 16,
-    display: 'flex', alignItems: 'center', gap: 8
+  // محتوى التبويبات
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'appearance':
+        return <AppearanceSettings embedded={true} />;
+      
+      case 'account':
+        return (
+          <div style={{ padding: 20 }}>
+            <h3 style={{ color: c.textPrimary, marginBottom: 20 }}>إعدادات الحساب</h3>
+            <p style={{ color: c.textMuted }}>قريباً...</p>
+          </div>
+        );
+      
+      case 'notifications':
+        return (
+          <div style={{ padding: 20 }}>
+            <h3 style={{ color: c.textPrimary, marginBottom: 20 }}>إعدادات الإشعارات</h3>
+            <p style={{ color: c.textMuted }}>قريباً...</p>
+          </div>
+        );
+      
+      case 'privacy':
+        return (
+          <div style={{ padding: 20 }}>
+            <h3 style={{ color: c.textPrimary, marginBottom: 20 }}>إعدادات الخصوصية</h3>
+            <p style={{ color: c.textMuted }}>قريباً...</p>
+          </div>
+        );
+      
+      default:
+        return null;
+    }
   };
 
   return (
-    <div style={{ padding: 16, paddingBottom: 80 }}>
-      
-      {/* العنوان */}
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: t.text.primary, display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
-          <SettingsIcon size={22} />
-          الإعدادات
-        </h2>
-        <p style={{ fontSize: 13, color: t.text.muted, marginTop: 4 }}>تخصيص المظهر والقوالب</p>
+    <div dir="rtl" style={{
+      minHeight: '100vh',
+      background: c.bgPrimary,
+      fontFamily: "'Tajawal', sans-serif",
+    }}>
+      {/* تحميل الخط */}
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700&display=swap" />
+
+      {/* الهيدر */}
+      <div style={{
+        background: c.bgSecondary,
+        borderBottom: `1px solid ${c.border}`,
+        padding: '16px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+      }}>
+        <button style={{
+          background: 'transparent',
+          border: 'none',
+          color: c.textSecondary,
+          cursor: 'pointer',
+          padding: 8,
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <ChevronLeft size={24} />
+        </button>
+        <h1 style={{
+          fontSize: 20,
+          fontWeight: 700,
+          color: c.textPrimary,
+          margin: 0,
+        }}>الإعدادات</h1>
       </div>
 
-      {/* تنبيه */}
-      <div style={{ background: `${t.button.primary}15`, border: `1px solid ${t.button.primary}30`, borderRadius: t.radius.lg, padding: 14, marginBottom: 24 }}>
-        <p style={{ fontSize: 13, color: t.button.primary, margin: 0 }}>💡 جميع الإعدادات يتم حفظها تلقائياً</p>
-      </div>
-
-      {/* ═══════════════ وضع العرض (نهاري/ليلي/تلقائي) ═══════════════ */}
-      <div style={sectionStyle}>
-        <h3 style={titleStyle}>
-          {themeMode === 'light' ? <Sun size={18} /> : themeMode === 'dark' ? <Moon size={18} /> : <Monitor size={18} />}
-          وضع العرض
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          {[
-            { mode: 'light', icon: <Sun size={22} />, label: 'فاتح' },
-            { mode: 'dark', icon: <Moon size={22} />, label: 'داكن' },
-            { mode: 'auto', icon: <Monitor size={22} />, label: 'تلقائي' }
-          ].map(({ mode, icon, label }) => (
-            <button key={mode} onClick={() => setThemeMode(mode)} style={{
-              padding: 18, borderRadius: t.radius.xl,
-              border: themeMode === mode ? `2px solid ${t.button.primary}` : `1px solid ${t.border.primary}`,
-              background: themeMode === mode ? `${t.button.primary}15` : t.bg.tertiary, cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8
-            }}>
-              <div style={{ color: themeMode === mode ? t.button.primary : t.text.muted }}>{icon}</div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: themeMode === mode ? t.button.primary : t.text.secondary }}>{label}</span>
-              {themeMode === mode && <Check size={14} color={t.button.primary} />}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ═══════════════ اختيار المدينة ═══════════════ */}
-      <div style={sectionStyle}>
-        <h3 style={titleStyle}><MapPin size={18} />المدينة (للطقس)</h3>
-        <select value={city} onChange={(e) => setCity(e.target.value)} style={inputStyle}>
-          {cities.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
-        <p style={{ fontSize: 11, color: t.text.muted, marginTop: 8 }}>اختر مدينتك لعرض حالة الطقس</p>
-      </div>
-
-      {/* ═══════════════ حجم الخط ═══════════════ */}
-      <div style={sectionStyle}>
-        <h3 style={titleStyle}><Type size={18} />حجم الخط</h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <input type="range" min="12" max="24" value={fontSize} onChange={(e) => setFontSize(parseInt(e.target.value))}
-            style={{ flex: 1, accentColor: t.button.primary }} />
-          <div style={{ minWidth: 45, padding: '8px 12px', background: t.bg.tertiary, borderRadius: t.radius.md, textAlign: 'center' }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: t.text.primary }}>{fontSize}</span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-          <span style={{ fontSize: 11, color: t.text.muted }}>صغير</span>
-          <span style={{ fontSize: 11, color: t.text.muted }}>كبير</span>
-        </div>
-      </div>
-
-      {/* ═══════════════ اختيار القالب ═══════════════ */}
-      <div style={sectionStyle}>
-        <h3 style={titleStyle}><Palette size={18} />اختر القالب</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
-          {themeList?.map((themeItem) => {
-            const isSelected = currentThemeId === themeItem.id;
-            const previewColors = themeItem.colorKeys?.slice(0, 5).map(key => themeItem.colors[key]?.main) || [];
+      <div style={{
+        maxWidth: 900,
+        margin: '0 auto',
+        display: 'flex',
+        gap: 0,
+      }}>
+        {/* القائمة الجانبية */}
+        <div style={{
+          width: 220,
+          background: c.bgSecondary,
+          borderLeft: `1px solid ${c.border}`,
+          minHeight: 'calc(100vh - 65px)',
+          padding: '20px 0',
+        }}>
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            
             return (
-              <button key={themeItem.id} onClick={() => setCurrentThemeId(themeItem.id)} style={{
-                padding: 18, borderRadius: t.radius.xl, textAlign: 'right',
-                border: isSelected ? `2px solid ${t.button.primary}` : `1px solid ${t.border.primary}`,
-                background: isSelected ? `${t.button.primary}10` : t.bg.tertiary, cursor: 'pointer', position: 'relative'
-              }}>
-                {isSelected && (
-                  <div style={{ position: 'absolute', top: 10, left: 10, width: 22, height: 22, borderRadius: '50%',
-                    background: t.button.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Check size={12} color="#fff" />
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>
-                  {previewColors.map((color, i) => (
-                    <div key={i} style={{ width: 22, height: 22, borderRadius: '50%', background: color, border: '2px solid rgba(255,255,255,0.2)' }} />
-                  ))}
-                </div>
-                <h4 style={{ fontSize: 14, fontWeight: 700, color: t.text.primary, margin: '0 0 4px 0' }}>{themeItem.name}</h4>
-                <p style={{ fontSize: 11, color: t.text.muted, margin: 0 }}>{themeItem.description || 'قالب مميز'}</p>
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  width: '100%',
+                  padding: '14px 20px',
+                  background: isActive ? `${c.primary}15` : 'transparent',
+                  border: 'none',
+                  borderRight: isActive ? `3px solid ${c.primary}` : '3px solid transparent',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Icon size={20} color={isActive ? c.primary : c.textMuted} />
+                <span style={{
+                  fontSize: 14,
+                  fontWeight: isActive ? 600 : 500,
+                  color: isActive ? c.primary : c.textSecondary,
+                }}>{tab.name}</span>
               </button>
             );
           })}
         </div>
+
+        {/* المحتوى */}
+        <div style={{
+          flex: 1,
+          minHeight: 'calc(100vh - 65px)',
+          overflowY: 'auto',
+        }}>
+          {renderTabContent()}
+        </div>
       </div>
     </div>
   );
-};
-
-export default Settings;
+}
