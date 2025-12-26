@@ -193,6 +193,60 @@ const GradientBackground = () => (
 );
 
 // ═══════════════════════════════════════════════════════════════
+// ⏰ مكون الساعة (منفصل لتجنب re-render)
+// ═══════════════════════════════════════════════════════════════
+
+const LiveClock = React.memo(() => {
+  const [time, setTime] = useState(new Date());
+  
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  
+  return (
+    <span>🕐 {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ⏱️ مكون عداد الوقت النشط (منفصل لتجنب re-render)
+// ═══════════════════════════════════════════════════════════════
+
+const ActiveTimer = React.memo(({ isActive, buttonColor }) => {
+  const [seconds, setSeconds] = useState(() => {
+    const saved = localStorage.getItem('activeSessionTime');
+    return saved ? parseInt(saved) : 0;
+  });
+  const secondsRef = useRef(seconds);
+  
+  useEffect(() => {
+    if (!isActive) return;
+    
+    const interval = setInterval(() => {
+      secondsRef.current += 1;
+      setSeconds(secondsRef.current);
+      if (secondsRef.current % 10 === 0) {
+        localStorage.setItem('activeSessionTime', secondsRef.current.toString());
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isActive]);
+  
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  const display = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: buttonColor }}>
+      <Clock size={12} />
+      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{display}</span>
+    </div>
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════
 // 🚀 المكون الرئيسي
 // ═══════════════════════════════════════════════════════════════
 
@@ -203,7 +257,7 @@ function App() {
   const [showSignup, setShowSignup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState('dashboard');
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
   
   // البيانات
   const [expenses, setExpenses] = useState([]);
@@ -225,10 +279,8 @@ function App() {
   const [fontFamily, setFontFamily] = useState(() => localStorage.getItem('rkz_fontFamily') || 'tajawal');
   const [bgEffect, setBgEffect] = useState(() => localStorage.getItem('rkz_bgEffect') || 'none');
   
-  // عداد الوقت
-  const [activeSeconds, setActiveSeconds] = useState(0);
+  // عداد الوقت - تم نقله لمكون منفصل
   const [isPageVisible, setIsPageVisible] = useState(true);
-  const activeSecondsRef = useRef(0);
 
   // ═══════════════════════════════════════════════════════════════
   // حساب الثيم والألوان
@@ -311,10 +363,9 @@ function App() {
     }
   }, [themeMode]);
 
-  // الوقت
+  // تحديث التاريخ فقط (ليس الوقت) - مرة واحدة عند التحميل
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
+    setCurrentDate(new Date());
   }, []);
 
   // تغيير العبارات
@@ -339,36 +390,6 @@ function App() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
-
-  // عداد الوقت
-  useEffect(() => {
-    const savedTime = localStorage.getItem('activeSessionTime');
-    if (savedTime) {
-      const parsed = parseInt(savedTime);
-      setActiveSeconds(parsed);
-      activeSecondsRef.current = parsed;
-    }
-  }, []);
-
-  useEffect(() => {
-    let interval;
-    if (isPageVisible && isLoggedIn) {
-      interval = setInterval(() => {
-        activeSecondsRef.current += 1;
-        setActiveSeconds(activeSecondsRef.current);
-        if (activeSecondsRef.current % 10 === 0) {
-          localStorage.setItem('activeSessionTime', activeSecondsRef.current.toString());
-        }
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isPageVisible, isLoggedIn]);
-
-  const formatActiveTime = () => {
-    const mins = Math.floor(activeSeconds / 60);
-    const secs = activeSeconds % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
 
   // الطقس
   useEffect(() => {
@@ -399,7 +420,7 @@ function App() {
 
   const formatDate = () => {
     const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-    return { dayName: days[currentTime.getDay()], day: currentTime.getDate(), month: currentTime.getMonth() + 1, year: currentTime.getFullYear() };
+    return { dayName: days[currentDate.getDay()], day: currentDate.getDate(), month: currentDate.getMonth() + 1, year: currentDate.getFullYear() };
   };
 
   const translateRole = (role) => {
@@ -436,7 +457,7 @@ function App() {
   const handleLogin = async (userData) => {
     setCurrentUser(userData); setIsLoggedIn(true);
     localStorage.setItem('currentUser', JSON.stringify(userData));
-    setActiveSeconds(0); activeSecondsRef.current = 0;
+    // إعادة تعيين عداد الوقت
     localStorage.setItem('activeSessionTime', '0');
   };
   
@@ -446,7 +467,6 @@ function App() {
     try {
       await signOut(auth); setIsLoggedIn(false); setCurrentUser(null);
       localStorage.removeItem('currentUser'); localStorage.removeItem('activeSessionTime');
-      setActiveSeconds(0); activeSecondsRef.current = 0;
     } catch (e) { console.error(e); }
   };
 
@@ -567,7 +587,7 @@ function App() {
                 <p style={{ fontSize: 11, color: t.text.muted, margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <span>📅 {dateInfo.dayName} {dateInfo.day}/{dateInfo.month}/{dateInfo.year}</span>
                   <span style={{ opacity: 0.4 }}>|</span>
-                  <span>🕐 {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                  <LiveClock />
                   <span style={{ opacity: 0.4 }}>|</span>
                   <span>{weather?.icon || '☀️'} {weather?.temp || '--'}° {cityName}</span>
                 </p>
@@ -589,10 +609,7 @@ function App() {
                 <span style={{ fontSize: 12, fontWeight: 600, color: t.text.primary }}>
                   {currentUser?.username || 'مستخدم'}: <span style={{ color: t.text.muted, fontWeight: 500 }}>{translateRole(currentUser?.role)}</span>
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: appliedButtonColor, borderRight: `1px solid ${t.border.primary}`, paddingRight: 8, marginRight: 4 }}>
-                  <Clock size={12} />
-                  <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{formatActiveTime()}</span>
-                </div>
+                <ActiveTimer isActive={isPageVisible && isLoggedIn} buttonColor={appliedButtonColor} />
               </button>
 
               <button style={{ width: 36, height: 36, borderRadius: t.radius.lg, border: 'none', background: t.bg.tertiary, color: t.text.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
