@@ -22,6 +22,163 @@ import Settings from './components/Settings';
 import QuantityCalculator from './components/QuantityCalculator';
 import { LogOut, Settings as SettingsIcon, Bell, Clock } from 'lucide-react';
 
+// ═══════════════════════════════════════════════════════════════
+// ⭐ خلفية النجوم والشهب (النمط الياباني)
+// ═══════════════════════════════════════════════════════════════
+
+const StarryBackground = () => {
+  const stars = Array.from({ length: 35 }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    top: Math.random() * 100,
+    size: Math.random() * 1.5 + 0.5,
+    delay: Math.random() * 5,
+    duration: Math.random() * 3 + 3,
+  }));
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      pointerEvents: 'none',
+      overflow: 'hidden',
+      zIndex: 0,
+    }}>
+      {stars.map((star) => (
+        <div
+          key={star.id}
+          style={{
+            position: 'absolute',
+            left: `${star.left}%`,
+            top: `${star.top}%`,
+            width: star.size,
+            height: star.size,
+            background: '#fff',
+            borderRadius: '50%',
+            opacity: 0.6,
+            animation: `twinkle ${star.duration}s ease-in-out ${star.delay}s infinite`,
+          }}
+        />
+      ))}
+      <div className="meteor" />
+      <style>{`
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 0.9; }
+        }
+        .meteor {
+          position: absolute;
+          top: 15%;
+          right: -5%;
+          width: 80px;
+          height: 1px;
+          background: linear-gradient(to left, #fff, transparent);
+          transform: rotate(-35deg);
+          opacity: 0;
+          animation: shootingStar 12s ease-out infinite;
+          animation-delay: 3s;
+        }
+        @keyframes shootingStar {
+          0% { opacity: 0; transform: rotate(-35deg) translateX(0); }
+          2% { opacity: 0.8; }
+          8% { opacity: 0; transform: rotate(-35deg) translateX(-400px); }
+          100% { opacity: 0; transform: rotate(-35deg) translateX(-400px); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 🎰 خلفية لاس فيغاس
+// ═══════════════════════════════════════════════════════════════
+
+const VegasBackground = () => {
+  const neonLights = Array.from({ length: 15 }, (_, i) => ({
+    id: i,
+    left: Math.random() * 90 + 5,
+    top: Math.random() * 90 + 5,
+    size: Math.random() * 3 + 1,
+    color: ['#ff00ff', '#00ffff', '#ff0066', '#00ff66', '#6600ff', '#ff3300'][Math.floor(Math.random() * 6)],
+    delay: Math.random() * 4,
+    duration: Math.random() * 2 + 1.5,
+  }));
+
+  const mysterySymbols = [
+    { symbol: '♠', left: 8, top: 15, size: 12, opacity: 0.04, delay: 0 },
+    { symbol: '♦', left: 92, top: 25, size: 14, opacity: 0.03, delay: 1 },
+    { symbol: '♣', left: 15, top: 75, size: 10, opacity: 0.04, delay: 2 },
+    { symbol: '♥', left: 85, top: 80, size: 11, opacity: 0.03, delay: 1.5 },
+    { symbol: '7', left: 50, top: 10, size: 20, opacity: 0.02, delay: 0.5 },
+    { symbol: '777', left: 30, top: 50, size: 16, opacity: 0.015, delay: 3 },
+    { symbol: '★', left: 70, top: 40, size: 18, opacity: 0.03, delay: 2.5 },
+    { symbol: '$', left: 25, top: 30, size: 15, opacity: 0.025, delay: 1.2 },
+  ];
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      pointerEvents: 'none',
+      overflow: 'hidden',
+      zIndex: 0,
+    }}>
+      {mysterySymbols.map((item, i) => (
+        <div
+          key={`mystery-${i}`}
+          style={{
+            position: 'absolute',
+            left: `${item.left}%`,
+            top: `${item.top}%`,
+            fontSize: item.size,
+            color: '#fff',
+            opacity: item.opacity,
+            fontFamily: 'serif',
+            animation: `mysteryPulse 8s ease-in-out ${item.delay}s infinite`,
+          }}
+        >
+          {item.symbol}
+        </div>
+      ))}
+
+      {neonLights.map((light) => (
+        <div
+          key={light.id}
+          style={{
+            position: 'absolute',
+            left: `${light.left}%`,
+            top: `${light.top}%`,
+            width: light.size,
+            height: light.size,
+            background: light.color,
+            borderRadius: '50%',
+            boxShadow: `0 0 ${light.size * 4}px ${light.size}px ${light.color}40`,
+            animation: `neonFloat ${light.duration}s ease-in-out ${light.delay}s infinite alternate`,
+            opacity: 0.6,
+          }}
+        />
+      ))}
+
+      <style>{`
+        @keyframes neonFloat {
+          0% { opacity: 0.3; transform: scale(0.9) translateY(0); }
+          100% { opacity: 0.7; transform: scale(1.1) translateY(-5px); }
+        }
+        @keyframes mysteryPulse {
+          0%, 100% { opacity: 0.02; transform: scale(1); }
+          50% { opacity: 0.06; transform: scale(1.1); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -42,6 +199,28 @@ function App() {
   const [fontSize, setFontSize] = useState(16);
   const [city, setCity] = useState('Riyadh');
   const [weather, setWeather] = useState(null);
+  
+  // ═══════════════ تأثير الخلفية ═══════════════
+  const [bgEffect, setBgEffect] = useState(() => {
+    return localStorage.getItem('rkz_bgEffect') || 'none';
+  });
+
+  // مراقبة تغييرات تأثير الخلفية
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const effect = localStorage.getItem('rkz_bgEffect') || 'none';
+      setBgEffect(effect);
+    };
+    
+    // فحص التغييرات كل ثانية
+    const interval = setInterval(handleStorageChange, 1000);
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
   
   // ═══════════════ عداد الوقت النشط ═══════════════
   const [activeSeconds, setActiveSeconds] = useState(0);
@@ -140,7 +319,6 @@ function App() {
 
   // ═══════════════ عداد الوقت النشط ═══════════════
   useEffect(() => {
-    // تحميل الوقت المحفوظ
     const savedTime = localStorage.getItem('activeSessionTime');
     if (savedTime) {
       const parsed = parseInt(savedTime);
@@ -155,7 +333,6 @@ function App() {
       interval = setInterval(() => {
         activeSecondsRef.current += 1;
         setActiveSeconds(activeSecondsRef.current);
-        // حفظ كل 10 ثواني
         if (activeSecondsRef.current % 10 === 0) {
           localStorage.setItem('activeSessionTime', activeSecondsRef.current.toString());
         }
@@ -164,26 +341,22 @@ function App() {
     return () => clearInterval(interval);
   }, [isPageVisible, isLoggedIn]);
 
-  // ═══════════════ تنسيق عداد الوقت ═══════════════
   const formatActiveTime = () => {
     const mins = Math.floor(activeSeconds / 60);
     const secs = activeSeconds % 60;
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  // ═══════════════ تحديث الوقت ═══════════════
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // ═══════════════ تغيير العبارات كل 30 ثانية ═══════════════
   useEffect(() => {
     const quoteTimer = setInterval(changeQuotes, 30000);
     return () => clearInterval(quoteTimer);
   }, []);
 
-  // ═══════════════ جلب حالة الطقس ═══════════════
   useEffect(() => {
     const fetchWeather = async () => {
       try {
@@ -212,7 +385,6 @@ function App() {
     return () => clearInterval(weatherTimer);
   }, [city]);
 
-  // ═══════════════ تنسيق التاريخ ═══════════════
   const formatDate = () => {
     const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
     return {
@@ -223,7 +395,6 @@ function App() {
     };
   };
 
-  // ═══════════════ ترجمة الصفة ═══════════════
   const translateRole = (role) => {
     const roles = { 'owner': 'المالك', 'admin': 'مدير', 'user': 'مستخدم', 'viewer': 'مشاهد' };
     return roles[role?.toLowerCase()] || role || 'مستخدم';
@@ -274,7 +445,6 @@ function App() {
     }
   }, [themeMode]);
 
-  // ═══════════════ Firebase listeners ═══════════════
   useEffect(() => {
     if (!isLoggedIn) return;
     const unsubExpenses = onSnapshot(query(collection(db, 'expenses'), orderBy('createdAt', 'desc')), (s) => setExpenses(s.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -284,12 +454,10 @@ function App() {
     return () => { unsubExpenses(); unsubTasks(); unsubProjects(); unsubAccounts(); };
   }, [isLoggedIn]);
 
-  // ═══════════════ Handlers ═══════════════
   const handleLogin = async (userData) => {
     setCurrentUser(userData);
     setIsLoggedIn(true);
     localStorage.setItem('currentUser', JSON.stringify(userData));
-    // إعادة تعيين عداد الوقت عند تسجيل الدخول
     setActiveSeconds(0);
     activeSecondsRef.current = 0;
     localStorage.setItem('activeSessionTime', '0');
@@ -371,8 +539,12 @@ function App() {
   const currentGreeting = greetingPhrases[greetingIndex];
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: t.bg.primary, color: t.text.primary, fontFamily: t.font.family, fontSize: `${fontSize}px` }}>
+    <div dir="rtl" style={{ minHeight: '100vh', background: t.bg.primary, color: t.text.primary, fontFamily: t.font.family, fontSize: `${fontSize}px`, position: 'relative' }}>
       <link href={SHARED.font.url} rel="stylesheet" />
+      
+      {/* ═══════════════ تأثيرات الخلفية ═══════════════ */}
+      {bgEffect === 'stars' && darkMode && <StarryBackground />}
+      {bgEffect === 'vegas' && darkMode && <VegasBackground />}
       
       <style>{`
         * { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
@@ -394,7 +566,6 @@ function App() {
         <div style={{ maxWidth: 1400, margin: '0 auto', padding: '10px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             
-            {/* ═══════════════ الشعار والمعلومات ═══════════════ */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 46, height: 46, background: 'linear-gradient(135deg, #d4c5a9 0%, #9ca3af 100%)', borderRadius: t.radius.lg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #b8a88a', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
                 <span style={{ fontSize: 17, fontWeight: 800, color: '#3d3d3d' }}>RKZ</span>
@@ -412,16 +583,13 @@ function App() {
               </div>
             </div>
 
-            {/* ═══════════════ المستخدم والأزرار ═══════════════ */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               
-              {/* العبارة الترحيبية مع إيموجي أكبر */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ fontSize: 11, color: t.text.muted, fontWeight: 700 }}>{currentGreeting.text}</span>
                 <span style={{ fontSize: 15 }}>{currentGreeting.emoji}</span>
               </div>
               
-              {/* فقاعة المستخدم - الاسم: الصفة */}
               <button 
                 onClick={() => handleViewChange('users')}
                 style={{ 
@@ -440,7 +608,6 @@ function App() {
                 </div>
               </button>
 
-              {/* زر الإشعارات */}
               <button style={{
                 width: 36, height: 36, borderRadius: t.radius.lg, border: 'none',
                 background: t.bg.tertiary, color: t.text.muted,
@@ -451,7 +618,6 @@ function App() {
                 <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, background: t.status.danger.text, borderRadius: '50%' }} />
               </button>
 
-              {/* زر الإعدادات */}
               <button onClick={() => handleViewChange('settings')} style={{
                 width: 36, height: 36, borderRadius: t.radius.lg, border: 'none',
                 background: currentView === 'settings' ? t.button.gradient : t.bg.tertiary,
@@ -461,7 +627,6 @@ function App() {
                 <SettingsIcon size={18} />
               </button>
 
-              {/* زر الخروج */}
               <button onClick={handleLogout} style={{
                 display: 'flex', alignItems: 'center', gap: 5, padding: '0 12px', height: 36,
                 borderRadius: t.radius.lg, border: 'none',
@@ -476,11 +641,9 @@ function App() {
         </div>
       </header>
 
-      {/* ═══════════════ Navigation ═══════════════ */}
       <Navigation currentView={currentView} setCurrentView={handleViewChange} darkMode={darkMode} theme={theme} />
 
-      {/* ═══════════════ Main Content ═══════════════ */}
-      <main style={{ maxWidth: 1400, margin: '0 auto', padding: '0 24px' }}>
+      <main style={{ maxWidth: 1400, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
         {currentView === 'dashboard' && <Dashboard expenses={expenses} tasks={tasks} projects={projects} accounts={accounts} darkMode={darkMode} theme={theme} />}
         {currentView === 'expenses' && <Expenses expenses={expenses} accounts={accounts} onAdd={handleAddExpense} onEdit={handleEditExpense} onDelete={handleDeleteExpense} onMarkPaid={handleMarkPaid} onRefresh={handleRefreshExpenses} darkMode={darkMode} theme={theme} />}
         {currentView === 'tasks' && <Tasks tasks={tasks} projects={projects} onAdd={handleAddTask} onEdit={handleEditTask} onDelete={handleDeleteTask} onToggleStatus={handleToggleTaskStatus} darkMode={darkMode} theme={theme} />}
@@ -491,7 +654,7 @@ function App() {
         {currentView === 'calculator' && <QuantityCalculator darkMode={darkMode} theme={theme} />}
       </main>
 
-      <footer style={{ textAlign: 'center', padding: 16, color: t.text.muted, fontSize: 10 }}>
+      <footer style={{ textAlign: 'center', padding: 16, color: t.text.muted, fontSize: 10, position: 'relative', zIndex: 1 }}>
         <p style={{ margin: 0 }}>نظام ركائز الأولى للتعمير v7.0 © 2024</p>
       </footer>
     </div>
