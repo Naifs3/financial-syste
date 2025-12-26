@@ -22,8 +22,7 @@ const Navigation = ({ currentView, setCurrentView, darkMode, theme }) => {
     { id: 'projects', name: 'المشاريع', icon: FolderKanban, colorKey: colorKeys[3] },
     { id: 'accounts', name: 'الحسابات', icon: Shield, colorKey: colorKeys[4] },
     { id: 'calculator', name: 'حاسبة الكميات', icon: Calculator, colorKey: colorKeys[5] },
-    { id: 'users', name: 'المستخدمين', icon: Users, colorKey: colorKeys[0] },
-    { id: 'settings', name: 'الإعدادات', icon: Settings, colorKey: colorKeys[1] }
+    { id: 'users', name: 'المستخدمين', icon: Users, colorKey: colorKeys[0] }
   ];
 
   return (
