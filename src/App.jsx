@@ -1,4 +1,4 @@
-// src/App.js
+// src/App.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Receipt, CheckSquare, FolderOpen, Wallet, Users,
@@ -14,7 +14,7 @@ import UsersComponent from './components/Users';
 import Resources from './components/Resources';
 
 // استيراد الثيم والمساعدات
-import { getTheme } from './utils/theme';
+import { getTheme } from './config/theme';
 import { formatNumber, generateCode, calcDaysRemaining } from './utils/helpers';
 
 function App() {
