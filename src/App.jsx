@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Receipt, CheckSquare, FolderOpen, Wallet, Users,
-  Package, Moon, Sun, Menu, X, LogOut, Settings, Bell, ChevronLeft
+  Package, Moon, Sun, Menu, X, LogOut, Settings, Bell, ChevronLeft,
+  User, Shield, Palette, Database, HelpCircle, Info, Calculator
 } from 'lucide-react';
 
 // استيراد المكونات
@@ -12,6 +13,7 @@ import Projects from './components/Projects';
 import Accounts from './components/Accounts';
 import UsersComponent from './components/Users';
 import Resources from './components/Resources';
+import QuantityCalculator from './components/QuantityCalculator';
 
 // استيراد الثيم والمساعدات
 import { getTheme } from './config/theme';
@@ -21,10 +23,19 @@ function App() {
   // ═══════════════════════════════════════════════════════════
   // الحالات الرئيسية
   // ═══════════════════════════════════════════════════════════
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [loading, setLoading] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // حفظ الوضع الليلي
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+  }, [darkMode]);
 
   // ═══════════════════════════════════════════════════════════
   // بيانات الأقسام الأساسية
@@ -59,7 +70,7 @@ function App() {
   ]);
 
   // ═══════════════════════════════════════════════════════════
-  // بيانات إدارة الموارد (الجديدة)
+  // بيانات إدارة الموارد
   // ═══════════════════════════════════════════════════════════
   const [clients, setClients] = useState([
     { id: 1, code: 'CL-0001', name: 'شركة الإنشاءات المتحدة', type: 'company', phone: '0112345678', email: 'info@construction.com', address: 'الرياض - حي العليا', notes: '' },
@@ -110,7 +121,9 @@ function App() {
     { id: 'expenses', label: 'المصروفات', icon: Receipt, count: expenses.filter(e => e.status === 'غير مدفوع').length },
     { id: 'accounts', label: 'الحسابات', icon: Wallet, count: accounts.length },
     { id: 'resources', label: 'إدارة الموارد', icon: Package, count: clients.length + suppliers.length },
+    { id: 'calculator', label: 'حاسبة الكميات', icon: Calculator },
     { id: 'users', label: 'المستخدمين', icon: Users, count: users.length },
+    { id: 'settings', label: 'الإعدادات', icon: Settings },
   ];
 
   // ═══════════════════════════════════════════════════════════
@@ -209,7 +222,6 @@ function App() {
   // ═══════════════════════════════════════════════════════════
   // دوال إدارة الموارد
   // ═══════════════════════════════════════════════════════════
-  // العملاء
   const handleAddClient = async (data) => {
     const newClient = { ...data, id: Date.now() };
     setClients([...clients, newClient]);
@@ -221,7 +233,6 @@ function App() {
     setClients(clients.filter(c => c.id !== id));
   };
 
-  // الموردين
   const handleAddSupplier = async (data) => {
     const newSupplier = { ...data, id: Date.now() };
     setSuppliers([...suppliers, newSupplier]);
@@ -233,7 +244,6 @@ function App() {
     setSuppliers(suppliers.filter(s => s.id !== id));
   };
 
-  // المستندات
   const handleAddDocument = async (data) => {
     const newDocument = { ...data, id: Date.now() };
     setDocuments([...documents, newDocument]);
@@ -245,7 +255,6 @@ function App() {
     setDocuments(documents.filter(d => d.id !== id));
   };
 
-  // المواد
   const handleAddMaterial = async (data) => {
     const newMaterial = { ...data, id: Date.now() };
     setMaterials([...materials, newMaterial]);
@@ -257,7 +266,6 @@ function App() {
     setMaterials(materials.filter(m => m.id !== id));
   };
 
-  // المعدات
   const handleAddEquipment = async (data) => {
     const newEquipment = { ...data, id: Date.now() };
     setEquipment([...equipment, newEquipment]);
@@ -376,6 +384,133 @@ function App() {
   };
 
   // ═══════════════════════════════════════════════════════════
+  // صفحة الإعدادات
+  // ═══════════════════════════════════════════════════════════
+  const SettingsPage = () => {
+    const settingsSections = [
+      {
+        id: 'appearance',
+        title: 'المظهر',
+        icon: Palette,
+        items: [
+          { label: 'الوضع الليلي', description: 'تفعيل أو تعطيل الوضع الداكن', type: 'toggle', value: darkMode, onChange: () => setDarkMode(!darkMode) },
+        ]
+      },
+      {
+        id: 'account',
+        title: 'الحساب',
+        icon: User,
+        items: [
+          { label: 'الملف الشخصي', description: 'تعديل بيانات الحساب', type: 'link' },
+          { label: 'تغيير كلمة المرور', description: 'تحديث كلمة المرور', type: 'link' },
+        ]
+      },
+      {
+        id: 'security',
+        title: 'الأمان',
+        icon: Shield,
+        items: [
+          { label: 'المصادقة الثنائية', description: 'تفعيل التحقق بخطوتين', type: 'toggle', value: false },
+          { label: 'سجل الدخول', description: 'عرض سجل تسجيلات الدخول', type: 'link' },
+        ]
+      },
+      {
+        id: 'data',
+        title: 'البيانات',
+        icon: Database,
+        items: [
+          { label: 'تصدير البيانات', description: 'تحميل نسخة من بياناتك', type: 'button' },
+          { label: 'استيراد البيانات', description: 'استيراد بيانات من ملف', type: 'button' },
+        ]
+      },
+      {
+        id: 'about',
+        title: 'حول التطبيق',
+        icon: Info,
+        items: [
+          { label: 'الإصدار', description: 'v2.0.0', type: 'info' },
+          { label: 'المساعدة', description: 'مركز المساعدة والدعم', type: 'link' },
+        ]
+      },
+    ];
+
+    return (
+      <div style={{ padding: '24px 0', paddingBottom: 100 }}>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: t.text.primary, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Settings size={28} />الإعدادات
+          </h2>
+          <p style={{ fontSize: 14, color: t.text.muted, marginTop: 4 }}>إدارة إعدادات النظام والحساب</p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {settingsSections.map(section => (
+            <div key={section.id} style={{ background: t.bg.secondary, borderRadius: 16, border: `1px solid ${t.border.primary}`, overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px', borderBottom: `1px solid ${t.border.primary}`, background: t.bg.tertiary, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <section.icon size={20} style={{ color: t.button.primary }} />
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: t.text.primary, margin: 0 }}>{section.title}</h3>
+              </div>
+              <div>
+                {section.items.map((item, idx) => (
+                  <div key={idx} style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: idx < section.items.length - 1 ? `1px solid ${t.border.primary}` : 'none' }}>
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 500, color: t.text.primary, margin: 0 }}>{item.label}</p>
+                      <p style={{ fontSize: 12, color: t.text.muted, margin: '4px 0 0 0' }}>{item.description}</p>
+                    </div>
+                    {item.type === 'toggle' && (
+                      <button
+                        onClick={item.onChange}
+                        style={{
+                          width: 50,
+                          height: 28,
+                          borderRadius: 14,
+                          border: 'none',
+                          background: item.value ? t.button.primary : t.bg.tertiary,
+                          cursor: 'pointer',
+                          position: 'relative',
+                          transition: 'background 0.3s',
+                        }}
+                      >
+                        <span style={{
+                          position: 'absolute',
+                          top: 4,
+                          right: item.value ? 4 : 22,
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          background: '#fff',
+                          transition: 'right 0.3s',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }} />
+                      </button>
+                    )}
+                    {item.type === 'link' && (
+                      <ChevronLeft size={20} style={{ color: t.text.muted }} />
+                    )}
+                    {item.type === 'button' && (
+                      <button style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${t.border.primary}`, background: 'transparent', color: t.text.secondary, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
+                        تنفيذ
+                      </button>
+                    )}
+                    {item.type === 'info' && (
+                      <span style={{ fontSize: 13, color: t.text.muted }}>{item.description}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════
+  // المستخدم الحالي
+  // ═══════════════════════════════════════════════════════════
+  const currentUser = users[0];
+
+  // ═══════════════════════════════════════════════════════════
   // Render الرئيسي
   // ═══════════════════════════════════════════════════════════
   return (
@@ -401,14 +536,73 @@ function App() {
           </button>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: t.text.primary, margin: 0 }}>🏗️ نظام إدارة المقاولات</h1>
         </div>
+        
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* زر الوضع الليلي */}
           <button onClick={() => setDarkMode(!darkMode)} style={{ width: 40, height: 40, borderRadius: 10, border: 'none', background: t.bg.tertiary, color: t.text.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
+          
+          {/* زر الإشعارات */}
           <button style={{ width: 40, height: 40, borderRadius: 10, border: 'none', background: t.bg.tertiary, color: t.text.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
             <Bell size={20} />
             <span style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: '50%', background: t.status.danger.text }}></span>
           </button>
+          
+          {/* زر الإعدادات */}
+          <button onClick={() => setCurrentPage('settings')} style={{ width: 40, height: 40, borderRadius: 10, border: 'none', background: currentPage === 'settings' ? t.button.primary : t.bg.tertiary, color: currentPage === 'settings' ? '#fff' : t.text.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Settings size={20} />
+          </button>
+          
+          {/* قائمة المستخدم */}
+          <div style={{ position: 'relative' }}>
+            <button 
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 10, 
+                padding: '6px 12px', 
+                borderRadius: 10, 
+                border: 'none', 
+                background: t.bg.tertiary, 
+                color: t.text.primary, 
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: t.button.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff' }}>
+                {currentUser?.username?.charAt(0) || 'م'}
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 500, display: sidebarOpen ? 'block' : 'none' }}>{currentUser?.username || 'مستخدم'}</span>
+            </button>
+            
+            {showUserMenu && (
+              <div style={{ 
+                position: 'absolute', 
+                top: '100%', 
+                left: 0, 
+                marginTop: 8, 
+                background: t.bg.secondary, 
+                border: `1px solid ${t.border.primary}`, 
+                borderRadius: 12, 
+                padding: 8, 
+                minWidth: 180,
+                boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+                zIndex: 1000
+              }}>
+                <button onClick={() => { setCurrentPage('settings'); setShowUserMenu(false); }} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: t.text.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontFamily: 'inherit', textAlign: 'right' }}>
+                  <User size={18} />الملف الشخصي
+                </button>
+                <button onClick={() => { setCurrentPage('settings'); setShowUserMenu(false); }} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: t.text.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontFamily: 'inherit', textAlign: 'right' }}>
+                  <Settings size={18} />الإعدادات
+                </button>
+                <div style={{ height: 1, background: t.border.primary, margin: '8px 0' }} />
+                <button style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: t.status.danger.text, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontFamily: 'inherit', textAlign: 'right' }}>
+                  <LogOut size={18} />تسجيل الخروج
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -470,6 +664,14 @@ function App() {
           ))}
         </nav>
       </aside>
+
+      {/* إغلاق القائمة عند الضغط خارجها */}
+      {showUserMenu && (
+        <div 
+          style={{ position: 'fixed', inset: 0, zIndex: 99 }} 
+          onClick={() => setShowUserMenu(false)} 
+        />
+      )}
 
       {/* Main Content */}
       <main style={{ 
@@ -590,6 +792,15 @@ function App() {
             theme={theme}
           />
         )}
+
+        {currentPage === 'calculator' && (
+          <QuantityCalculator
+            darkMode={darkMode}
+            theme={theme}
+          />
+        )}
+
+        {currentPage === 'settings' && <SettingsPage />}
       </main>
     </div>
   );
