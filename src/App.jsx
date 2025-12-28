@@ -23,7 +23,6 @@ import Tasks from './components/Tasks';
 import Projects from './components/Projects';
 import Accounts from './components/Accounts';
 import Users from './components/Users';
-import Calculator from './components/Calculator';
 import Resources from './components/Resources';
 import DataImport from './components/DataImport';
 
@@ -474,14 +473,6 @@ function App() {
             onAdd={handleAddUser}
             onUpdate={handleUpdateUser}
             onDelete={handleDeleteUser}
-            darkMode={darkMode}
-            theme={theme}
-          />
-        );
-      
-      case 'calculator':
-        return (
-          <Calculator
             darkMode={darkMode}
             theme={theme}
           />
