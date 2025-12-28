@@ -9,7 +9,8 @@ import {
   Users, 
   Settings, 
   Calculator,
-  Package
+  Package,
+  FileSpreadsheet
 } from 'lucide-react';
 
 const Navigation = ({ currentView, setCurrentView, darkMode, theme }) => {
@@ -23,6 +24,7 @@ const Navigation = ({ currentView, setCurrentView, darkMode, theme }) => {
     { id: 'projects', name: 'المشاريع', icon: FolderKanban, colorKey: colorKeys[3] },
     { id: 'accounts', name: 'الحسابات', icon: Shield, colorKey: colorKeys[4] },
     { id: 'resources', name: 'إدارة الموارد', icon: Package, colorKey: colorKeys[5] },
+    { id: 'import', name: 'استيراد البيانات', icon: FileSpreadsheet, colorKey: colorKeys[2] },
     { id: 'calculator', name: 'حاسبة الكميات', icon: Calculator, colorKey: colorKeys[0] },
     { id: 'users', name: 'المستخدمين', icon: Users, colorKey: colorKeys[1] }
   ];
