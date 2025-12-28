@@ -8,7 +8,8 @@ import {
   Shield, 
   Users, 
   Settings, 
-  Calculator 
+  Calculator,
+  Package
 } from 'lucide-react';
 
 const Navigation = ({ currentView, setCurrentView, darkMode, theme }) => {
@@ -21,8 +22,9 @@ const Navigation = ({ currentView, setCurrentView, darkMode, theme }) => {
     { id: 'tasks', name: 'المهام', icon: CheckSquare, colorKey: colorKeys[2] },
     { id: 'projects', name: 'المشاريع', icon: FolderKanban, colorKey: colorKeys[3] },
     { id: 'accounts', name: 'الحسابات', icon: Shield, colorKey: colorKeys[4] },
-    { id: 'calculator', name: 'حاسبة الكميات', icon: Calculator, colorKey: colorKeys[5] },
-    { id: 'users', name: 'المستخدمين', icon: Users, colorKey: colorKeys[0] }
+    { id: 'resources', name: 'إدارة الموارد', icon: Package, colorKey: colorKeys[5] },
+    { id: 'calculator', name: 'حاسبة الكميات', icon: Calculator, colorKey: colorKeys[0] },
+    { id: 'users', name: 'المستخدمين', icon: Users, colorKey: colorKeys[1] }
   ];
 
   return (
