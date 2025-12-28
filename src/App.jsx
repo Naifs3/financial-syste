@@ -1,807 +1,673 @@
-// src/App.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
-  LayoutDashboard, Receipt, CheckSquare, FolderOpen, Wallet, Users,
-  Package, Moon, Sun, Menu, X, LogOut, Settings, Bell, ChevronLeft,
-  User, Shield, Palette, Database, HelpCircle, Info, Calculator
-} from 'lucide-react';
+  collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, 
+  query, orderBy
+} from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
+import { db, storage, auth } from './config/firebase';
+import { generateId, compressImage } from './utils/helpers';
+import { getTheme, getStyles, THEME_LIST, SHARED } from './config/theme';
 
-// استيراد المكونات
+import Login from './components/Login';
+import SignUp from './components/SignUp';
+import Navigation from './components/Navigation';
+import Dashboard from './components/Dashboard';
 import Expenses from './components/Expenses';
 import Tasks from './components/Tasks';
 import Projects from './components/Projects';
 import Accounts from './components/Accounts';
-import UsersComponent from './components/Users';
-import Resources from './components/Resources';
+import Users from './components/Users';
+import Settings from './components/Settings';
 import QuantityCalculator from './components/QuantityCalculator';
+import { LogOut, Settings as SettingsIcon, Bell, Clock } from 'lucide-react';
 
-// استيراد الثيم والمساعدات
-import { getTheme } from './config/theme';
-import { formatNumber, generateCode, calcDaysRemaining } from './utils/helpers';
+// ═══════════════════════════════════════════════════════════════
+// 🎨 ثوابت الإعدادات المخصصة
+// ═══════════════════════════════════════════════════════════════
+
+const HEADER_COLORS = {
+  default: null,
+  navy: '#0f172a',
+  slate: '#1e293b',
+  zinc: '#18181b',
+  blue: '#1e3a5f',
+  indigo: '#312e81',
+  purple: '#3b0764',
+  pink: '#500724',
+  red: '#450a0a',
+  orange: '#431407',
+  green: '#052e16',
+  teal: '#042f2e',
+};
+
+const BUTTON_COLORS = {
+  default: null,
+  blue: { color: '#3b82f6', gradient: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' },
+  indigo: { color: '#6366f1', gradient: 'linear-gradient(135deg, #6366f1, #4f46e5)' },
+  purple: { color: '#8b5cf6', gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' },
+  pink: { color: '#ec4899', gradient: 'linear-gradient(135deg, #ec4899, #db2777)' },
+  red: { color: '#ef4444', gradient: 'linear-gradient(135deg, #ef4444, #dc2626)' },
+  orange: { color: '#f97316', gradient: 'linear-gradient(135deg, #f97316, #ea580c)' },
+  amber: { color: '#f59e0b', gradient: 'linear-gradient(135deg, #f59e0b, #d97706)' },
+  green: { color: '#22c55e', gradient: 'linear-gradient(135deg, #22c55e, #16a34a)' },
+  teal: { color: '#14b8a6', gradient: 'linear-gradient(135deg, #14b8a6, #0d9488)' },
+  cyan: { color: '#06b6d4', gradient: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
+  rose: { color: '#f43f5e', gradient: 'linear-gradient(135deg, #f43f5e, #e11d48)' },
+};
+
+const FONTS = {
+  tajawal: "'Tajawal', sans-serif",
+  cairo: "'Cairo', sans-serif",
+  almarai: "'Almarai', sans-serif",
+  ibm: "'IBM Plex Sans Arabic', sans-serif",
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ✨ مكونات الخلفية
+// ═══════════════════════════════════════════════════════════════
+
+const StarsBackground = () => {
+  const starsRef = useRef(null);
+  
+  useEffect(() => {
+    if (!starsRef.current) return;
+    const canvas = starsRef.current;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const stars = Array.from({ length: 80 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2 + 0.5,
+      speed: Math.random() * 0.5 + 0.1,
+      opacity: Math.random() * 0.5 + 0.3,
+    }));
+    
+    let animationId;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      stars.forEach(star => {
+        star.opacity += (Math.random() - 0.5) * 0.02;
+        star.opacity = Math.max(0.2, Math.min(0.8, star.opacity));
+        
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+        ctx.fill();
+      });
+      
+      animationId = requestAnimationFrame(animate);
+    };
+    
+    animate();
+    
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+  
+  return (
+    <canvas
+      ref={starsRef}
+      style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        pointerEvents: 'none', zIndex: 0,
+      }}
+    />
+  );
+};
+
+const ParticlesBackground = () => {
+  const canvasRef = useRef(null);
+  
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const particles = Array.from({ length: 40 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 3 + 1,
+      speedX: (Math.random() - 0.5) * 0.5,
+      speedY: (Math.random() - 0.5) * 0.5,
+      opacity: Math.random() * 0.3 + 0.1,
+    }));
+    
+    let animationId;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach(p => {
+        p.x += p.speedX;
+        p.y += p.speedY;
+        
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+        
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(100, 150, 255, ${p.opacity})`;
+        ctx.fill();
+      });
+      
+      animationId = requestAnimationFrame(animate);
+    };
+    
+    animate();
+    
+    return () => cancelAnimationFrame(animationId);
+  }, []);
+  
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        pointerEvents: 'none', zIndex: 0,
+      }}
+    />
+  );
+};
+
+const GradientBackground = () => (
+  <div style={{
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    background: 'radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)',
+    pointerEvents: 'none', zIndex: 0,
+  }} />
+);
+
+// ═══════════════════════════════════════════════════════════════
+// ⏰ مكون الساعة (منفصل لتجنب re-render)
+// ═══════════════════════════════════════════════════════════════
+
+const LiveClock = React.memo(() => {
+  const [time, setTime] = useState(new Date());
+  
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  
+  return (
+    <span>🕐 {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ⏱️ مكون عداد الوقت النشط (منفصل لتجنب re-render)
+// ═══════════════════════════════════════════════════════════════
+
+const ActiveTimer = React.memo(({ isActive, buttonColor }) => {
+  const [seconds, setSeconds] = useState(() => {
+    const saved = localStorage.getItem('activeSessionTime');
+    return saved ? parseInt(saved) : 0;
+  });
+  const secondsRef = useRef(seconds);
+  
+  useEffect(() => {
+    if (!isActive) return;
+    
+    const interval = setInterval(() => {
+      secondsRef.current += 1;
+      setSeconds(secondsRef.current);
+      if (secondsRef.current % 10 === 0) {
+        localStorage.setItem('activeSessionTime', secondsRef.current.toString());
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isActive]);
+  
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  const display = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: buttonColor }}>
+      <Clock size={12} />
+      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{display}</span>
+    </div>
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 🚀 المكون الرئيسي
+// ═══════════════════════════════════════════════════════════════
 
 function App() {
-  // ═══════════════════════════════════════════════════════════
-  // الحالات الرئيسية
-  // ═══════════════════════════════════════════════════════════
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [currentPage, setCurrentPage] = useState('dashboard');
-  const [loading, setLoading] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  // الحالات الأساسية
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [showSignup, setShowSignup] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // البيانات
+  const [expenses, setExpenses] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [accounts, setAccounts] = useState([]);
 
-  // حفظ الوضع الليلي
-  useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(darkMode));
-  }, [darkMode]);
+  // إعدادات المظهر الأساسية
+  const [themeMode, setThemeMode] = useState(() => localStorage.getItem('themeMode') || 'dark');
+  const [darkMode, setDarkMode] = useState(true);
+  const [currentThemeId, setCurrentThemeId] = useState(() => localStorage.getItem('currentThemeId') || 'tokyo-lights');
+  const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('fontSize')) || 16);
+  const [city, setCity] = useState(() => localStorage.getItem('city') || 'Riyadh');
+  const [weather, setWeather] = useState(null);
+  
+  // الإعدادات المخصصة
+  const [headerColor, setHeaderColor] = useState(() => localStorage.getItem('rkz_headerColor') || 'default');
+  const [buttonColor, setButtonColor] = useState(() => localStorage.getItem('rkz_buttonColor') || 'default');
+  const [fontFamily, setFontFamily] = useState(() => localStorage.getItem('rkz_fontFamily') || 'tajawal');
+  const [bgEffect, setBgEffect] = useState(() => localStorage.getItem('rkz_bgEffect') || 'none');
+  
+  // عداد الوقت - تم نقله لمكون منفصل
+  const [isPageVisible, setIsPageVisible] = useState(true);
 
-  // ═══════════════════════════════════════════════════════════
-  // بيانات الأقسام الأساسية
-  // ═══════════════════════════════════════════════════════════
-  const [expenses, setExpenses] = useState([
-    { id: 1, code: 'E-0001', name: 'إيجار المكتب', amount: 15000, type: 'monthly', dueDate: '2025-01-15', status: 'غير مدفوع', projectId: 1, accountId: 1, userId: 1, notes: '' },
-    { id: 2, code: 'E-0002', name: 'رواتب الموظفين', amount: 45000, type: 'monthly', dueDate: '2025-01-01', status: 'مدفوع', projectId: null, accountId: 1, userId: 1, notes: '' },
-    { id: 3, code: 'E-0003', name: 'فاتورة الكهرباء', amount: 2500, type: 'monthly', dueDate: '2025-01-20', status: 'غير مدفوع', projectId: 1, accountId: 2, userId: 2, notes: '' },
-  ]);
+  // ═══════════════════════════════════════════════════════════════
+  // حساب الثيم والألوان
+  // ═══════════════════════════════════════════════════════════════
 
-  const [tasks, setTasks] = useState([
-    { id: 1, code: 'T-0001', title: 'مراجعة العقود', description: 'مراجعة عقود المشروع الجديد', status: 'قيد التنفيذ', priority: 'عاجل', dueDate: '2025-01-10', projectId: 1, assignedTo: 1 },
-    { id: 2, code: 'T-0002', title: 'تجهيز الموقع', description: 'تجهيز موقع المشروع للبناء', status: 'معلق', priority: 'عالي', dueDate: '2025-01-15', projectId: 1, assignedTo: 2 },
-    { id: 3, code: 'T-0003', title: 'طلب المواد', description: 'طلب مواد البناء من الموردين', status: 'مكتمل', priority: 'متوسط', dueDate: '2025-01-05', projectId: 2, assignedTo: 1 },
-  ]);
-
-  const [projects, setProjects] = useState([
-    { id: 1, code: 'P-0001', name: 'فيلا الرياض', client: 'شركة الإنشاءات المتحدة', status: 'نشط', budget: 500000, startDate: '2024-06-01', endDate: '2025-06-01', managerId: 1, accountId: 1, clientId: 1, description: 'بناء فيلا سكنية' },
-    { id: 2, code: 'P-0002', name: 'مجمع تجاري جدة', client: 'مؤسسة البناء الحديث', status: 'نشط', budget: 1200000, startDate: '2024-09-01', endDate: '2025-12-01', managerId: 2, accountId: 1, clientId: 2, description: 'بناء مجمع تجاري' },
-  ]);
-
-  const [accounts, setAccounts] = useState([
-    { id: 1, code: 'A-0001', name: 'بنك الراجحي - الحساب الرئيسي', type: 'bank', bankName: 'بنك الراجحي', accountNumber: 'SA0380000000608010167519', balance: 250000, notes: '' },
-    { id: 2, code: 'A-0002', name: 'صندوق المكتب', type: 'cash', balance: 15000, notes: 'الصندوق النقدي للمصروفات اليومية' },
-    { id: 3, code: 'A-0003', name: 'STC Pay', type: 'stcpay', accountNumber: '0501234567', balance: 5000, notes: '' },
-  ]);
-
-  const [users, setUsers] = useState([
-    { id: 1, code: 'U-0001', username: 'أحمد محمد', email: 'ahmed@company.com', phone: '0501234567', role: 'owner', status: 'نشط' },
-    { id: 2, code: 'U-0002', username: 'خالد علي', email: 'khaled@company.com', phone: '0507654321', role: 'admin', status: 'نشط' },
-    { id: 3, code: 'U-0003', username: 'سعد عبدالله', email: 'saad@company.com', phone: '0509876543', role: 'editor', status: 'نشط' },
-  ]);
-
-  // ═══════════════════════════════════════════════════════════
-  // بيانات إدارة الموارد
-  // ═══════════════════════════════════════════════════════════
-  const [clients, setClients] = useState([
-    { id: 1, code: 'CL-0001', name: 'شركة الإنشاءات المتحدة', type: 'company', phone: '0112345678', email: 'info@construction.com', address: 'الرياض - حي العليا', notes: '' },
-    { id: 2, code: 'CL-0002', name: 'مؤسسة البناء الحديث', type: 'company', phone: '0126543210', email: 'info@modern-build.com', address: 'جدة - حي الروضة', notes: '' },
-    { id: 3, code: 'CL-0003', name: 'محمد عبدالرحمن', type: 'individual', phone: '0551234567', email: 'mohammed@email.com', address: 'الدمام - حي الفيصلية', notes: '' },
-  ]);
-
-  const [suppliers, setSuppliers] = useState([
-    { id: 1, code: 'SP-0001', name: 'مصنع الحديد السعودي', category: 'حديد ومعادن', phone: '0138765432', email: 'sales@steel.com', address: 'الجبيل - المنطقة الصناعية', notes: '' },
-    { id: 2, code: 'SP-0002', name: 'شركة الأسمنت الوطنية', category: 'أسمنت ومواد بناء', phone: '0114567890', email: 'orders@cement.com', address: 'الرياض - المنطقة الصناعية الثانية', notes: '' },
-    { id: 3, code: 'SP-0003', name: 'مؤسسة الكهرباء المتكاملة', category: 'كهرباء', phone: '0509988776', email: 'info@electric.com', address: 'الرياض - حي السلي', notes: '' },
-  ]);
-
-  const [documents, setDocuments] = useState([
-    { id: 1, code: 'DOC-0001', title: 'فاتورة دفعة أولى - فيلا الرياض', type: 'invoice_out', number: 'INV-2025-001', date: '2025-01-01', amount: 150000, clientId: 1, supplierId: null, projectId: 1, accountId: 1, status: 'paid', notes: '' },
-    { id: 2, code: 'DOC-0002', title: 'عقد مشروع فيلا الرياض', type: 'contract', number: 'CNT-2024-001', date: '2024-06-01', amount: 500000, clientId: 1, supplierId: null, projectId: 1, accountId: null, status: 'active', notes: '' },
-    { id: 3, code: 'DOC-0003', title: 'فاتورة شراء حديد', type: 'invoice_in', number: 'PO-2025-001', date: '2025-01-05', amount: 85000, clientId: null, supplierId: 1, projectId: 1, accountId: 1, status: 'pending', notes: '' },
-    { id: 4, code: 'DOC-0004', title: 'سند قبض - دفعة ثانية', type: 'receipt', number: 'REC-2025-001', date: '2025-01-10', amount: 100000, clientId: 1, supplierId: null, projectId: 1, accountId: 1, status: 'completed', notes: '' },
-  ]);
-
-  const [materials, setMaterials] = useState([
-    { id: 1, code: 'MT-0001', name: 'حديد تسليح 16مم', unit: 'ton', quantity: 50, minQuantity: 10, price: 3500, supplierId: 1, location: 'المستودع الرئيسي - رف A1', notes: '' },
-    { id: 2, code: 'MT-0002', name: 'أسمنت بورتلاندي', unit: 'bag', quantity: 500, minQuantity: 100, price: 22, supplierId: 2, location: 'المستودع الرئيسي - رف B2', notes: '' },
-    { id: 3, code: 'MT-0003', name: 'رمل أبيض', unit: 'm3', quantity: 200, minQuantity: 50, price: 85, supplierId: null, location: 'ساحة التخزين', notes: '' },
-    { id: 4, code: 'MT-0004', name: 'بلوك خرساني 20سم', unit: 'unit', quantity: 5, minQuantity: 1000, price: 3.5, supplierId: null, location: 'المستودع الرئيسي - رف C1', notes: 'نقص في المخزون!' },
-  ]);
-
-  const [equipment, setEquipment] = useState([
-    { id: 1, code: 'EQ-0001', name: 'حفارة كوماتسو PC200', type: 'حفارة', plateNumber: 'أ ب ج 1234', status: 'in_use', projectId: 1, purchaseDate: '2020-01-15', value: 450000, notes: '' },
-    { id: 2, code: 'EQ-0002', name: 'شاحنة قلاب هينو', type: 'شاحنة', plateNumber: 'س ع د 5678', status: 'available', projectId: null, purchaseDate: '2021-06-20', value: 280000, notes: '' },
-    { id: 3, code: 'EQ-0003', name: 'خلاطة خرسانة', type: 'خلاطة', plateNumber: '', status: 'maintenance', projectId: null, purchaseDate: '2019-03-10', value: 85000, notes: 'في الصيانة الدورية' },
-    { id: 4, code: 'EQ-0004', name: 'رافعة شوكية', type: 'رافعة', plateNumber: 'ر ف ع 9012', status: 'in_use', projectId: 2, purchaseDate: '2022-08-05', value: 120000, notes: '' },
-  ]);
-
-  // ═══════════════════════════════════════════════════════════
-  // الثيم
-  // ═══════════════════════════════════════════════════════════
-  const theme = getTheme(darkMode);
+  const theme = getTheme(currentThemeId, darkMode);
   const t = theme;
-
-  // ═══════════════════════════════════════════════════════════
-  // القائمة الجانبية
-  // ═══════════════════════════════════════════════════════════
-  const menuItems = [
-    { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
-    { id: 'projects', label: 'المشاريع', icon: FolderOpen, count: projects.length },
-    { id: 'tasks', label: 'المهام', icon: CheckSquare, count: tasks.filter(t => t.status !== 'مكتمل').length },
-    { id: 'expenses', label: 'المصروفات', icon: Receipt, count: expenses.filter(e => e.status === 'غير مدفوع').length },
-    { id: 'accounts', label: 'الحسابات', icon: Wallet, count: accounts.length },
-    { id: 'resources', label: 'إدارة الموارد', icon: Package, count: clients.length + suppliers.length },
-    { id: 'calculator', label: 'حاسبة الكميات', icon: Calculator },
-    { id: 'users', label: 'المستخدمين', icon: Users, count: users.length },
-    { id: 'settings', label: 'الإعدادات', icon: Settings },
-  ];
-
-  // ═══════════════════════════════════════════════════════════
-  // دوال المصروفات
-  // ═══════════════════════════════════════════════════════════
-  const handleAddExpense = async (data) => {
-    const newExpense = { ...data, id: Date.now(), code: data.code || generateCode('E') };
-    setExpenses([...expenses, newExpense]);
-  };
-
-  const handleEditExpense = async (data) => {
-    setExpenses(expenses.map(e => e.id === data.id ? data : e));
-  };
-
-  const handleDeleteExpense = async (id) => {
-    setExpenses(expenses.filter(e => e.id !== id));
-  };
-
-  const handleMarkPaid = async (id) => {
-    setExpenses(expenses.map(e => e.id === id ? { ...e, status: 'مدفوع' } : e));
-  };
-
-  // ═══════════════════════════════════════════════════════════
-  // دوال المهام
-  // ═══════════════════════════════════════════════════════════
-  const handleAddTask = async (data) => {
-    const newTask = { ...data, id: Date.now(), code: data.code || generateCode('T') };
-    setTasks([...tasks, newTask]);
-  };
-
-  const handleEditTask = async (data) => {
-    setTasks(tasks.map(t => t.id === data.id ? data : t));
-  };
-
-  const handleDeleteTask = async (id) => {
-    setTasks(tasks.filter(t => t.id !== id));
-  };
-
-  const handleToggleTaskStatus = async (id) => {
-    setTasks(tasks.map(t => {
-      if (t.id === id) {
-        return { ...t, status: t.status === 'مكتمل' ? 'قيد التنفيذ' : 'مكتمل' };
-      }
-      return t;
-    }));
-  };
-
-  // ═══════════════════════════════════════════════════════════
-  // دوال المشاريع
-  // ═══════════════════════════════════════════════════════════
-  const handleAddProject = async (data) => {
-    const newProject = { ...data, id: Date.now(), code: data.code || generateCode('P') };
-    setProjects([...projects, newProject]);
-  };
-
-  const handleEditProject = async (data) => {
-    setProjects(projects.map(p => p.id === data.id ? data : p));
-  };
-
-  const handleDeleteProject = async (id) => {
-    setProjects(projects.filter(p => p.id !== id));
-  };
-
-  // ═══════════════════════════════════════════════════════════
-  // دوال الحسابات
-  // ═══════════════════════════════════════════════════════════
-  const handleAddAccount = async (data) => {
-    const newAccount = { ...data, id: Date.now(), code: data.code || generateCode('A') };
-    setAccounts([...accounts, newAccount]);
-  };
-
-  const handleEditAccount = async (data) => {
-    setAccounts(accounts.map(a => a.id === data.id ? data : a));
-  };
-
-  const handleDeleteAccount = async (id) => {
-    setAccounts(accounts.filter(a => a.id !== id));
-  };
-
-  // ═══════════════════════════════════════════════════════════
-  // دوال المستخدمين
-  // ═══════════════════════════════════════════════════════════
-  const handleAddUser = async (data) => {
-    const newUser = { ...data, id: Date.now(), code: data.code || generateCode('U') };
-    setUsers([...users, newUser]);
-  };
-
-  const handleEditUser = async (data) => {
-    setUsers(users.map(u => u.id === data.id ? data : u));
-  };
-
-  const handleDeleteUser = async (id) => {
-    setUsers(users.filter(u => u.id !== id));
-  };
-
-  // ═══════════════════════════════════════════════════════════
-  // دوال إدارة الموارد
-  // ═══════════════════════════════════════════════════════════
-  const handleAddClient = async (data) => {
-    const newClient = { ...data, id: Date.now() };
-    setClients([...clients, newClient]);
-  };
-  const handleEditClient = async (data) => {
-    setClients(clients.map(c => c.id === data.id ? data : c));
-  };
-  const handleDeleteClient = async (id) => {
-    setClients(clients.filter(c => c.id !== id));
-  };
-
-  const handleAddSupplier = async (data) => {
-    const newSupplier = { ...data, id: Date.now() };
-    setSuppliers([...suppliers, newSupplier]);
-  };
-  const handleEditSupplier = async (data) => {
-    setSuppliers(suppliers.map(s => s.id === data.id ? data : s));
-  };
-  const handleDeleteSupplier = async (id) => {
-    setSuppliers(suppliers.filter(s => s.id !== id));
-  };
-
-  const handleAddDocument = async (data) => {
-    const newDocument = { ...data, id: Date.now() };
-    setDocuments([...documents, newDocument]);
-  };
-  const handleEditDocument = async (data) => {
-    setDocuments(documents.map(d => d.id === data.id ? data : d));
-  };
-  const handleDeleteDocument = async (id) => {
-    setDocuments(documents.filter(d => d.id !== id));
-  };
-
-  const handleAddMaterial = async (data) => {
-    const newMaterial = { ...data, id: Date.now() };
-    setMaterials([...materials, newMaterial]);
-  };
-  const handleEditMaterial = async (data) => {
-    setMaterials(materials.map(m => m.id === data.id ? data : m));
-  };
-  const handleDeleteMaterial = async (id) => {
-    setMaterials(materials.filter(m => m.id !== id));
-  };
-
-  const handleAddEquipment = async (data) => {
-    const newEquipment = { ...data, id: Date.now() };
-    setEquipment([...equipment, newEquipment]);
-  };
-  const handleEditEquipment = async (data) => {
-    setEquipment(equipment.map(e => e.id === data.id ? data : e));
-  };
-  const handleDeleteEquipment = async (id) => {
-    setEquipment(equipment.filter(e => e.id !== id));
-  };
-
-  // ═══════════════════════════════════════════════════════════
-  // التنقل بين الأقسام
-  // ═══════════════════════════════════════════════════════════
-  const handleNavigate = (type, data) => {
-    switch (type) {
-      case 'project':
-        setCurrentPage('projects');
-        break;
-      case 'account':
-        setCurrentPage('accounts');
-        break;
-      case 'user':
-        setCurrentPage('users');
-        break;
-      case 'task':
-        setCurrentPage('tasks');
-        break;
-      case 'expense':
-        setCurrentPage('expenses');
-        break;
-      case 'client':
-      case 'supplier':
-      case 'document':
-      case 'material':
-      case 'equipment':
-        setCurrentPage('resources');
-        break;
-      default:
-        break;
+  
+  const appliedHeaderColor = HEADER_COLORS[headerColor] || t.bg.secondary;
+  const appliedButtonColor = BUTTON_COLORS[buttonColor]?.color || t.button.primary;
+  const appliedButtonGradient = BUTTON_COLORS[buttonColor]?.gradient || t.button.gradient;
+  const appliedFont = FONTS[fontFamily] || "'Tajawal', sans-serif";
+  
+  // الثيم المعدل
+  const customTheme = {
+    ...theme,
+    button: {
+      ...theme.button,
+      primary: appliedButtonColor,
+      gradient: appliedButtonGradient,
     }
   };
 
-  // ═══════════════════════════════════════════════════════════
-  // لوحة التحكم
-  // ═══════════════════════════════════════════════════════════
-  const Dashboard = () => {
-    const totalBalance = accounts.reduce((sum, a) => sum + (parseFloat(a.balance) || 0), 0);
-    const unpaidExpenses = expenses.filter(e => e.status === 'غير مدفوع').reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
-    const activeTasks = tasks.filter(t => t.status !== 'مكتمل').length;
-    const activeProjects = projects.filter(p => p.status === 'نشط').length;
+  // ═══════════════════════════════════════════════════════════════
+  // العبارات
+  // ═══════════════════════════════════════════════════════════════
 
-    const stats = [
-      { label: 'إجمالي الرصيد', value: `${formatNumber(totalBalance)} ﷼`, color: t.colors[Object.keys(t.colors)[0]]?.main, icon: Wallet },
-      { label: 'مصروفات غير مدفوعة', value: `${formatNumber(unpaidExpenses)} ﷼`, color: t.status.danger.text, icon: Receipt },
-      { label: 'مشاريع نشطة', value: activeProjects, color: t.status.success.text, icon: FolderOpen },
-      { label: 'مهام قيد التنفيذ', value: activeTasks, color: t.status.warning.text, icon: CheckSquare },
-      { label: 'العملاء', value: clients.length, color: '#3b82f6', icon: Users },
-      { label: 'الموردين', value: suppliers.length, color: '#f97316', icon: Package },
-    ];
+  const motivationalQuotes = [
+    "النجاح يبدأ بخطوة واحدة 🚀", "كل يوم هو فرصة جديدة للإنجاز ✨", "العمل الجاد يصنع المستحيل 💪",
+    "معاً نبني المستقبل 🏗️", "الإتقان هو سر التميز ⭐", "خطوة بخطوة نحو القمة 📈",
+    "الجودة هي عنواننا 🎯", "نحن نبني أحلامكم 🏠", "التميز ليس خياراً بل أسلوب حياة 🌟",
+  ];
 
-    return (
-      <div style={{ padding: '24px 0' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: t.text.primary, marginBottom: 24 }}>لوحة التحكم</h2>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
-          {stats.map((stat, i) => (
-            <div key={i} style={{ background: t.bg.secondary, borderRadius: 16, padding: 20, border: `1px solid ${t.border.primary}`, cursor: 'pointer', transition: 'transform 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <stat.icon size={24} style={{ color: stat.color }} />
-              </div>
-              <p style={{ fontSize: 13, color: t.text.muted, margin: '0 0 6px 0' }}>{stat.label}</p>
-              <p style={{ fontSize: 26, fontWeight: 700, color: stat.color, margin: 0 }}>{stat.value}</p>
-            </div>
-          ))}
-        </div>
+  const greetingPhrases = [
+    { text: "أهلاً وسهلاً", emoji: "👋" }, { text: "مرحباً بك", emoji: "🌟" },
+    { text: "سعداء بوجودك", emoji: "😊" }, { text: "حياك الله", emoji: "💫" },
+    { text: "نورت", emoji: "✨" },
+  ];
 
-        {/* آخر المهام */}
-        <div style={{ background: t.bg.secondary, borderRadius: 16, padding: 20, border: `1px solid ${t.border.primary}`, marginBottom: 24 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, color: t.text.primary, marginBottom: 16 }}>آخر المهام</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {tasks.slice(0, 5).map(task => (
-              <div key={task.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, background: t.bg.tertiary, borderRadius: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <CheckSquare size={18} style={{ color: task.status === 'مكتمل' ? t.status.success.text : t.text.muted }} />
-                  <span style={{ color: t.text.primary, textDecoration: task.status === 'مكتمل' ? 'line-through' : 'none' }}>{task.title}</span>
-                </div>
-                <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, background: task.status === 'مكتمل' ? t.status.success.bg : t.status.warning.bg, color: task.status === 'مكتمل' ? t.status.success.text : t.status.warning.text }}>{task.status}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+  const [quoteIndex, setQuoteIndex] = useState(0);
+  const [greetingIndex, setGreetingIndex] = useState(0);
 
-        {/* آخر المصروفات */}
-        <div style={{ background: t.bg.secondary, borderRadius: 16, padding: 20, border: `1px solid ${t.border.primary}` }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, color: t.text.primary, marginBottom: 16 }}>آخر المصروفات</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {expenses.slice(0, 5).map(expense => (
-              <div key={expense.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, background: t.bg.tertiary, borderRadius: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <Receipt size={18} style={{ color: t.text.muted }} />
-                  <span style={{ color: t.text.primary }}>{expense.name}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontWeight: 600, color: t.colors[Object.keys(t.colors)[0]]?.main }}>{formatNumber(expense.amount)} ﷼</span>
-                  <span style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, background: expense.status === 'مدفوع' ? t.status.success.bg : t.status.danger.bg, color: expense.status === 'مدفوع' ? t.status.success.text : t.status.danger.text }}>{expense.status}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  const cityCoordinates = {
+    'Riyadh': { lat: 24.7136, lon: 46.6753, name: 'الرياض' },
+    'Jeddah': { lat: 21.4858, lon: 39.1925, name: 'جدة' },
+    'Mecca': { lat: 21.3891, lon: 39.8579, name: 'مكة' },
+    'Medina': { lat: 24.5247, lon: 39.5692, name: 'المدينة' },
+    'Dammam': { lat: 26.4207, lon: 50.0888, name: 'الدمام' },
+    'Khobar': { lat: 26.2172, lon: 50.1971, name: 'الخبر' },
+    'Tabuk': { lat: 28.3838, lon: 36.5550, name: 'تبوك' },
+    'Abha': { lat: 18.2164, lon: 42.5053, name: 'أبها' },
+    'Taif': { lat: 21.2703, lon: 40.4158, name: 'الطائف' },
+    'Hail': { lat: 27.5114, lon: 41.7208, name: 'حائل' },
   };
 
-  // ═══════════════════════════════════════════════════════════
-  // صفحة الإعدادات
-  // ═══════════════════════════════════════════════════════════
-  const SettingsPage = () => {
-    const settingsSections = [
-      {
-        id: 'appearance',
-        title: 'المظهر',
-        icon: Palette,
-        items: [
-          { label: 'الوضع الليلي', description: 'تفعيل أو تعطيل الوضع الداكن', type: 'toggle', value: darkMode, onChange: () => setDarkMode(!darkMode) },
-        ]
-      },
-      {
-        id: 'account',
-        title: 'الحساب',
-        icon: User,
-        items: [
-          { label: 'الملف الشخصي', description: 'تعديل بيانات الحساب', type: 'link' },
-          { label: 'تغيير كلمة المرور', description: 'تحديث كلمة المرور', type: 'link' },
-        ]
-      },
-      {
-        id: 'security',
-        title: 'الأمان',
-        icon: Shield,
-        items: [
-          { label: 'المصادقة الثنائية', description: 'تفعيل التحقق بخطوتين', type: 'toggle', value: false },
-          { label: 'سجل الدخول', description: 'عرض سجل تسجيلات الدخول', type: 'link' },
-        ]
-      },
-      {
-        id: 'data',
-        title: 'البيانات',
-        icon: Database,
-        items: [
-          { label: 'تصدير البيانات', description: 'تحميل نسخة من بياناتك', type: 'button' },
-          { label: 'استيراد البيانات', description: 'استيراد بيانات من ملف', type: 'button' },
-        ]
-      },
-      {
-        id: 'about',
-        title: 'حول التطبيق',
-        icon: Info,
-        items: [
-          { label: 'الإصدار', description: 'v2.0.0', type: 'info' },
-          { label: 'المساعدة', description: 'مركز المساعدة والدعم', type: 'link' },
-        ]
-      },
-    ];
+  // ═══════════════════════════════════════════════════════════════
+  // التأثيرات
+  // ═══════════════════════════════════════════════════════════════
 
-    return (
-      <div style={{ padding: '24px 0', paddingBottom: 100 }}>
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: t.text.primary, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Settings size={28} />الإعدادات
-          </h2>
-          <p style={{ fontSize: 14, color: t.text.muted, marginTop: 4 }}>إدارة إعدادات النظام والحساب</p>
-        </div>
+  // حفظ الإعدادات
+  useEffect(() => { localStorage.setItem('themeMode', themeMode); }, [themeMode]);
+  useEffect(() => { localStorage.setItem('currentThemeId', currentThemeId); }, [currentThemeId]);
+  useEffect(() => { localStorage.setItem('fontSize', fontSize); }, [fontSize]);
+  useEffect(() => { localStorage.setItem('city', city); }, [city]);
+  useEffect(() => { localStorage.setItem('rkz_headerColor', headerColor); }, [headerColor]);
+  useEffect(() => { localStorage.setItem('rkz_buttonColor', buttonColor); }, [buttonColor]);
+  useEffect(() => { localStorage.setItem('rkz_fontFamily', fontFamily); }, [fontFamily]);
+  useEffect(() => { localStorage.setItem('rkz_bgEffect', bgEffect); }, [bgEffect]);
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {settingsSections.map(section => (
-            <div key={section.id} style={{ background: t.bg.secondary, borderRadius: 16, border: `1px solid ${t.border.primary}`, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', borderBottom: `1px solid ${t.border.primary}`, background: t.bg.tertiary, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <section.icon size={20} style={{ color: t.button.primary }} />
-                <h3 style={{ fontSize: 16, fontWeight: 600, color: t.text.primary, margin: 0 }}>{section.title}</h3>
-              </div>
-              <div>
-                {section.items.map((item, idx) => (
-                  <div key={idx} style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: idx < section.items.length - 1 ? `1px solid ${t.border.primary}` : 'none' }}>
-                    <div>
-                      <p style={{ fontSize: 14, fontWeight: 500, color: t.text.primary, margin: 0 }}>{item.label}</p>
-                      <p style={{ fontSize: 12, color: t.text.muted, margin: '4px 0 0 0' }}>{item.description}</p>
-                    </div>
-                    {item.type === 'toggle' && (
-                      <button
-                        onClick={item.onChange}
-                        style={{
-                          width: 50,
-                          height: 28,
-                          borderRadius: 14,
-                          border: 'none',
-                          background: item.value ? t.button.primary : t.bg.tertiary,
-                          cursor: 'pointer',
-                          position: 'relative',
-                          transition: 'background 0.3s',
-                        }}
-                      >
-                        <span style={{
-                          position: 'absolute',
-                          top: 4,
-                          right: item.value ? 4 : 22,
-                          width: 20,
-                          height: 20,
-                          borderRadius: '50%',
-                          background: '#fff',
-                          transition: 'right 0.3s',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                        }} />
-                      </button>
-                    )}
-                    {item.type === 'link' && (
-                      <ChevronLeft size={20} style={{ color: t.text.muted }} />
-                    )}
-                    {item.type === 'button' && (
-                      <button style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${t.border.primary}`, background: 'transparent', color: t.text.secondary, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
-                        تنفيذ
-                      </button>
-                    )}
-                    {item.type === 'info' && (
-                      <span style={{ fontSize: 13, color: t.text.muted }}>{item.description}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+  // وضع العرض
+  useEffect(() => {
+    if (themeMode === 'auto') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      setDarkMode(mediaQuery.matches);
+      const handleChange = () => setDarkMode(mediaQuery.matches);
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    } else {
+      setDarkMode(themeMode === 'dark');
+    }
+  }, [themeMode]);
+
+  // تحديث التاريخ فقط (ليس الوقت) - مرة واحدة عند التحميل
+  useEffect(() => {
+    setCurrentDate(new Date());
+  }, []);
+
+  // تغيير العبارات
+  const changeQuotes = () => {
+    setQuoteIndex(prev => (prev + 1) % motivationalQuotes.length);
+    setGreetingIndex(prev => (prev + 1) % greetingPhrases.length);
   };
 
-  // ═══════════════════════════════════════════════════════════
-  // المستخدم الحالي
-  // ═══════════════════════════════════════════════════════════
-  const currentUser = users[0];
+  useEffect(() => {
+    const quoteTimer = setInterval(changeQuotes, 30000);
+    return () => clearInterval(quoteTimer);
+  }, []);
 
-  // ═══════════════════════════════════════════════════════════
-  // Render الرئيسي
-  // ═══════════════════════════════════════════════════════════
+  const handleViewChange = (view) => {
+    setCurrentView(view);
+    changeQuotes();
+  };
+
+  // مراقبة نشاط الصفحة
+  useEffect(() => {
+    const handleVisibilityChange = () => setIsPageVisible(!document.hidden);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // الطقس
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const coords = cityCoordinates[city] || cityCoordinates['Riyadh'];
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weather_code&timezone=auto`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const weatherCode = data.current.weather_code;
+          let icon = '☀️';
+          if (weatherCode === 0) icon = '☀️';
+          else if (weatherCode <= 3) icon = '⛅';
+          else if (weatherCode <= 49) icon = '🌫️';
+          else if (weatherCode <= 69) icon = '🌧️';
+          setWeather({ temp: Math.round(data.current.temperature_2m), icon });
+        }
+      } catch (error) {
+        setWeather({ temp: 25, icon: '☀️' });
+      }
+    };
+    fetchWeather();
+    const weatherTimer = setInterval(fetchWeather, 600000);
+    return () => clearInterval(weatherTimer);
+  }, [city]);
+
+  const formatDate = () => {
+    const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    return { dayName: days[currentDate.getDay()], day: currentDate.getDate(), month: currentDate.getMonth() + 1, year: currentDate.getFullYear() };
+  };
+
+  const translateRole = (role) => {
+    const roles = { 'owner': 'المالك', 'admin': 'مدير', 'user': 'مستخدم', 'viewer': 'مشاهد' };
+    return roles[role?.toLowerCase()] || role || 'مستخدم';
+  };
+
+  // المصادقة
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) { setCurrentUser(JSON.parse(savedUser)); setIsLoggedIn(true); }
+      } else { setIsLoggedIn(false); setCurrentUser(null); }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Firebase listeners
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const unsubExpenses = onSnapshot(query(collection(db, 'expenses'), orderBy('createdAt', 'desc')), (s) => setExpenses(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubTasks = onSnapshot(query(collection(db, 'tasks'), orderBy('createdAt', 'desc')), (s) => setTasks(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubProjects = onSnapshot(query(collection(db, 'projects'), orderBy('createdAt', 'desc')), (s) => setProjects(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubAccounts = onSnapshot(query(collection(db, 'accounts'), orderBy('createdAt', 'desc')), (s) => setAccounts(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    return () => { unsubExpenses(); unsubTasks(); unsubProjects(); unsubAccounts(); };
+  }, [isLoggedIn]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // Handlers
+  // ═══════════════════════════════════════════════════════════════
+
+  const handleLogin = async (userData) => {
+    setCurrentUser(userData); setIsLoggedIn(true);
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+    // إعادة تعيين عداد الوقت
+    localStorage.setItem('activeSessionTime', '0');
+  };
+  
+  const handleSignupSuccess = (userData) => { setShowSignup(false); handleLogin(userData); };
+  
+  const handleLogout = async () => {
+    try {
+      await signOut(auth); setIsLoggedIn(false); setCurrentUser(null);
+      localStorage.removeItem('currentUser'); localStorage.removeItem('activeSessionTime');
+    } catch (e) { console.error(e); }
+  };
+
+  const handleAddExpense = async (e) => { await addDoc(collection(db, 'expenses'), { ...e, createdAt: new Date() }); };
+  const handleEditExpense = async (e) => { const { id, ...d } = e; await updateDoc(doc(db, 'expenses', id), d); };
+  const handleDeleteExpense = async (id) => { await deleteDoc(doc(db, 'expenses', id)); };
+  const handleMarkPaid = async (id) => { await updateDoc(doc(db, 'expenses', id), { status: 'مدفوع' }); };
+  const handleRefreshExpenses = () => {};
+
+  const handleAddTask = async (t) => { await addDoc(collection(db, 'tasks'), { ...t, createdAt: new Date() }); };
+  const handleEditTask = async (t) => { const { id, ...d } = t; await updateDoc(doc(db, 'tasks', id), d); };
+  const handleDeleteTask = async (id) => { await deleteDoc(doc(db, 'tasks', id)); };
+  const handleToggleTaskStatus = async (id) => {
+    const task = tasks.find(t => t.id === id);
+    await updateDoc(doc(db, 'tasks', id), { status: task.status === 'مكتمل' ? 'قيد التنفيذ' : 'مكتمل' });
+  };
+
+  const handleAddProject = async (p) => { await addDoc(collection(db, 'projects'), { ...p, folders: [], createdAt: new Date() }); };
+  const handleEditProject = async (p) => { const { id, ...d } = p; await updateDoc(doc(db, 'projects', id), d); };
+  const handleDeleteProject = async (id) => { await deleteDoc(doc(db, 'projects', id)); };
+  const handleAddFolder = async (pId, name) => {
+    const p = projects.find(x => x.id === pId);
+    await updateDoc(doc(db, 'projects', pId), { folders: [...(p.folders || []), { id: generateId(), name, files: [] }] });
+  };
+  const handleUploadFile = async (pId, fId, file) => {
+    const p = projects.find(x => x.id === pId);
+    const compressed = file.type.startsWith('image/') ? await compressImage(file) : file;
+    const fileRef = ref(storage, `projects/${pId}/${fId}/${file.name}`);
+    await uploadBytes(fileRef, compressed);
+    const url = await getDownloadURL(fileRef);
+    const updated = p.folders.map(f => f.id === fId ? { ...f, files: [...f.files, { id: generateId(), name: file.name, url, type: file.type }] } : f);
+    await updateDoc(doc(db, 'projects', pId), { folders: updated });
+  };
+  const handleDeleteFile = async (pId, fId, fileId) => {
+    const p = projects.find(x => x.id === pId);
+    const folder = p.folders.find(f => f.id === fId);
+    const file = folder.files.find(f => f.id === fileId);
+    await deleteObject(ref(storage, `projects/${pId}/${fId}/${file.name}`));
+    const updated = p.folders.map(f => f.id === fId ? { ...f, files: f.files.filter(x => x.id !== fileId) } : f);
+    await updateDoc(doc(db, 'projects', pId), { folders: updated });
+  };
+
+  const handleAddAccount = async (a) => { await addDoc(collection(db, 'accounts'), { ...a, createdAt: new Date() }); };
+  const handleEditAccount = async (a) => { const { id, ...d } = a; await updateDoc(doc(db, 'accounts', id), d); };
+  const handleDeleteAccount = async (id) => { await deleteDoc(doc(db, 'accounts', id)); };
+
+  // ═══════════════════════════════════════════════════════════════
+  // الواجهة
+  // ═══════════════════════════════════════════════════════════════
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: t.bg.primary }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 48, height: 48, border: `3px solid ${t.border.primary}`, borderTopColor: appliedButtonColor, borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+          <p style={{ color: t.text.primary, fontFamily: appliedFont }}>جاري التحميل...</p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    if (showSignup) return <SignUp onBack={() => setShowSignup(false)} onSuccess={handleSignupSuccess} darkMode={darkMode} theme={theme} />;
+    return <Login onLogin={handleLogin} onShowSignup={() => setShowSignup(true)} darkMode={darkMode} theme={theme} />;
+  }
+
+  const dateInfo = formatDate();
+  const cityName = cityCoordinates[city]?.name || 'الرياض';
+  const currentGreeting = greetingPhrases[greetingIndex];
+
   return (
-    <div style={{ minHeight: '100vh', background: t.bg.primary, fontFamily: 'Tajawal, sans-serif', direction: 'rtl' }}>
+    <div dir="rtl" style={{ 
+      minHeight: '100vh', 
+      background: t.bg.primary, 
+      color: t.text.primary, 
+      fontFamily: appliedFont, 
+      fontSize: `${fontSize}px`,
+      position: 'relative',
+    }}>
+      <link href={SHARED.font.url} rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700&family=Cairo:wght@400;600;700&family=Almarai:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
+      
+      {/* تأثيرات الخلفية */}
+      {bgEffect === 'stars' && darkMode && <StarsBackground />}
+      {bgEffect === 'particles' && darkMode && <ParticlesBackground />}
+      {bgEffect === 'gradient' && darkMode && <GradientBackground />}
+      
+      <style>{`
+        * { font-feature-settings: "tnum"; }
+        input, select, textarea { font-family: ${appliedFont}; }
+        input[type="number"] { direction: ltr; text-align: right; -moz-appearance: textfield; }
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: ${darkMode ? '#0a0a0a' : '#f1f1f1'}; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: ${darkMode ? '#1a1a1a' : '#c1c1c1'}; border-radius: 4px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+
       {/* Header */}
       <header style={{ 
-        position: 'fixed', 
-        top: 0, 
-        right: 0, 
-        left: 0, 
-        height: 64, 
-        background: t.bg.secondary, 
+        background: `${appliedHeaderColor}f5`, 
+        backdropFilter: 'blur(12px)', 
         borderBottom: `1px solid ${t.border.primary}`, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        padding: '0 20px',
-        zIndex: 100 
+        position: 'sticky', 
+        top: 0, 
+        zIndex: 50,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 40, height: 40, borderRadius: 10, border: 'none', background: t.bg.tertiary, color: t.text.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {sidebarOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
-          </button>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: t.text.primary, margin: 0 }}>🏗️ نظام إدارة المقاولات</h1>
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* زر الوضع الليلي */}
-          <button onClick={() => setDarkMode(!darkMode)} style={{ width: 40, height: 40, borderRadius: 10, border: 'none', background: t.bg.tertiary, color: t.text.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
-          
-          {/* زر الإشعارات */}
-          <button style={{ width: 40, height: 40, borderRadius: 10, border: 'none', background: t.bg.tertiary, color: t.text.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-            <Bell size={20} />
-            <span style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: '50%', background: t.status.danger.text }}></span>
-          </button>
-          
-          {/* زر الإعدادات */}
-          <button onClick={() => setCurrentPage('settings')} style={{ width: 40, height: 40, borderRadius: 10, border: 'none', background: currentPage === 'settings' ? t.button.primary : t.bg.tertiary, color: currentPage === 'settings' ? '#fff' : t.text.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Settings size={20} />
-          </button>
-          
-          {/* قائمة المستخدم */}
-          <div style={{ position: 'relative' }}>
-            <button 
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 10, 
-                padding: '6px 12px', 
-                borderRadius: 10, 
-                border: 'none', 
-                background: t.bg.tertiary, 
-                color: t.text.primary, 
-                cursor: 'pointer',
-              }}
-            >
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: t.button.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff' }}>
-                {currentUser?.username?.charAt(0) || 'م'}
-              </div>
-              <span style={{ fontSize: 14, fontWeight: 500, display: sidebarOpen ? 'block' : 'none' }}>{currentUser?.username || 'مستخدم'}</span>
-            </button>
+        <div style={{ maxWidth: 1400, margin: '0 auto', padding: '10px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             
-            {showUserMenu && (
-              <div style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                marginTop: 8, 
-                background: t.bg.secondary, 
-                border: `1px solid ${t.border.primary}`, 
-                borderRadius: 12, 
-                padding: 8, 
-                minWidth: 180,
-                boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-                zIndex: 1000
-              }}>
-                <button onClick={() => { setCurrentPage('settings'); setShowUserMenu(false); }} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: t.text.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontFamily: 'inherit', textAlign: 'right' }}>
-                  <User size={18} />الملف الشخصي
-                </button>
-                <button onClick={() => { setCurrentPage('settings'); setShowUserMenu(false); }} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: t.text.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontFamily: 'inherit', textAlign: 'right' }}>
-                  <Settings size={18} />الإعدادات
-                </button>
-                <div style={{ height: 1, background: t.border.primary, margin: '8px 0' }} />
-                <button style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: 'none', background: 'transparent', color: t.status.danger.text, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontFamily: 'inherit', textAlign: 'right' }}>
-                  <LogOut size={18} />تسجيل الخروج
-                </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 46, height: 46, background: 'linear-gradient(135deg, #d4c5a9 0%, #9ca3af 100%)', borderRadius: t.radius.lg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #b8a88a' }}>
+                <span style={{ fontSize: 17, fontWeight: 800, color: '#3d3d3d' }}>RKZ</span>
               </div>
-            )}
+              <div>
+                <h1 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: t.text.primary }}>ركائز الأولى للتعمير</h1>
+                <p style={{ fontSize: 11, color: t.text.muted, margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span>📅 {dateInfo.dayName} {dateInfo.day}/{dateInfo.month}/{dateInfo.year}</span>
+                  <span style={{ opacity: 0.4 }}>|</span>
+                  <LiveClock />
+                  <span style={{ opacity: 0.4 }}>|</span>
+                  <span>{weather?.icon || '☀️'} {weather?.temp || '--'}° {cityName}</span>
+                </p>
+                <p style={{ fontSize: 11, color: t.text.muted, margin: '2px 0 0 0', fontWeight: 700 }}>{motivationalQuotes[quoteIndex]}</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: 11, color: t.text.muted, fontWeight: 700 }}>{currentGreeting.text}</span>
+                <span style={{ fontSize: 15 }}>{currentGreeting.emoji}</span>
+              </div>
+              
+              <button onClick={() => handleViewChange('users')} style={{ 
+                display: 'flex', alignItems: 'center', gap: 8, background: t.bg.tertiary, 
+                padding: '0 12px', height: 36, borderRadius: t.radius.lg, 
+                border: `1px solid ${t.border.primary}`, cursor: 'pointer', fontFamily: appliedFont 
+              }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: t.text.primary }}>
+                  {currentUser?.username || 'مستخدم'}: <span style={{ color: t.text.muted, fontWeight: 500 }}>{translateRole(currentUser?.role)}</span>
+                </span>
+                <ActiveTimer isActive={isPageVisible && isLoggedIn} buttonColor={appliedButtonColor} />
+              </button>
+
+              <button style={{ width: 36, height: 36, borderRadius: t.radius.lg, border: 'none', background: t.bg.tertiary, color: t.text.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                <Bell size={18} />
+                <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, background: t.status.danger.text, borderRadius: '50%' }} />
+              </button>
+
+              <button onClick={() => handleViewChange('settings')} style={{
+                width: 36, height: 36, borderRadius: t.radius.lg, border: 'none',
+                background: currentView === 'settings' ? appliedButtonGradient : t.bg.tertiary,
+                color: currentView === 'settings' ? '#fff' : t.text.muted,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <SettingsIcon size={18} />
+              </button>
+
+              <button onClick={handleLogout} style={{
+                display: 'flex', alignItems: 'center', gap: 5, padding: '0 12px', height: 36,
+                borderRadius: t.radius.lg, border: 'none', background: `${t.status.danger.text}15`,
+                color: t.status.danger.text, cursor: 'pointer', fontSize: 12, fontFamily: appliedFont,
+              }}>
+                <LogOut size={15} />
+                <span>خروج</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Sidebar */}
-      <aside style={{ 
-        position: 'fixed', 
-        top: 64, 
-        right: 0, 
-        bottom: 0, 
-        width: sidebarOpen ? 260 : 70, 
-        background: t.bg.secondary, 
-        borderLeft: `1px solid ${t.border.primary}`, 
-        transition: 'width 0.3s',
-        zIndex: 90,
-        overflowY: 'auto',
-        overflowX: 'hidden'
-      }}>
-        <nav style={{ padding: '16px 12px' }}>
-          {menuItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setCurrentPage(item.id)}
-              style={{
-                width: '100%',
-                padding: sidebarOpen ? '12px 16px' : '12px',
-                marginBottom: 6,
-                borderRadius: 12,
-                border: 'none',
-                background: currentPage === item.id ? t.button.gradient : 'transparent',
-                color: currentPage === item.id ? '#fff' : t.text.secondary,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: sidebarOpen ? 'flex-start' : 'center',
-                gap: 12,
-                fontSize: 14,
-                fontWeight: 600,
-                fontFamily: 'inherit',
-                transition: 'all 0.2s',
-              }}
-            >
-              <item.icon size={20} />
-              {sidebarOpen && (
-                <>
-                  <span style={{ flex: 1, textAlign: 'right' }}>{item.label}</span>
-                  {item.count !== undefined && (
-                    <span style={{ 
-                      fontSize: 11, 
-                      padding: '2px 8px', 
-                      borderRadius: 10, 
-                      background: currentPage === item.id ? 'rgba(255,255,255,0.2)' : t.bg.tertiary 
-                    }}>
-                      {item.count}
-                    </span>
-                  )}
-                </>
-              )}
-            </button>
-          ))}
-        </nav>
-      </aside>
+      <Navigation currentView={currentView} setCurrentView={handleViewChange} darkMode={darkMode} theme={customTheme} />
 
-      {/* إغلاق القائمة عند الضغط خارجها */}
-      {showUserMenu && (
-        <div 
-          style={{ position: 'fixed', inset: 0, zIndex: 99 }} 
-          onClick={() => setShowUserMenu(false)} 
-        />
-      )}
-
-      {/* Main Content */}
-      <main style={{ 
-        marginRight: sidebarOpen ? 260 : 70, 
-        marginTop: 64, 
-        padding: '0 24px', 
-        transition: 'margin-right 0.3s',
-        minHeight: 'calc(100vh - 64px)'
-      }}>
-        {currentPage === 'dashboard' && <Dashboard />}
-        
-        {currentPage === 'expenses' && (
-          <Expenses
-            expenses={expenses}
-            accounts={accounts}
-            projects={projects}
-            users={users}
-            onAdd={handleAddExpense}
-            onEdit={handleEditExpense}
-            onDelete={handleDeleteExpense}
-            onMarkPaid={handleMarkPaid}
-            onRefresh={() => {}}
-            onNavigate={handleNavigate}
-            darkMode={darkMode}
-            theme={theme}
+      <main style={{ maxWidth: 1400, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
+        {currentView === 'dashboard' && <Dashboard expenses={expenses} tasks={tasks} projects={projects} accounts={accounts} darkMode={darkMode} theme={customTheme} />}
+        {currentView === 'expenses' && <Expenses expenses={expenses} accounts={accounts} onAdd={handleAddExpense} onEdit={handleEditExpense} onDelete={handleDeleteExpense} onMarkPaid={handleMarkPaid} onRefresh={handleRefreshExpenses} darkMode={darkMode} theme={customTheme} />}
+        {currentView === 'tasks' && <Tasks tasks={tasks} projects={projects} onAdd={handleAddTask} onEdit={handleEditTask} onDelete={handleDeleteTask} onToggleStatus={handleToggleTaskStatus} darkMode={darkMode} theme={customTheme} />}
+        {currentView === 'projects' && <Projects projects={projects} onAdd={handleAddProject} onEdit={handleEditProject} onDelete={handleDeleteProject} onAddFolder={handleAddFolder} onUploadFile={handleUploadFile} onDeleteFile={handleDeleteFile} darkMode={darkMode} theme={customTheme} />}
+        {currentView === 'accounts' && <Accounts accounts={accounts} onAdd={handleAddAccount} onEdit={handleEditAccount} onDelete={handleDeleteAccount} darkMode={darkMode} theme={customTheme} />}
+        {currentView === 'users' && <Users currentUser={currentUser} darkMode={darkMode} theme={customTheme} />}
+        {currentView === 'settings' && (
+          <Settings 
+            darkMode={darkMode} 
+            themeMode={themeMode} setThemeMode={setThemeMode} 
+            currentThemeId={currentThemeId} setCurrentThemeId={setCurrentThemeId} 
+            fontSize={fontSize} setFontSize={setFontSize} 
+            city={city} setCity={setCity} 
+            theme={customTheme} themeList={THEME_LIST}
+            headerColor={headerColor} setHeaderColor={setHeaderColor}
+            buttonColor={buttonColor} setButtonColor={setButtonColor}
+            fontFamily={fontFamily} setFontFamily={setFontFamily}
+            bgEffect={bgEffect} setBgEffect={setBgEffect}
           />
         )}
-
-        {currentPage === 'tasks' && (
-          <Tasks
-            tasks={tasks}
-            projects={projects}
-            users={users}
-            onAdd={handleAddTask}
-            onEdit={handleEditTask}
-            onDelete={handleDeleteTask}
-            onToggleStatus={handleToggleTaskStatus}
-            onNavigate={handleNavigate}
-            darkMode={darkMode}
-            theme={theme}
-          />
-        )}
-
-        {currentPage === 'projects' && (
-          <Projects
-            projects={projects}
-            accounts={accounts}
-            users={users}
-            tasks={tasks}
-            expenses={expenses}
-            clients={clients}
-            onAdd={handleAddProject}
-            onEdit={handleEditProject}
-            onDelete={handleDeleteProject}
-            onNavigate={handleNavigate}
-            darkMode={darkMode}
-            theme={theme}
-          />
-        )}
-
-        {currentPage === 'accounts' && (
-          <Accounts
-            accounts={accounts}
-            expenses={expenses}
-            projects={projects}
-            onAdd={handleAddAccount}
-            onEdit={handleEditAccount}
-            onDelete={handleDeleteAccount}
-            onNavigate={handleNavigate}
-            darkMode={darkMode}
-            theme={theme}
-          />
-        )}
-
-        {currentPage === 'users' && (
-          <UsersComponent
-            users={users}
-            projects={projects}
-            tasks={tasks}
-            expenses={expenses}
-            onAdd={handleAddUser}
-            onEdit={handleEditUser}
-            onDelete={handleDeleteUser}
-            onNavigate={handleNavigate}
-            darkMode={darkMode}
-            theme={theme}
-          />
-        )}
-
-        {currentPage === 'resources' && (
-          <Resources
-            clients={clients}
-            suppliers={suppliers}
-            documents={documents}
-            materials={materials}
-            equipment={equipment}
-            projects={projects}
-            accounts={accounts}
-            users={users}
-            expenses={expenses}
-            onAddClient={handleAddClient}
-            onEditClient={handleEditClient}
-            onDeleteClient={handleDeleteClient}
-            onAddSupplier={handleAddSupplier}
-            onEditSupplier={handleEditSupplier}
-            onDeleteSupplier={handleDeleteSupplier}
-            onAddDocument={handleAddDocument}
-            onEditDocument={handleEditDocument}
-            onDeleteDocument={handleDeleteDocument}
-            onAddMaterial={handleAddMaterial}
-            onEditMaterial={handleEditMaterial}
-            onDeleteMaterial={handleDeleteMaterial}
-            onAddEquipment={handleAddEquipment}
-            onEditEquipment={handleEditEquipment}
-            onDeleteEquipment={handleDeleteEquipment}
-            onNavigate={handleNavigate}
-            darkMode={darkMode}
-            theme={theme}
-          />
-        )}
-
-        {currentPage === 'calculator' && (
-          <QuantityCalculator
-            darkMode={darkMode}
-            theme={theme}
-          />
-        )}
-
-        {currentPage === 'settings' && <SettingsPage />}
+        {currentView === 'calculator' && <QuantityCalculator darkMode={darkMode} theme={customTheme} />}
       </main>
+
+      <footer style={{ textAlign: 'center', padding: 16, color: t.text.muted, fontSize: 10, position: 'relative', zIndex: 1 }}>
+        <p style={{ margin: 0 }}>نظام ركائز الأولى للتعمير v7.0 © 2024</p>
+      </footer>
     </div>
   );
 }
