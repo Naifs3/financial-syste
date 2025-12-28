@@ -65,7 +65,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   // Theme
-  const theme = getTheme(darkMode);
+  const theme = getTheme('professional', darkMode);
 
   // ═══════════════ Dark Mode Effect ═══════════════
   useEffect(() => {
