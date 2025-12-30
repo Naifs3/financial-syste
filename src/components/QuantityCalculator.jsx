@@ -53,6 +53,25 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
     setWorkItems(prev => ({ ...prev, [catKey]: { ...prev[catKey], icon: newIcon } }));
   };
 
+  const addNewCategory = () => {
+    const newKey = 'cat_' + Date.now();
+    setWorkItems(prev => ({
+      ...prev,
+      [newKey]: { name: 'قسم جديد', icon: '📦', items: [] }
+    }));
+    // فتح نافذة التحرير للقسم الجديد
+    setEditingCategory({ catKey: newKey, name: 'قسم جديد', icon: '📦' });
+  };
+
+  const deleteCategory = (catKey) => {
+    setWorkItems(prev => {
+      const newItems = { ...prev };
+      delete newItems[catKey];
+      return newItems;
+    });
+    setEditingCategory(null);
+  };
+
   const formatNum = (n) => Number(n).toLocaleString('en-US');
   const calcFloorArea = () => length * width;
   const calcWallArea = () => 2 * (length + width) * height;
@@ -323,8 +342,8 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                         <DimensionInput label="العرض" value={width} onChange={setWidth} />
                         <DimensionInput label="الارتفاع" value={height} onChange={setHeight} />
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, padding: 16, background: t?.bg?.secondary, borderRadius: 12, border: `1px solid ${t?.border?.primary}` }}>
-                        <div style={{ textAlign: 'center', padding: 12, background: t?.bg?.tertiary, borderRadius: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div style={{ textAlign: 'center', padding: 16, background: t?.bg?.tertiary, borderRadius: 10, border: `1px solid ${t?.border?.primary}` }}>
                           <div style={{ fontSize: 12, color: t?.text?.muted, marginBottom: 6 }}>مساحة الأرضية</div>
                           <div style={{ fontSize: 11, color: t?.text?.muted, marginBottom: 8, fontFamily: 'monospace', background: t?.bg?.secondary, padding: '4px 8px', borderRadius: 6, display: 'inline-block' }}>
                             {formatNum(length)} × {formatNum(width)}
@@ -334,7 +353,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                             <span style={{ fontSize: 14, color: t?.text?.muted }}>م²</span>
                           </div>
                         </div>
-                        <div style={{ textAlign: 'center', padding: 12, background: t?.bg?.tertiary, borderRadius: 10 }}>
+                        <div style={{ textAlign: 'center', padding: 16, background: t?.bg?.tertiary, borderRadius: 10, border: `1px solid ${t?.border?.primary}` }}>
                           <div style={{ fontSize: 12, color: t?.text?.muted, marginBottom: 6 }}>مساحة الجدران</div>
                           <div style={{ fontSize: 11, color: t?.text?.muted, marginBottom: 8, fontFamily: 'monospace', background: t?.bg?.secondary, padding: '4px 8px', borderRadius: 6, display: 'inline-block' }}>
                             2×({formatNum(length)}+{formatNum(width)})×{formatNum(height)}
@@ -575,6 +594,30 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                 </div>
               );
             })}
+            
+            {/* زر إضافة قسم جديد */}
+            <button 
+              onClick={addNewCategory} 
+              style={{ 
+                width: '100%', 
+                padding: 16, 
+                borderRadius: 12, 
+                border: `2px dashed ${t?.button?.primary}`, 
+                background: `${t?.button?.primary}10`, 
+                color: t?.button?.primary, 
+                fontSize: 14, 
+                fontWeight: 600, 
+                cursor: 'pointer', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: 10, 
+                fontFamily: 'inherit',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Plus size={20} /> إضافة قسم جديد
+            </button>
           </div>
         </div>
       )}
@@ -666,7 +709,13 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
             </div>
 
             {/* أزرار */}
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+              <button 
+                onClick={() => deleteCategory(editingCategory.catKey)}
+                style={{ padding: '12px 16px', borderRadius: 10, border: `1px solid ${t?.status?.danger?.border}`, background: 'transparent', color: t?.status?.danger?.text, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}
+              >
+                <Trash2 size={16} /> حذف
+              </button>
               <button 
                 onClick={() => {
                   updateCategoryName(editingCategory.catKey, editingCategory.name);
@@ -678,7 +727,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                 ✓ حفظ التعديلات
               </button>
             </div>
-            <button onClick={() => setEditingCategory(null)} style={{ width: '100%', marginTop: 10, padding: '12px 16px', borderRadius: 10, border: `1px solid ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+            <button onClick={() => setEditingCategory(null)} style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: `1px solid ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
           </div>
         </div>
       )}
