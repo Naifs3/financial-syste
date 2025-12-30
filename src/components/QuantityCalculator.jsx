@@ -11,11 +11,11 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
   const [multiPlaces, setMultiPlaces] = useState([]);
 
   const [workItems, setWorkItems] = useState({
-    tiles: { name: 'البلاط', icon: '🔲', programmed: true, items: [{ id: 't1', name: 'إزالة بلاط', desc: 'إزالة البلاط القديم', exec: 15, cont: 10, type: 'floor' }, { id: 't2', name: 'صبة أرضية', desc: 'صب الخرسانة مع المواد', exec: 47, cont: 35, type: 'floor' }, { id: 't3', name: 'تبليط', desc: 'تركيب البلاط الجديد', exec: 30, cont: 20, type: 'floor' }] },
-    paint: { name: 'الدهانات', icon: '🎨', programmed: true, items: [{ id: 'p1', name: 'دهان داخلي', desc: 'دهان جوتن فاخر', exec: 21, cont: 14, type: 'wall' }, { id: 'p2', name: 'معجون', desc: 'تجهيز وتسوية الجدران', exec: 15, cont: 10, type: 'wall' }] },
-    gypsum: { name: 'الجبس', icon: '🏛️', programmed: true, items: [{ id: 'g1', name: 'جبسمبورد', desc: 'تركيب ألواح الجبس', exec: 60, cont: 40, type: 'ceiling' }] },
-    electrical: { name: 'الكهرباء', icon: '⚡', programmed: true, items: [{ id: 'e1', name: 'تأسيس كهرباء', desc: 'تمديدات شاملة', exec: 45, cont: 30, type: 'floor' }] },
-    plumbing: { name: 'السباكة', icon: '🔧', programmed: true, items: [{ id: 'pb1', name: 'تأسيس سباكة', desc: 'تمديدات شاملة', exec: 80, cont: 55, type: 'floor' }] },
+    tiles: { name: 'البلاط', icon: '🔲', items: [{ id: 't1', name: 'إزالة بلاط', desc: 'إزالة البلاط القديم', exec: 15, cont: 10, type: 'floor' }, { id: 't2', name: 'صبة أرضية', desc: 'صب الخرسانة مع المواد', exec: 47, cont: 35, type: 'floor' }, { id: 't3', name: 'تبليط', desc: 'تركيب البلاط الجديد', exec: 30, cont: 20, type: 'floor' }] },
+    paint: { name: 'الدهانات', icon: '🎨', items: [{ id: 'p1', name: 'دهان داخلي', desc: 'دهان جوتن فاخر', exec: 21, cont: 14, type: 'wall' }, { id: 'p2', name: 'معجون', desc: 'تجهيز وتسوية الجدران', exec: 15, cont: 10, type: 'wall' }] },
+    gypsum: { name: 'الجبس', icon: '🏛️', items: [{ id: 'g1', name: 'جبسمبورد', desc: 'تركيب ألواح الجبس', exec: 60, cont: 40, type: 'ceiling' }] },
+    electrical: { name: 'الكهرباء', icon: '⚡', items: [{ id: 'e1', name: 'تأسيس كهرباء', desc: 'تمديدات شاملة', exec: 45, cont: 30, type: 'floor' }] },
+    plumbing: { name: 'السباكة', icon: '🔧', items: [{ id: 'pb1', name: 'تأسيس سباكة', desc: 'تمديدات شاملة', exec: 80, cont: 55, type: 'floor' }] },
   });
 
   const [places] = useState({ dry: { name: 'جاف', icon: '🏠', enabled: true, places: ['صالة', 'مجلس', 'غرفة نوم', 'ممر'] }, wet: { name: 'رطب', icon: '🚿', enabled: true, places: ['مطبخ', 'دورة مياه', 'غسيل'] }, outdoor: { name: 'خارجي', icon: '🌳', enabled: true, places: ['حوش', 'سطح', 'موقف'] } });
@@ -57,7 +57,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
     const newKey = 'cat_' + Date.now();
     setWorkItems(prev => ({
       ...prev,
-      [newKey]: { name: 'قسم جديد', icon: '📦', items: [], programmed: false }
+      [newKey]: { name: 'قسم جديد', icon: '📦', items: [] }
     }));
     // فتح نافذة التحرير للقسم الجديد
     setEditingCategory({ catKey: newKey, name: 'قسم جديد', icon: '📦', isNew: true });
@@ -396,7 +396,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                     <div style={{ fontSize: 14, marginBottom: 12, fontWeight: 600, color: t?.text?.secondary }}>🔧 بنود العمل</div>
                     <div style={{ background: t?.bg?.tertiary, borderRadius: 10, border: `1px solid ${t?.border?.primary}`, padding: 12, marginBottom: 16 }}>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                        {Object.entries(workItems).filter(([ck, cat]) => cat.programmed && programming[selectedPlaceType]?.[ck]?.length > 0).map(([key, cat], idx) => {
+                        {Object.entries(workItems).filter(([ck]) => programming[selectedPlaceType]?.[ck]).map(([key, cat], idx) => {
                           const color = getCategoryColor(idx);
                           const isSelected = selectedCategory === key;
                           return (
@@ -404,7 +404,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                               style={{ padding: '14px 10px', borderRadius: 10, border: isSelected ? `2px solid ${color.main}` : `1px solid ${t?.border?.primary}`, background: isSelected ? `${color.main}15` : t?.bg?.secondary, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
                               <div style={{ fontSize: 26, marginBottom: 6 }}>{cat.icon}</div>
                               <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? color.main : t?.text?.primary }}>{cat.name}</div>
-                              <div style={{ fontSize: 11, color: t?.text?.muted, marginTop: 4 }}>{cat.items.filter(i => programming[selectedPlaceType]?.[key]?.includes(i.id)).length} بند</div>
+                              <div style={{ fontSize: 11, color: t?.text?.muted, marginTop: 4 }}>{cat.items.length} بند</div>
                             </div>
                           );
                         })}
@@ -417,7 +417,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                         <div style={{ fontSize: 14, marginBottom: 12, fontWeight: 600, color: t?.text?.secondary }}>📋 تفاصيل {workItems[selectedCategory].name}</div>
                         <div style={{ background: t?.bg?.tertiary, borderRadius: 10, border: `1px solid ${t?.border?.primary}`, padding: 12, marginBottom: 16 }}>
                           <div className="work-items-scroll" style={{ display: 'grid', gap: 8, maxHeight: 220, overflowY: 'auto', paddingLeft: 8 }}>
-                            {workItems[selectedCategory].items.filter(i => programming[selectedPlaceType]?.[selectedCategory]?.includes(i.id)).map(item => {
+                            {workItems[selectedCategory].items.map(item => {
                               const isSelected = selectedItems.includes(item.id);
                               return (
                                 <div key={item.id} onClick={() => toggleItem(item.id)} 
