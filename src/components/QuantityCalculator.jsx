@@ -174,7 +174,7 @@ export default function QuantityCalculator() {
   };
 
   return (
-    <div dir="rtl" style={{ color: c.text, padding: 16, background: c.bg, minHeight: '100vh' }}>
+    <div dir="rtl" style={{ color: c.text, padding: 16 }}>
       <style>{`
         input, textarea, select { font-family: inherit; } 
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } 
