@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calculator, ChevronDown, ChevronUp, Plus, Trash2, Layers, FileText, X, MapPin, RefreshCw } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp, Plus, Trash2, Layers, FileText, X, MapPin, RefreshCw, Edit3 } from 'lucide-react';
 
 const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
   const t = theme;
@@ -148,6 +148,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
   const cardStyle = { background: t?.bg?.secondary, borderRadius: 12, border: `1px solid ${t?.border?.primary}`, padding: 20, marginBottom: 16 };
   const btnStyle = (active) => ({ padding: '10px 20px', borderRadius: 10, border: active ? 'none' : `1px solid ${t?.border?.primary}`, background: active ? t?.button?.gradient : 'transparent', color: active ? '#fff' : t?.text?.muted, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', transition: 'all 0.2s' });
   const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: 10, border: `1px solid ${t?.border?.primary}`, background: t?.bg?.tertiary, color: t?.text?.primary, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', ...noSpinner };
+  const selectStyle = { ...inputStyle, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left 12px center', paddingLeft: 36, cursor: 'pointer' };
 
   const DimensionInput = ({ label, value, onChange }) => (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: t?.bg?.tertiary, borderRadius: 10, border: `1px solid ${t?.border?.primary}` }}>
@@ -213,11 +214,12 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                 {Object.entries(places).filter(([_, p]) => p.enabled).map(([key, place], idx) => {
                   const color = getCategoryColor(idx);
+                  const isSelected = selectedPlaceType === key;
                   return (
                     <div key={key} onClick={() => { setSelectedPlaceType(key); setSelectedPlace(''); setSelectedItems([]); setSelectedCategory(''); }} 
-                      style={{ padding: '14px 10px', borderRadius: 10, border: selectedPlaceType === key ? `1px solid ${color.main}` : `1px solid ${t?.border?.primary}`, background: selectedPlaceType === key ? `${color.main}15` : t?.bg?.secondary, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
+                      style={{ padding: '14px 10px', borderRadius: 10, border: isSelected ? `2px solid ${color.main}` : `1px solid ${t?.border?.primary}`, background: isSelected ? `${color.main}15` : t?.bg?.secondary, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
                       <div style={{ fontSize: 26, marginBottom: 6 }}>{place.icon}</div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: selectedPlaceType === key ? color.main : t?.text?.primary }}>{place.name}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? color.main : t?.text?.primary }}>{place.name}</div>
                       <div style={{ fontSize: 11, color: t?.text?.muted, marginTop: 4 }}>{place.places.length} مكان</div>
                     </div>
                   );
@@ -237,7 +239,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                 {/* المكان */}
                 <div style={{ fontSize: 14, marginBottom: 12, fontWeight: 600, color: t?.text?.secondary }}>🏠 المكان</div>
                 <div style={{ background: t?.bg?.tertiary, borderRadius: 10, padding: 16, marginBottom: 20, border: `1px solid ${t?.border?.primary}` }}>
-                  <select value={selectedPlace} onChange={(e) => setSelectedPlace(e.target.value)} style={{ ...inputStyle, marginBottom: selectedPlace ? 16 : 0 }}>
+                  <select value={selectedPlace} onChange={(e) => setSelectedPlace(e.target.value)} style={{ ...selectStyle, marginBottom: selectedPlace ? 16 : 0 }}>
                     <option value="">اختر المكان</option>
                     {places[selectedPlaceType]?.places.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
@@ -296,11 +298,12 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                         {Object.entries(workItems).filter(([ck]) => programming[selectedPlaceType]?.[ck]?.length > 0).map(([key, cat], idx) => {
                           const color = getCategoryColor(idx);
+                          const isSelected = selectedCategory === key;
                           return (
                             <div key={key} onClick={() => toggleCategory(key)}
-                              style={{ padding: '14px 10px', borderRadius: 10, border: selectedCategory === key ? `1px solid ${color.main}` : `1px solid ${t?.border?.primary}`, background: selectedCategory === key ? `${color.main}15` : t?.bg?.secondary, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
+                              style={{ padding: '14px 10px', borderRadius: 10, border: isSelected ? `2px solid ${color.main}` : `1px solid ${t?.border?.primary}`, background: isSelected ? `${color.main}15` : t?.bg?.secondary, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
                               <div style={{ fontSize: 26, marginBottom: 6 }}>{cat.icon}</div>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: selectedCategory === key ? color.main : t?.text?.primary }}>{cat.name}</div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? color.main : t?.text?.primary }}>{cat.name}</div>
                               <div style={{ fontSize: 11, color: t?.text?.muted, marginTop: 4 }}>{cat.items.filter(i => programming[selectedPlaceType]?.[key]?.includes(i.id)).length} بند</div>
                             </div>
                           );
@@ -314,21 +317,24 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                         <div style={{ fontSize: 14, marginBottom: 12, fontWeight: 600, color: t?.text?.secondary }}>📋 تفاصيل {workItems[selectedCategory].name}</div>
                         <div style={{ background: t?.bg?.tertiary, borderRadius: 10, border: `1px solid ${t?.border?.primary}`, padding: 12, marginBottom: 16 }}>
                           <div className="work-items-scroll" style={{ display: 'grid', gap: 8, maxHeight: 220, overflowY: 'auto', paddingLeft: 8 }}>
-                            {workItems[selectedCategory].items.filter(i => programming[selectedPlaceType]?.[selectedCategory]?.includes(i.id)).map(item => (
-                              <div key={item.id} onClick={() => toggleItem(item.id)} 
-                                style={{ padding: '12px 14px', borderRadius: 10, border: selectedItems.includes(item.id) ? `1px solid ${t?.button?.primary}` : `1px solid ${t?.border?.primary}`, background: selectedItems.includes(item.id) ? `${t?.button?.primary}15` : t?.bg?.secondary, cursor: 'pointer' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ fontSize: 14, fontWeight: 600, color: t?.text?.primary }}>{item.name}</span>
-                                    <span style={{ fontSize: 10, color: item.type === 'wall' ? t?.status?.info?.text : item.type === 'ceiling' ? t?.status?.warning?.text : t?.status?.success?.text, background: item.type === 'wall' ? t?.status?.info?.bg : item.type === 'ceiling' ? t?.status?.warning?.bg : t?.status?.success?.bg, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
-                                      {item.type === 'wall' ? 'جدران' : item.type === 'ceiling' ? 'أسقف' : 'أرضية'}
-                                    </span>
+                            {workItems[selectedCategory].items.filter(i => programming[selectedPlaceType]?.[selectedCategory]?.includes(i.id)).map(item => {
+                              const isSelected = selectedItems.includes(item.id);
+                              return (
+                                <div key={item.id} onClick={() => toggleItem(item.id)} 
+                                  style={{ padding: '12px 14px', borderRadius: 10, border: isSelected ? `2px solid ${t?.button?.primary}` : `1px solid ${t?.border?.primary}`, background: isSelected ? `${t?.button?.primary}15` : t?.bg?.secondary, cursor: 'pointer' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                      <span style={{ fontSize: 14, fontWeight: 600, color: t?.text?.primary }}>{item.name}</span>
+                                      <span style={{ fontSize: 10, color: item.type === 'wall' ? t?.status?.info?.text : item.type === 'ceiling' ? t?.status?.warning?.text : t?.status?.success?.text, background: item.type === 'wall' ? t?.status?.info?.bg : item.type === 'ceiling' ? t?.status?.warning?.bg : t?.status?.success?.bg, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
+                                        {item.type === 'wall' ? 'جدران' : item.type === 'ceiling' ? 'أسقف' : 'أرضية'}
+                                      </span>
+                                    </div>
+                                    <span style={{ fontSize: 13, color: t?.status?.success?.text, fontWeight: 600 }}>{formatNum(item.exec)} ر.س</span>
                                   </div>
-                                  <span style={{ fontSize: 13, color: t?.status?.success?.text, fontWeight: 600 }}>{formatNum(item.exec)} ر.س</span>
+                                  <div style={{ fontSize: 11, color: t?.text?.muted }}>{item.desc}</div>
                                 </div>
-                                <div style={{ fontSize: 11, color: t?.text?.muted }}>{item.desc}</div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       </>
@@ -462,6 +468,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                     <span style={{ fontSize: 24 }}>{cat.icon}</span>
                     <span style={{ fontSize: 16, fontWeight: 600, flex: 1, color: t?.text?.primary }}>{cat.name}</span>
                     <span style={{ fontSize: 12, color: t?.text?.muted, background: t?.bg?.secondary, padding: '4px 10px', borderRadius: 8 }}>{cat.items.length} بند</span>
+                    <div style={{ width: 28, height: 28, borderRadius: 6, background: `${t?.button?.primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit3 size={14} color={t?.button?.primary} /></div>
                     {selectedCategory === catKey ? <ChevronUp size={20} color={t?.text?.muted} /> : <ChevronDown size={20} color={t?.text?.muted} />}
                   </div>
                   {selectedCategory === catKey && (
@@ -471,7 +478,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                           <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2, color: t?.text?.primary }}>{item.name}</div><div style={{ fontSize: 11, color: t?.text?.muted }}>{item.desc}</div></div>
                           <span style={{ fontSize: 10, color: item.type === 'floor' ? t?.status?.success?.text : item.type === 'wall' ? t?.status?.info?.text : t?.status?.warning?.text, background: item.type === 'floor' ? t?.status?.success?.bg : item.type === 'wall' ? t?.status?.info?.bg : t?.status?.warning?.bg, padding: '3px 8px', borderRadius: 6 }}>{item.type === 'floor' ? 'أرضية' : item.type === 'wall' ? 'جدران' : 'أسقف'}</span>
                           <div style={{ textAlign: 'left', minWidth: 60 }}><div style={{ fontSize: 13, fontWeight: 700, color: color.main }}>{formatNum(item.exec)}</div><div style={{ fontSize: 10, color: t?.text?.muted }}>ر.س</div></div>
-                          <ChevronDown size={16} color={t?.text?.muted} style={{ transform: 'rotate(-90deg)' }} />
+                          <div style={{ width: 28, height: 28, borderRadius: 6, background: `${t?.button?.primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit3 size={14} color={t?.button?.primary} /></div>
                         </div>
                       ))}
                       <button onClick={() => addNewWorkItem(catKey)} style={{ width: '100%', padding: 12, borderRadius: 10, border: `2px dashed ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit' }}><Plus size={16} /> إضافة بند جديد</button>
@@ -507,10 +514,11 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
               <div><div style={{ fontSize: 13, color: t?.text?.secondary, marginBottom: 6, fontWeight: 600 }}>سعر المقاول</div><input type="number" value={editingItem.item.cont} onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, cont: parseFloat(e.target.value) || 0 } })} onFocus={handleInputFocus} style={{ ...inputStyle, borderColor: `${t?.status?.info?.text}50`, background: `${t?.status?.info?.text}10`, color: t?.status?.info?.text, fontSize: 18, fontWeight: 700, textAlign: 'center' }} /></div>
             </div>
             <div style={{ padding: 14, borderRadius: 10, background: t?.status?.success?.bg, textAlign: 'center', marginBottom: 20 }}><div style={{ fontSize: 11, color: t?.text?.muted, marginBottom: 4 }}>صافي الربح</div><div style={{ fontSize: 24, fontWeight: 700, color: t?.status?.success?.text }}>{formatNum(editingItem.item.exec - editingItem.item.cont)} ر.س</div></div>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
               <button onClick={() => { deleteWorkItem(editingItem.catKey, editingItem.item.id); setEditingItem(null); }} style={{ padding: '12px 16px', borderRadius: 10, border: `1px solid ${t?.status?.danger?.border}`, background: 'transparent', color: t?.status?.danger?.text, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}><Trash2 size={16} /> حذف</button>
               <button onClick={() => { setWorkItems(prev => ({ ...prev, [editingItem.catKey]: { ...prev[editingItem.catKey], items: prev[editingItem.catKey].items.map(item => item.id === editingItem.item.id ? editingItem.item : item) } })); setEditingItem(null); }} style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', background: t?.button?.gradient, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>✓ حفظ التعديلات</button>
             </div>
+            <button onClick={() => setEditingItem(null)} style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: `1px solid ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
           </div>
         </div>
       )}
