@@ -1,647 +1,249 @@
 import React, { useState, useRef } from 'react';
-import { Calculator, FileText, Printer, Upload, Plus, Trash2, Image, Move, X, GripVertical } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp, Plus, Edit3, Trash2, Check, Save, Settings, Layers, Printer, Image, FileText, X } from 'lucide-react';
 
-const QuantityCalculatorPro = () => {
-  const [mainTab, setMainTab] = useState('report');
-  const darkMode = true;
-  const reportRef = useRef(null);
-  
-  const c = {
-    bg: darkMode ? '#0a0a0f' : '#f8fafc',
-    card: darkMode ? '#101018' : '#ffffff',
-    cardAlt: darkMode ? '#1a1a28' : '#f1f5f9',
-    border: darkMode ? '#252538' : '#e2e8f0',
-    text: darkMode ? '#f0f0f8' : '#1e293b',
-    muted: darkMode ? '#707088' : '#64748b',
-    accent: '#00d4ff',
-    accentGradient: 'linear-gradient(135deg, #0099bb, #00d4ff)',
-    success: '#4ade80',
-  };
+const QuantityCalculator = () => {
+  const [mainTab, setMainTab] = useState('calculator');
+  const [showReport, setShowReport] = useState(false);
+  const c = { bg: '#0a0a0f', card: '#101018', cardAlt: '#1a1a28', border: '#252538', text: '#f0f0f8', muted: '#707088', accent: '#00d4ff', accentGradient: 'linear-gradient(135deg, #0099bb, #00d4ff)', accentGlow: '0 0 20px #00d4ff40', success: '#4ade80', warning: '#fbbf24', danger: '#f87171', info: '#22d3ee' };
 
-  // الصور مع إمكانية التحرير الكامل
-  const [images, setImages] = useState({
-    logo: { src: null, width: 80, height: 60 },
-    vision2030: { src: null, width: 70, height: 50 },
-    stamp: { src: null, width: 60, height: 60 },
-    signature: { src: null, width: 100, height: 50 },
+  const [workItems, setWorkItems] = useState({
+    tiles: { name: 'البلاط', icon: '🔲', items: [
+      { id: 't1', name: 'إزالة متوسطة', desc: 'إزالة بلاط قديم متوسط', exec: 13, cont: 8, type: 'floor' },
+      { id: 't2', name: 'إزالة كبيرة', desc: 'إزالة بلاط كبير', exec: 20, cont: 12, type: 'floor' },
+      { id: 't3', name: 'صبة شامل مواد', desc: 'صب أرضية مع المواد', exec: 47, cont: 35, type: 'floor' },
+      { id: 't4', name: 'تبليط متوسط', desc: 'بلاط 40×40', exec: 28, cont: 18, type: 'floor' },
+      { id: 't5', name: 'تبليط كبير', desc: 'بلاط 60×60', exec: 33, cont: 22, type: 'floor' },
+    ]},
+    paint: { name: 'الدهانات', icon: '🎨', items: [
+      { id: 'p1', name: 'داخلي جوتن', desc: 'دهان جوتن', exec: 21, cont: 14, type: 'wall' },
+      { id: 'p2', name: 'داخلي الجزيرة', desc: 'دهان الجزيرة', exec: 20, cont: 13, type: 'wall' },
+      { id: 'p3', name: 'خارجي جوتن', desc: 'دهان خارجي', exec: 23, cont: 15, type: 'wall' },
+      { id: 'p4', name: 'معجون', desc: 'معجون وتجهيز', exec: 15, cont: 10, type: 'wall' },
+    ]},
+    gypsum: { name: 'الجبس', icon: '🏛️', items: [
+      { id: 'g1', name: 'جبسمبورد', desc: 'تركيب جبسمبورد', exec: 60, cont: 40, type: 'ceiling' },
+      { id: 'g2', name: 'جبس بلدي', desc: 'جبس تقليدي', exec: 53, cont: 35, type: 'ceiling' },
+    ]},
+    electrical: { name: 'الكهرباء', icon: '⚡', items: [
+      { id: 'e1', name: 'تأسيس شامل', desc: 'تأسيس كامل', exec: 45, cont: 30, type: 'floor' },
+      { id: 'e2', name: 'تشطيب', desc: 'تشطيب كهرباء', exec: 25, cont: 18, type: 'floor' },
+    ]},
+    plumbing: { name: 'السباكة', icon: '🔧', items: [
+      { id: 'pb1', name: 'تأسيس شامل', desc: 'تأسيس سباكة', exec: 80, cont: 55, type: 'floor' },
+      { id: 'pb2', name: 'تشطيب', desc: 'تشطيب سباكة', exec: 40, cont: 28, type: 'floor' },
+    ]},
   });
 
-  // بيانات التقرير - كل شيء قابل للتحرير
-  const [reportData, setReportData] = useState({
-    companyName: 'ركائز الأولى',
-    companySubtitle: 'للتعمير',
-    headerTitle: 'تقدير تكلفة مبدئي',
-    quoteNumber: '22224100',
-    quoteDate: 'Monday, 29/12/2025',
-    contactPhone: '+96653 244 5054',
-    contactLabel: 'تليفون المعني (معتم العرض)',
-    quoteNumberLabel: 'رقم العرض',
-    dateLabel: 'التاريخ',
-    
-    introTitle: 'المقدمة',
-    introText: 'بمعادلة توازن الجودة متميزون في مجال المقاولات و نوفر لعملائنا قيمة تحتوي على أعلى الأضافات المعلومية للانتاج المشروع الخاص بك وتكلفة المقاولة لذلك',
-    
-    clientDataTitle: 'بيانات العميل:',
-    clientNameLabel: 'الأسم:',
-    clientName: 'محب لبيتي',
-    clientPhoneLabel: 'الهاتف:',
-    clientPhone: '0533043030',
-    clientLocationLabel: 'الموقع:',
-    clientLocation: 'حي الحمدانية',
-    
-    projectTitle: 'مشروع اعمال داخلية - خارجية فيلا',
-    
-    sideTotalLabel: 'ريال',
-    sideTotal: '74,590.38',
-    
-    subtotalLabel: 'المبلغ',
-    subtotal: '74,590.38',
-    discountLabel: 'مصروفات أخرى',
-    discount: '',
-    vatLabel: 'ضريبة القيمة المضافة',
-    vatAmount: '11,188.56',
-    grandTotalLabel: 'الإجمالي',
-    grandTotal: '85,778.94',
-    currency: 'ريال',
-    
-    noteTitle: '📌 ملاحظة توضيحية:',
-    noteText: 'يرجى ملاحظة أن الأسعار المقدم محسوبة بالمواصفات والاحترافيه في هذه الميزانية فقط ولا يشمل أي أعمال أخرى',
-    
-    termsTitle: '📋 الشروط والأحكام:',
-    terms: [
-      'الأسعار المقدمة في هذا العرض تقديرية وتشمل الأعمال المحددة فقط',
-      'يسري العرض لمدة 15 يوماً من تاريخ تقديمه',
-      'يبدأ العمل فوراً غير مرتبط بما تم ترسيته منذ تحويل دفعة مقدمة',
-      'قد تتغير الأسعار لظروف طارئة بنسبة لا تتجاوز 10%',
-    ],
-    
-    bankTitle: '🏦 بيانات التحويل',
-    bankNameLabel: 'البنك:',
-    bankName: 'الراجحي',
-    accountLabel: 'رقم الحساب:',
-    accountNumber: '2B200001009080891660',
-    ibanLabel: 'رقم الايبان:',
-    iban: 'SA 26 8000 0282 6080 1089 1660',
-    
-    footerEmail: 'Rkaz3600@Gmail.com',
-  });
+  const [places, setPlaces] = useState({ dry: { name: 'جاف', icon: '🏠', color: c.accent, enabled: true }, wet: { name: 'رطب', icon: '🚿', color: c.info, enabled: true }, outdoor: { name: 'خارجي', icon: '🌳', color: c.success, enabled: true } });
+  const [programming, setProgramming] = useState({ dry: { tiles: ['t1','t2','t3','t4','t5'], paint: ['p1','p2','p4'], gypsum: ['g1','g2'], electrical: ['e1','e2'] }, wet: { tiles: ['t1','t2','t3','t4','t5'], paint: ['p1','p2','p4'], gypsum: ['g1','g2'], electrical: ['e1','e2'], plumbing: ['pb1','pb2'] }, outdoor: { tiles: ['t1','t2','t3','t4','t5'], paint: ['p3'], electrical: ['e1','e2'], plumbing: ['pb1','pb2'] } });
+  const calcPlaces = { dry: ['صالة', 'مجلس', 'غرفة نوم رئيسية', 'غرفة نوم 1', 'مكتب'], wet: ['مطبخ', 'دورة مياه رئيسية', 'دورة مياه 1', 'غرفة غسيل'], outdoor: ['حوش أمامي', 'حوش خلفي', 'سطح', 'موقف'] };
 
-  // بنود التقرير
-  const [reportItems, setReportItems] = useState([
-    { id: 'AC-2420', title: 'أعمال البلاط', desc: 'تشمل الخدمة: إزالة بلاط تكسير كبير سيور حاوية والنقل -380م و تأسيس تركيب بلاط مقاسات أكبر من 1م', area: '760.0', areaLabel: 'مجموع الأمتار', price: '22,956.47', priceLabel: 'ريال' },
-    { id: 'AC-2422', title: 'دهانات الحوائط', desc: 'تشمل الخدمة: دهان جدران عدة طبقات سيور مواد تنظيف وصنفرة الأسطح ومعالجة الشروخ الدقيقة', area: '1,800.0', areaLabel: 'مجموع الأمتار', price: '19,023.44', priceLabel: 'ريال' },
-    { id: 'AC-2424', title: 'دهانات جبسمبورد', desc: 'تشمل الخدمة: دهان جبسمبورد سيور مواد 350م', area: '350.0', areaLabel: 'مجموع الأمتار', price: '6,345.97', priceLabel: 'ريال' },
-    { id: 'AC-2426', title: 'المجبس', desc: 'تشمل الخدمة: تركيب جبسمبورد ZB0 وطبقة الجبس القديم سيور حاوية', area: '460.0', areaLabel: 'مجموع الأمتار', price: '17,027.34', priceLabel: 'ريال' },
-    { id: 'AC-2427', title: 'العزل', desc: 'تشمل الخدمة: لياسة بالقسم وترويب مع تجهيز السطح', area: '', areaLabel: '', price: '2,043.85', priceLabel: 'ريال' },
-    { id: 'AC-2428', title: 'تحميل النظام', desc: 'تشمل الخدمة: أعادة اختبار السباكي المعلق و نقل إلى المستودعات', area: '', areaLabel: '', price: '7,193.31', priceLabel: 'ريال' },
-  ]);
+  const [selectedPlaceType, setSelectedPlaceType] = useState('');
+  const [selectedPlace, setSelectedPlace] = useState('');
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [addedItems, setAddedItems] = useState({});
+  const [inputMethod, setInputMethod] = useState('direct');
+  const [area, setArea] = useState(0);
+  const [length, setLength] = useState(0);
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(3);
+  const [expandedCategories, setExpandedCategories] = useState({ tiles: true });
+  const [editingItem, setEditingItem] = useState(null);
 
-  const [freeItems, setFreeItems] = useState([
-    { id: 'AC-2425', title: 'الاستشارات و المتابعات في التصميم الداخلي', desc: 'تشمل الخدمة: تقييم الاحتياجات والمقترحات المتعلقة بتصميم جوانب المساحة', price: 'مجاناً' },
-    { id: 'AC-2429', title: 'الإشراف والمتابعة', desc: 'تشمل الخدمة: متابعة تنفيذ الأعمال في الموقع', price: 'مجاناً' },
-  ]);
-
-  // إدارة التحرير
-  const [selectedElement, setSelectedElement] = useState(null);
+  const [images, setImages] = useState({ logo: { src: null, width: 80, height: 60 }, stamp: { src: null, width: 60, height: 60 }, signature: { src: null, width: 100, height: 50 } });
+  const [reportData, setReportData] = useState({ companyName: 'ركائز الأولى', companySubtitle: 'للتعمير', headerTitle: 'تقدير تكلفة مبدئي', quoteNumber: Math.floor(Math.random() * 100000000).toString(), quoteDate: new Date().toLocaleDateString('ar-SA'), contactPhone: '+96653 244 5054', clientName: '', clientPhone: '', clientLocation: '', projectTitle: 'مشروع ترميم وتشطيب', vatRate: 15, noteText: 'الأسعار محسوبة بالمواصفات المحددة', terms: ['الأسعار تقديرية', 'يسري العرض 15 يوماً', 'دفعة مقدمة 50%'], bankName: 'الراجحي', accountNumber: '', iban: '', footerEmail: 'info@company.com' });
+  const [freeItems, setFreeItems] = useState([{ id: 'F1', title: 'الاستشارات', desc: 'تقييم الاحتياجات', price: 'مجاناً' }]);
   const [imageEditModal, setImageEditModal] = useState(null);
 
+  const quickAreas = [5, 10, 15, 20, 25, 30, 40, 50];
+  const calcFloorArea = () => length * width;
+  const calcWallArea = () => 2 * (length + width) * height;
+  const getArea = () => inputMethod === 'direct' ? area : calcFloorArea();
+  const getWallArea = () => inputMethod === 'dimensions' ? calcWallArea() : 0;
+  const adjustValue = (setter, value, delta, min = 0) => { const nv = Math.max(min, value + delta); setter(Number.isInteger(nv) ? nv : parseFloat(nv.toFixed(1))); };
+  const toggleItem = (id) => setSelectedItems(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleCategory = (catKey) => setExpandedCategories(prev => ({ ...prev, [catKey]: !prev[catKey] }));
+  const toggleProgramming = (pk, ck, iid) => { const np = JSON.parse(JSON.stringify(programming)); if (!np[pk]) np[pk] = {}; if (!np[pk][ck]) np[pk][ck] = []; np[pk][ck] = np[pk][ck].includes(iid) ? np[pk][ck].filter(id => id !== iid) : [...np[pk][ck], iid]; setProgramming(np); };
+
+  const getAvailableItems = () => { if (!selectedPlaceType) return []; const items = []; Object.entries(workItems).forEach(([ck, cat]) => { const eids = programming[selectedPlaceType]?.[ck] || []; cat.items.forEach(i => { if (eids.includes(i.id)) items.push({ ...i, category: cat.name, catKey: ck }); }); }); return items; };
+
+  const addItems = () => { const fa = getArea(), wa = getWallArea(); if (!selectedPlace || fa <= 0 || selectedItems.length === 0) return; const avail = getAvailableItems(); const nai = { ...addedItems }; selectedItems.forEach(id => { const item = avail.find(w => w.id === id); if (!item) return; const isWall = item.type === 'wall' || item.type === 'ceiling'; const finalArea = isWall && wa > 0 ? wa : fa; const key = item.id + '-' + selectedPlace; if (nai[key]) nai[key].area += finalArea; else nai[key] = { ...item, place: selectedPlace, placeType: selectedPlaceType, area: finalArea }; }); setAddedItems(nai); setSelectedItems([]); setArea(0); setLength(0); setWidth(0); };
+  const removeAddedItem = (key) => { const n = { ...addedItems }; delete n[key]; setAddedItems(n); };
+  const updateAddedItemArea = (key, val) => setAddedItems(p => ({ ...p, [key]: { ...p[key], area: parseFloat(val) || 0 } }));
+
+  const calcTotals = () => { 
+    let totalExec = 0, totalCont = 0, totalArea = 0, itemCount = 0;
+    Object.values(addedItems).forEach(i => { 
+      totalExec += i.area * i.exec; 
+      totalCont += i.area * i.cont; 
+      totalArea += i.area;
+      itemCount++;
+    }); 
+    const profit = totalExec - totalCont; 
+    const profitPercent = totalCont > 0 ? ((profit / totalCont) * 100).toFixed(1) : 0;
+    const vatAmount = totalExec * (reportData.vatRate / 100); 
+    const grandTotal = totalExec + vatAmount; 
+    return { totalExec, totalCont, profit, profitPercent, vatAmount, grandTotal, totalArea, itemCount }; 
+  };
+  const { totalExec, totalCont, profit, profitPercent, vatAmount, grandTotal, totalArea, itemCount } = calcTotals();
+  const canAdd = selectedPlace && getArea() > 0 && selectedItems.length > 0;
+
+  const startEditItem = (catKey, item) => setEditingItem({ catKey, itemId: item.id, name: item.name, desc: item.desc || '', exec: item.exec, cont: item.cont, type: item.type });
+  const saveEditItem = () => { if (!editingItem) return; const nw = JSON.parse(JSON.stringify(workItems)); nw[editingItem.catKey].items = nw[editingItem.catKey].items.map(i => i.id === editingItem.itemId ? { ...i, name: editingItem.name, desc: editingItem.desc, exec: editingItem.exec, cont: editingItem.cont, type: editingItem.type } : i); setWorkItems(nw); setEditingItem(null); };
+  const deleteItem = (ck, iid) => { const nw = JSON.parse(JSON.stringify(workItems)); nw[ck].items = nw[ck].items.filter(i => i.id !== iid); setWorkItems(nw); const np = JSON.parse(JSON.stringify(programming)); Object.keys(np).forEach(pk => { if (np[pk][ck]) np[pk][ck] = np[pk][ck].filter(id => id !== iid); }); setProgramming(np); if (editingItem?.itemId === iid) setEditingItem(null); };
+
   const handlePrint = () => window.print();
+  const handleImageUpload = (k, e) => { const f = e.target.files[0]; if (f) { const r = new FileReader(); r.onload = (ev) => setImages(p => ({ ...p, [k]: { ...p[k], src: ev.target.result } })); r.readAsDataURL(f); } };
+  const updateImageSize = (k, d, v) => setImages(p => ({ ...p, [k]: { ...p[k], [d]: parseInt(v) || 50 } }));
+  const removeImage = (k) => { setImages(p => ({ ...p, [k]: { ...p[k], src: null } })); setImageEditModal(null); };
+  const updateTerm = (i, v) => { const t = [...reportData.terms]; t[i] = v; setReportData({ ...reportData, terms: t }); };
+  const addNewTerm = () => setReportData({ ...reportData, terms: [...reportData.terms, 'شرط جديد'] });
+  const deleteTerm = (i) => setReportData({ ...reportData, terms: reportData.terms.filter((_, idx) => idx !== i) });
+  const updateFreeItem = (i, f, v) => { const n = [...freeItems]; n[i][f] = v; setFreeItems(n); };
+  const addNewFreeItem = () => setFreeItems([...freeItems, { id: 'F' + (freeItems.length + 1), title: 'خدمة جديدة', desc: 'وصف', price: 'مجاناً' }]);
+  const deleteFreeItem = (i) => setFreeItems(freeItems.filter((_, idx) => idx !== i));
 
-  // رفع صورة
-  const handleImageUpload = (key, e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setImages(prev => ({
-          ...prev,
-          [key]: { ...prev[key], src: ev.target.result }
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const getItemsByCategory = () => { const result = {}; Object.entries(addedItems).forEach(([key, item]) => { if (!result[item.catKey]) result[item.catKey] = { name: item.category, items: [], total: 0 }; const itemTotal = item.area * item.exec; result[item.catKey].items.push({ ...item, key, total: itemTotal }); result[item.catKey].total += itemTotal; }); return result; };
 
-  // تغيير حجم الصورة
-  const updateImageSize = (key, dimension, value) => {
-    setImages(prev => ({
-      ...prev,
-      [key]: { ...prev[key], [dimension]: parseInt(value) || 50 }
-    }));
-  };
+  const noSpinnerStyle = { MozAppearance: 'textfield', WebkitAppearance: 'none', appearance: 'textfield' };
+  const cardStyle = { background: c.card, borderRadius: 16, border: '1px solid ' + c.border, padding: 20, marginBottom: 16 };
+  const btnStyle = (active) => ({ padding: '12px 20px', borderRadius: 12, border: 'none', background: active ? c.accentGradient : c.cardAlt, color: active ? '#fff' : c.muted, fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: active ? c.accentGlow : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 });
+  const inputStyle = { width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid ' + c.border, background: c.card, color: c.text, fontSize: 14, outline: 'none', boxSizing: 'border-box', ...noSpinnerStyle };
 
-  // حذف صورة
-  const removeImage = (key) => {
-    setImages(prev => ({
-      ...prev,
-      [key]: { ...prev[key], src: null }
-    }));
-    setImageEditModal(null);
-  };
+  const EditableText = ({ value, onChange, style = {}, multiline = false, placeholder = '...' }) => { const [focused, setFocused] = useState(false); const base = { ...style, border: 'none', borderBottom: focused ? '2px solid #0099bb' : '1px solid transparent', background: focused ? '#fffef0' : 'transparent', outline: 'none', fontFamily: 'inherit', padding: '2px 4px', borderRadius: 2, minWidth: 50 }; if (multiline) return <textarea value={value} onChange={(e) => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} placeholder={placeholder} style={{ ...base, resize: 'both', minHeight: 40, width: '100%' }} />; return <input type="text" value={value} onChange={(e) => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} placeholder={placeholder} style={base} />; };
 
-  // تحديث بند
-  const updateReportItem = (index, field, value) => {
-    const newItems = [...reportItems];
-    newItems[index][field] = value;
-    setReportItems(newItems);
-  };
-
-  const updateFreeItem = (index, field, value) => {
-    const newItems = [...freeItems];
-    newItems[index][field] = value;
-    setFreeItems(newItems);
-  };
-
-  const addNewItem = () => {
-    setReportItems([...reportItems, {
-      id: `AC-${2430 + reportItems.length}`,
-      title: 'بند جديد',
-      desc: 'تشمل الخدمة: وصف البند هنا',
-      area: '0',
-      areaLabel: 'مجموع الأمتار',
-      price: '0',
-      priceLabel: 'ريال'
-    }]);
-  };
-
-  const addNewFreeItem = () => {
-    setFreeItems([...freeItems, {
-      id: `AC-${2440 + freeItems.length}`,
-      title: 'خدمة مجانية جديدة',
-      desc: 'تشمل الخدمة: وصف الخدمة',
-      price: 'مجاناً'
-    }]);
-  };
-
-  const deleteItem = (index) => setReportItems(reportItems.filter((_, i) => i !== index));
-  const deleteFreeItem = (index) => setFreeItems(freeItems.filter((_, i) => i !== index));
-
-  const updateTerm = (index, value) => {
-    const newTerms = [...reportData.terms];
-    newTerms[index] = value;
-    setReportData({ ...reportData, terms: newTerms });
-  };
-
-  const addNewTerm = () => {
-    setReportData({ ...reportData, terms: [...reportData.terms, 'شرط جديد'] });
-  };
-
-  const deleteTerm = (index) => {
-    setReportData({ ...reportData, terms: reportData.terms.filter((_, i) => i !== index) });
-  };
-
-  const cardStyle = {
-    background: c.card, borderRadius: 16,
-    border: `1px solid ${c.border}`, padding: 20, marginBottom: 16
-  };
-
-  const btnStyle = (active) => ({
-    padding: '12px 20px', borderRadius: 12, border: 'none',
-    background: active ? c.accentGradient : c.cardAlt,
-    color: active ? '#fff' : c.muted, fontSize: 14, fontWeight: 600,
-    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
-  });
-
-  // مكون الصورة القابلة للتحرير
-  const EditableImage = ({ imageKey, placeholder, style = {} }) => {
-    const inputRef = useRef(null);
-    const img = images[imageKey];
-    
-    return (
-      <div style={{ position: 'relative', display: 'inline-block', ...style }}>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => handleImageUpload(imageKey, e)}
-          ref={inputRef}
-          style={{ display: 'none' }}
-        />
-        {img.src ? (
-          <div 
-            style={{ position: 'relative', cursor: 'pointer' }}
-            onClick={() => setImageEditModal(imageKey)}
-          >
-            <img 
-              src={img.src} 
-              alt={placeholder}
-              style={{ 
-                width: img.width, 
-                height: img.height, 
-                objectFit: 'contain',
-                border: selectedElement === imageKey ? '2px solid #0099bb' : '2px solid transparent',
-                borderRadius: 4
-              }} 
-            />
-            <div className="no-print" style={{
-              position: 'absolute', top: -8, right: -8,
-              background: '#0099bb', color: '#fff', borderRadius: '50%',
-              width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, cursor: 'pointer'
-            }}>✎</div>
-          </div>
-        ) : (
-          <div
-            onClick={() => inputRef.current?.click()}
-            style={{
-              width: img.width,
-              height: img.height,
-              background: '#f5f5f5',
-              border: '2px dashed #ccc',
-              borderRadius: 8,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              fontSize: 10,
-              color: '#999',
-              gap: 4
-            }}
-          >
-            <Image size={16} />
-            {placeholder}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // مكون النص القابل للتحرير (مثل الوورد)
-  const EditableText = ({ value, onChange, style = {}, multiline = false, placeholder = 'انقر للكتابة...' }) => {
-    const [isFocused, setIsFocused] = useState(false);
-    
-    const baseStyle = {
-      ...style,
-      border: 'none',
-      borderBottom: isFocused ? '2px solid #0099bb' : '1px solid transparent',
-      background: isFocused ? '#fffef0' : 'transparent',
-      outline: 'none',
-      fontFamily: 'inherit',
-      transition: 'all 0.2s',
-      padding: '2px 4px',
-      margin: '-2px -4px',
-      borderRadius: 2,
-      width: style.width || 'auto',
-      minWidth: 50,
-    };
-
-    if (multiline) {
-      return (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder={placeholder}
-          style={{
-            ...baseStyle,
-            resize: 'both',
-            minHeight: 40,
-            width: '100%',
-          }}
-        />
-      );
-    }
-    
-    return (
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        placeholder={placeholder}
-        style={baseStyle}
-      />
-    );
-  };
+  const EditableImage = ({ imageKey, placeholder }) => { const inputRef = useRef(null); const img = images[imageKey]; return (<div style={{ position: 'relative', display: 'inline-block' }}><input type="file" accept="image/*" onChange={(e) => handleImageUpload(imageKey, e)} ref={inputRef} style={{ display: 'none' }} />{img.src ? (<div style={{ cursor: 'pointer' }} onClick={() => setImageEditModal(imageKey)}><img src={img.src} alt={placeholder} style={{ width: img.width, height: img.height, objectFit: 'contain', borderRadius: 4 }} /><div className="no-print" style={{ position: 'absolute', top: -8, right: -8, background: '#0099bb', color: '#fff', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>✎</div></div>) : (<div onClick={() => inputRef.current?.click()} style={{ width: img.width, height: img.height, background: '#f5f5f5', border: '2px dashed #ccc', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 10, color: '#999', gap: 4 }}><Image size={16} />{placeholder}</div>)}</div>); };
 
   return (
     <div dir="rtl" style={{ color: c.text, padding: 16, background: c.bg, minHeight: '100vh' }}>
       <style>{`
         input, textarea { font-family: inherit; }
-        input:focus, textarea:focus { background: #fffef0 !important; }
-        .no-print { }
-        @media print {
-          body * { visibility: hidden; }
-          .report-print, .report-print * { visibility: visible; }
-          .report-print { position: absolute; left: 0; top: 0; width: 100%; }
-          .no-print { display: none !important; }
-        }
-        .editable-row:hover { background: #f8f8f8 !important; }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        @media print { body * { visibility: hidden; } .report-print, .report-print * { visibility: visible; } .report-print { position: absolute; left: 0; top: 0; width: 100%; } .no-print { display: none !important; } }
+        .item-row:hover { background: ${c.cardAlt} !important; }
         .delete-btn { opacity: 0; transition: opacity 0.2s; }
-        .editable-row:hover .delete-btn { opacity: 1; }
+        .item-row:hover .delete-btn { opacity: 1; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #000; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #333; }
+        * { scrollbar-width: thin; scrollbar-color: #000 transparent; }
       `}</style>
+      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}><div style={{ width: 48, height: 48, borderRadius: 14, background: c.accentGradient, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: c.accentGlow }}><Calculator size={26} color="#fff" /></div><div><h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>حاسبة الكميات</h1><p style={{ fontSize: 14, color: c.muted, margin: 0 }}>احسب تكاليف المشاريع</p></div></div>
 
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, background: c.accentGradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Calculator size={26} color="#fff" />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>حاسبة الكميات</h1>
-            <p style={{ fontSize: 14, color: c.muted, margin: 0 }}>تقرير قابل للتحرير الكامل</p>
-          </div>
-        </div>
+        <div style={cardStyle}><div style={{ display: 'flex', gap: 10 }}><button onClick={() => setMainTab('calculator')} style={{ ...btnStyle(mainTab === 'calculator'), flex: 1 }}><Calculator size={18} /> الحاسبة</button><button onClick={() => setMainTab('items')} style={{ ...btnStyle(mainTab === 'items'), flex: 1 }}><Layers size={18} /> البنود والبرمجة</button></div></div>
 
-        {/* شريط الأدوات */}
-        <div className="no-print" style={{ ...cardStyle, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <button onClick={addNewItem} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: c.success, color: '#fff', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-            <Plus size={16} /> بند جديد
-          </button>
-          <button onClick={addNewFreeItem} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#8b5cf6', color: '#fff', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-            <Plus size={16} /> خدمة مجانية
-          </button>
-          <button onClick={addNewTerm} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#f59e0b', color: '#fff', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-            <Plus size={16} /> شرط جديد
-          </button>
-          <div style={{ flex: 1 }} />
-          <button onClick={handlePrint} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#667eea', color: '#fff', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-            <Printer size={16} /> طباعة / PDF
-          </button>
-        </div>
-
-        {/* نصيحة التحرير */}
-        <div className="no-print" style={{ background: '#e0f2fe', padding: '12px 16px', borderRadius: 8, marginBottom: 16, fontSize: 12, color: '#0369a1', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span>💡</span>
-          <span><strong>نصيحة:</strong> انقر على أي نص لتحريره مباشرة • انقر على الصور لتغييرها أو تغيير حجمها • مرر على البند واضغط 🗑️ لحذفه</span>
-        </div>
-
-        {/* ========== التقرير القابل للتحرير الكامل ========== */}
-        <div className="report-print" ref={reportRef} style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', border: '1px solid #e0e0e0', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-          
-          {/* === HEADER === */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '20px 24px', borderBottom: '1px solid #e0e0e0' }}>
-            {/* الشعار */}
-            <div style={{ textAlign: 'right' }}>
-              <EditableImage imageKey="logo" placeholder="الشعار" />
-              <div style={{ marginTop: 8 }}>
-                <EditableText value={reportData.companyName} onChange={(v) => setReportData({...reportData, companyName: v})} style={{ fontSize: 16, fontWeight: 700, color: '#2d5a3d', display: 'block' }} />
-                <EditableText value={reportData.companySubtitle} onChange={(v) => setReportData({...reportData, companySubtitle: v})} style={{ fontSize: 11, color: '#666' }} />
-              </div>
+        {mainTab === 'calculator' && (<div>
+          <div style={cardStyle}>
+            <div style={{ fontSize: 14, marginBottom: 12, fontWeight: 600 }}>📍 نوع المكان</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>{Object.entries(places).filter(([_, p]) => p.enabled).map(([key, place]) => (<div key={key} onClick={() => { setSelectedPlaceType(key); setSelectedPlace(''); setSelectedItems([]); }} style={{ padding: '18px 14px', borderRadius: 14, border: selectedPlaceType === key ? '2px solid ' + place.color : '1px solid ' + c.border, background: selectedPlaceType === key ? place.color + '18' : c.cardAlt, cursor: 'pointer', textAlign: 'center' }}><div style={{ fontSize: 32, marginBottom: 8 }}>{place.icon}</div><div style={{ fontSize: 14, fontWeight: 600, color: selectedPlaceType === key ? place.color : c.text }}>{place.name}</div></div>))}</div>
+            <div style={{ fontSize: 14, marginBottom: 12, fontWeight: 600 }}>🏷️ المكان</div>
+            <select value={selectedPlace} onChange={(e) => setSelectedPlace(e.target.value)} disabled={!selectedPlaceType} style={{ ...inputStyle, marginBottom: 20 }}><option value="">اختر المكان</option>{selectedPlaceType && calcPlaces[selectedPlaceType]?.map(p => <option key={p} value={p}>{p}</option>)}</select>
+            <div style={{ fontSize: 14, marginBottom: 12, fontWeight: 600 }}>📐 المساحة</div>
+            <div style={{ background: c.cardAlt, borderRadius: 14, padding: 18, marginBottom: 20, border: '1px solid ' + c.border }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}><button onClick={() => setInputMethod('direct')} style={{ ...btnStyle(inputMethod === 'direct'), flex: 1 }}>مساحة مباشرة</button><button onClick={() => setInputMethod('dimensions')} style={{ ...btnStyle(inputMethod === 'dimensions'), flex: 1 }}>أبعاد الغرفة</button></div>
+              {inputMethod === 'direct' ? (<div><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 16 }}><button onClick={() => adjustValue(setArea, area, -1)} style={{ width: 56, height: 56, borderRadius: 14, border: '1px solid ' + c.border, background: c.card, color: c.text, fontSize: 28, cursor: 'pointer' }}>−</button><div style={{ textAlign: 'center' }}><input type="number" value={area} onChange={(e) => setArea(parseFloat(e.target.value) || 0)} style={{ width: 100, background: 'transparent', border: 'none', color: c.text, fontSize: 42, fontWeight: 700, textAlign: 'center', outline: 'none', ...noSpinnerStyle }} /><div style={{ fontSize: 14, color: c.accent, fontWeight: 600 }}>م²</div></div><button onClick={() => adjustValue(setArea, area, 1)} style={{ width: 56, height: 56, borderRadius: 14, border: '1px solid ' + c.border, background: c.card, color: c.text, fontSize: 28, cursor: 'pointer' }}>+</button></div><div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>{quickAreas.map(val => (<button key={val} onClick={() => setArea(val)} style={{ padding: '10px 18px', borderRadius: 10, border: area === val ? '2px solid ' + c.accent : '1px solid ' + c.border, background: area === val ? c.accent + '20' : c.card, color: area === val ? c.accent : c.text, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{val}</button>))}</div></div>) : (<div><div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}><div><label style={{ fontSize: 12, color: c.muted, marginBottom: 6, display: 'block' }}>الطول</label><input type="number" value={length} onChange={(e) => setLength(parseFloat(e.target.value) || 0)} style={inputStyle} /></div><div><label style={{ fontSize: 12, color: c.muted, marginBottom: 6, display: 'block' }}>العرض</label><input type="number" value={width} onChange={(e) => setWidth(parseFloat(e.target.value) || 0)} style={inputStyle} /></div><div><label style={{ fontSize: 12, color: c.muted, marginBottom: 6, display: 'block' }}>الارتفاع</label><input type="number" value={height} onChange={(e) => setHeight(parseFloat(e.target.value) || 0)} style={inputStyle} /></div></div><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, padding: 12, background: c.card, borderRadius: 10 }}><div style={{ textAlign: 'center' }}><div style={{ fontSize: 12, color: c.muted }}>أرض</div><div style={{ fontSize: 20, fontWeight: 700, color: c.success }}>{calcFloorArea().toFixed(1)} م²</div></div><div style={{ textAlign: 'center' }}><div style={{ fontSize: 12, color: c.muted }}>جدران</div><div style={{ fontSize: 20, fontWeight: 700, color: c.info }}>{calcWallArea().toFixed(1)} م²</div></div></div></div>)}
             </div>
-
-            {/* العنوان */}
-            <div style={{ textAlign: 'center', flex: 1, padding: '0 20px' }}>
-              <div style={{ background: '#6b7b3d', color: '#fff', padding: '12px 30px', borderRadius: 25, display: 'inline-block', marginBottom: 12 }}>
-                <EditableText value={reportData.headerTitle} onChange={(v) => setReportData({...reportData, headerTitle: v})} style={{ fontSize: 18, fontWeight: 700, color: '#fff', textAlign: 'center', background: 'transparent' }} />
-              </div>
-              <div style={{ fontSize: 11, color: '#666', textAlign: 'right' }}>
-                <div style={{ marginBottom: 4 }}>
-                  <EditableText value={reportData.quoteNumberLabel} onChange={(v) => setReportData({...reportData, quoteNumberLabel: v})} style={{ color: '#888', fontSize: 10 }} />
-                  : <EditableText value={reportData.quoteNumber} onChange={(v) => setReportData({...reportData, quoteNumber: v})} style={{ fontWeight: 600, fontSize: 12 }} />
-                </div>
-                <div style={{ marginBottom: 4 }}>
-                  <EditableText value={reportData.dateLabel} onChange={(v) => setReportData({...reportData, dateLabel: v})} style={{ color: '#888', fontSize: 10 }} />
-                  : <EditableText value={reportData.quoteDate} onChange={(v) => setReportData({...reportData, quoteDate: v})} style={{ fontWeight: 600, fontSize: 11 }} />
-                </div>
-                <div style={{ marginBottom: 4 }}>
-                  <EditableText value={reportData.contactLabel} onChange={(v) => setReportData({...reportData, contactLabel: v})} style={{ color: '#888', fontSize: 10 }} />
-                </div>
-                <div>
-                  <EditableText value={reportData.contactPhone} onChange={(v) => setReportData({...reportData, contactPhone: v})} style={{ fontWeight: 600, fontSize: 12, color: '#333' }} />
-                </div>
-              </div>
-            </div>
-
-            {/* رؤية 2030 */}
-            <EditableImage imageKey="vision2030" placeholder="رؤية 2030" />
+            <div style={{ fontSize: 14, marginBottom: 12, fontWeight: 600 }}>🔧 بنود العمل</div>
+            <div style={{ display: 'grid', gap: 8, marginBottom: 16, maxHeight: 250, overflowY: 'auto' }}>{getAvailableItems().map(item => (<div key={item.id} onClick={() => toggleItem(item.id)} style={{ padding: '14px 16px', borderRadius: 12, border: selectedItems.includes(item.id) ? '2px solid ' + c.accent : '1px solid ' + c.border, background: selectedItems.includes(item.id) ? c.accent + '15' : c.cardAlt, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ fontSize: 14, fontWeight: 600 }}>{item.category} - {item.name}</span><span style={{ fontSize: 11, color: item.type === 'wall' ? c.info : item.type === 'ceiling' ? c.warning : c.success, background: (item.type === 'wall' ? c.info : item.type === 'ceiling' ? c.warning : c.success) + '20', padding: '3px 8px', borderRadius: 6, fontWeight: 600 }}>{item.type === 'wall' ? 'جدران' : item.type === 'ceiling' ? 'أسقف' : 'أرضية'}</span></div><span style={{ fontSize: 13, color: c.muted, background: c.card, padding: '4px 10px', borderRadius: 8, fontWeight: 600 }}>{item.exec} ر.س</span></div>))}{getAvailableItems().length === 0 && (<div style={{ textAlign: 'center', padding: '30px 20px', color: c.muted }}><div style={{ fontSize: 32, marginBottom: 8, opacity: 0.4 }}>📋</div><div style={{ fontSize: 13 }}>اختر نوع المكان</div></div>)}</div>
+            <button onClick={addItems} disabled={!canAdd} style={{ width: '100%', padding: 16, borderRadius: 14, border: 'none', background: canAdd ? c.accentGradient : c.cardAlt, color: canAdd ? '#fff' : c.muted, fontSize: 15, fontWeight: 700, cursor: canAdd ? 'pointer' : 'not-allowed', boxShadow: canAdd ? c.accentGlow : 'none' }}>{selectedItems.length > 0 ? '➕ إضافة ' + selectedItems.length + ' بند' : 'اختر بنود'}</button>
           </div>
 
-          {/* === المقدمة وبيانات العميل === */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid #e0e0e0' }}>
-            {/* بيانات العميل */}
-            <div style={{ padding: '16px 24px', borderLeft: '1px solid #e0e0e0' }}>
-              <EditableText value={reportData.clientDataTitle} onChange={(v) => setReportData({...reportData, clientDataTitle: v})} style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, display: 'block', color: '#333' }} />
-              <div style={{ fontSize: 12, lineHeight: 2.2 }}>
-                <div>
-                  <EditableText value={reportData.clientNameLabel} onChange={(v) => setReportData({...reportData, clientNameLabel: v})} style={{ color: '#888', fontSize: 11 }} />
-                  {' '}<EditableText value={reportData.clientName} onChange={(v) => setReportData({...reportData, clientName: v})} style={{ fontWeight: 600 }} />
-                </div>
-                <div>
-                  <EditableText value={reportData.clientPhoneLabel} onChange={(v) => setReportData({...reportData, clientPhoneLabel: v})} style={{ color: '#888', fontSize: 11 }} />
-                  {' '}<EditableText value={reportData.clientPhone} onChange={(v) => setReportData({...reportData, clientPhone: v})} style={{ fontWeight: 600 }} />
-                </div>
-                <div>
-                  <EditableText value={reportData.clientLocationLabel} onChange={(v) => setReportData({...reportData, clientLocationLabel: v})} style={{ color: '#888', fontSize: 11 }} />
-                  {' '}<EditableText value={reportData.clientLocation} onChange={(v) => setReportData({...reportData, clientLocation: v})} style={{ fontWeight: 600 }} />
-                </div>
-              </div>
-            </div>
-            {/* المقدمة */}
-            <div style={{ padding: '16px 24px' }}>
-              <EditableText value={reportData.introTitle} onChange={(v) => setReportData({...reportData, introTitle: v})} style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, display: 'block', color: '#333' }} />
-              <EditableText value={reportData.introText} onChange={(v) => setReportData({...reportData, introText: v})} multiline style={{ fontSize: 11, color: '#666', lineHeight: 1.7, width: '100%' }} />
-            </div>
-          </div>
+          {/* البنود المضافة أولاً */}
+          {Object.keys(addedItems).length > 0 && (<div style={cardStyle}><div style={{ fontSize: 14, marginBottom: 16, fontWeight: 600 }}>📋 البنود المضافة ({itemCount} بند)</div>{Object.entries(getItemsByCategory()).map(([catKey, cat]) => (<div key={catKey} style={{ marginBottom: 16 }}><div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}><span style={{ fontWeight: 600 }}>{cat.name}</span><span style={{ marginRight: 'auto', fontWeight: 700, color: c.accent }}>{cat.total.toLocaleString()} ر.س</span></div>{cat.items.map(item => (<div key={item.key} className="item-row" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: c.cardAlt, borderRadius: 10, marginBottom: 8 }}><div style={{ flex: 1 }}><div style={{ fontWeight: 600, fontSize: 13 }}>{item.name}</div><div style={{ fontSize: 11, color: c.muted }}>{item.place}</div></div><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><input type="number" value={item.area} onChange={(e) => updateAddedItemArea(item.key, e.target.value)} style={{ width: 60, padding: '6px 8px', borderRadius: 6, border: '1px solid ' + c.border, background: c.card, color: c.text, fontSize: 13, textAlign: 'center', ...noSpinnerStyle }} /><span style={{ fontSize: 11, color: c.muted }}>×</span><span style={{ fontSize: 12, fontWeight: 600 }}>{item.exec}</span><span style={{ fontSize: 11, color: c.muted }}>=</span><span style={{ fontWeight: 700, color: c.accent, minWidth: 70, textAlign: 'left' }}>{item.total.toLocaleString()}</span></div><button onClick={() => removeAddedItem(item.key)} className="delete-btn" style={{ background: '#fee2e2', border: 'none', color: '#dc2626', padding: '6px 8px', borderRadius: 6, cursor: 'pointer' }}><Trash2 size={14} /></button></div>))}</div>))}</div>)}
 
-          {/* === عنوان المشروع === */}
-          <div style={{ background: '#5a6a3a', padding: '14px 24px' }}>
-            <EditableText value={reportData.projectTitle} onChange={(v) => setReportData({...reportData, projectTitle: v})} style={{ fontSize: 18, fontWeight: 700, color: '#fff', background: 'transparent' }} />
-          </div>
-
-          {/* === جدول البنود === */}
-          <div style={{ display: 'flex' }}>
-            {/* البنود */}
-            <div style={{ flex: 1 }}>
-              {reportItems.map((item, idx) => (
-                <div key={idx} className="editable-row" style={{ display: 'flex', borderBottom: '1px solid #eee', background: idx % 2 === 0 ? '#fff' : '#fafafa', position: 'relative' }}>
-                  {/* زر الحذف */}
-                  <button className="delete-btn no-print" onClick={() => deleteItem(idx)} style={{ position: 'absolute', left: 8, top: 8, background: '#fee2e2', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '4px 8px', borderRadius: 4, fontSize: 11 }}>
-                    <Trash2 size={12} />
-                  </button>
-                  
-                  {/* الكود */}
-                  <div style={{ width: 70, padding: '14px 10px', textAlign: 'center', borderLeft: '1px solid #eee' }}>
-                    <EditableText value={item.id} onChange={(v) => updateReportItem(idx, 'id', v)} style={{ fontSize: 10, fontWeight: 600, color: '#5a6a3a' }} />
-                  </div>
-                  {/* المحتوى */}
-                  <div style={{ flex: 1, padding: '14px' }}>
-                    <EditableText value={item.title} onChange={(v) => updateReportItem(idx, 'title', v)} style={{ fontSize: 14, fontWeight: 700, color: '#333', display: 'block', marginBottom: 8 }} />
-                    <EditableText value={item.desc} onChange={(v) => updateReportItem(idx, 'desc', v)} multiline style={{ fontSize: 10, color: '#666', lineHeight: 1.6, width: '100%' }} />
-                    {item.area && (
-                      <div style={{ marginTop: 8, fontSize: 10, color: '#888' }}>
-                        <EditableText value={item.areaLabel} onChange={(v) => updateReportItem(idx, 'areaLabel', v)} style={{ color: '#888' }} />
-                        {' = '}<EditableText value={item.area} onChange={(v) => updateReportItem(idx, 'area', v)} style={{ fontWeight: 600, color: '#5a6a3a' }} /> م²
-                      </div>
-                    )}
-                  </div>
-                  {/* السعر */}
-                  <div style={{ width: 100, padding: '14px', textAlign: 'right', borderRight: '1px solid #eee' }}>
-                    <EditableText value={item.price} onChange={(v) => updateReportItem(idx, 'price', v)} style={{ fontSize: 13, fontWeight: 700, display: 'block' }} />
-                    <EditableText value={item.priceLabel} onChange={(v) => updateReportItem(idx, 'priceLabel', v)} style={{ fontSize: 9, color: '#888' }} />
-                  </div>
-                </div>
-              ))}
-
-              {/* البنود المجانية */}
-              {freeItems.map((item, idx) => (
-                <div key={`free-${idx}`} className="editable-row" style={{ display: 'flex', borderBottom: '1px solid #eee', background: '#f0fff0', position: 'relative' }}>
-                  <button className="delete-btn no-print" onClick={() => deleteFreeItem(idx)} style={{ position: 'absolute', left: 8, top: 8, background: '#fee2e2', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '4px 8px', borderRadius: 4, fontSize: 11 }}>
-                    <Trash2 size={12} />
-                  </button>
-                  <div style={{ width: 70, padding: '14px 10px', textAlign: 'center', borderLeft: '1px solid #eee' }}>
-                    <EditableText value={item.id} onChange={(v) => updateFreeItem(idx, 'id', v)} style={{ fontSize: 10, fontWeight: 600, color: '#5a6a3a' }} />
-                  </div>
-                  <div style={{ flex: 1, padding: '14px' }}>
-                    <EditableText value={item.title} onChange={(v) => updateFreeItem(idx, 'title', v)} style={{ fontSize: 14, fontWeight: 700, color: '#333', display: 'block', marginBottom: 8 }} />
-                    <EditableText value={item.desc} onChange={(v) => updateFreeItem(idx, 'desc', v)} multiline style={{ fontSize: 10, color: '#666', lineHeight: 1.6, width: '100%' }} />
-                  </div>
-                  <div style={{ width: 100, padding: '14px', textAlign: 'right', borderRight: '1px solid #eee' }}>
-                    <EditableText value={item.price} onChange={(v) => updateFreeItem(idx, 'price', v)} style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* الإجمالي الجانبي */}
-            <div style={{ width: 100, background: '#f8f8f8', borderRight: '2px solid #5a6a3a', padding: '20px 10px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-              <EditableText value={reportData.sideTotalLabel} onChange={(v) => setReportData({...reportData, sideTotalLabel: v})} style={{ fontSize: 11, color: '#888', marginBottom: 6 }} />
-              <EditableText value={reportData.sideTotal} onChange={(v) => setReportData({...reportData, sideTotal: v})} style={{ fontSize: 18, fontWeight: 700, color: '#333' }} />
-            </div>
-          </div>
-
-          {/* === الإجماليات === */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: '3px solid #5a6a3a' }}>
-            {/* المبالغ */}
-            <div style={{ padding: '20px 24px', borderLeft: '1px solid #e0e0e0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontSize: 12 }}>
-                <EditableText value={reportData.subtotal} onChange={(v) => setReportData({...reportData, subtotal: v})} style={{ fontWeight: 600 }} />
-                <EditableText value={reportData.subtotalLabel} onChange={(v) => setReportData({...reportData, subtotalLabel: v})} style={{ color: '#888' }} />
+          {/* الملخص المفصل */}
+          {Object.keys(addedItems).length > 0 && (<div style={cardStyle}>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>💰 الملخص التفصيلي</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+              <div style={{ padding: 16, borderRadius: 14, background: c.cardAlt, textAlign: 'center', border: '1px solid ' + c.border }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: c.text }}>{itemCount}</div>
+                <div style={{ fontSize: 12, color: c.muted, marginTop: 4 }}>عدد البنود</div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontSize: 12 }}>
-                <EditableText value={reportData.discount} onChange={(v) => setReportData({...reportData, discount: v})} style={{ fontWeight: 600 }} placeholder="-" />
-                <EditableText value={reportData.discountLabel} onChange={(v) => setReportData({...reportData, discountLabel: v})} style={{ color: '#888' }} />
+              <div style={{ padding: 16, borderRadius: 14, background: c.cardAlt, textAlign: 'center', border: '1px solid ' + c.border }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: c.text }}>{totalArea.toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: c.muted, marginTop: 4 }}>إجمالي المساحة م²</div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontSize: 12 }}>
-                <EditableText value={reportData.vatAmount} onChange={(v) => setReportData({...reportData, vatAmount: v})} style={{ fontWeight: 600 }} />
-                <EditableText value={reportData.vatLabel} onChange={(v) => setReportData({...reportData, vatLabel: v})} style={{ color: '#888' }} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12, borderTop: '2px solid #5a6a3a', fontSize: 14 }}>
-                <span>
-                  <EditableText value={reportData.grandTotal} onChange={(v) => setReportData({...reportData, grandTotal: v})} style={{ fontWeight: 700, color: '#5a6a3a', fontSize: 16 }} />
-                  {' '}<EditableText value={reportData.currency} onChange={(v) => setReportData({...reportData, currency: v})} style={{ fontSize: 11, color: '#666' }} />
-                </span>
-                <EditableText value={reportData.grandTotalLabel} onChange={(v) => setReportData({...reportData, grandTotalLabel: v})} style={{ fontWeight: 700 }} />
+              <div style={{ padding: 16, borderRadius: 14, background: c.success + '15', textAlign: 'center', border: '1px solid ' + c.success + '50' }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: c.success }}>{profitPercent}%</div>
+                <div style={{ fontSize: 12, color: c.muted, marginTop: 4 }}>نسبة الربح</div>
               </div>
             </div>
-            {/* الملاحظة */}
-            <div style={{ padding: '20px 24px' }}>
-              <EditableText value={reportData.noteTitle} onChange={(v) => setReportData({...reportData, noteTitle: v})} style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, display: 'block', color: '#92400e' }} />
-              <div style={{ background: '#fef3c7', padding: 12, borderRadius: 8 }}>
-                <EditableText value={reportData.noteText} onChange={(v) => setReportData({...reportData, noteText: v})} multiline style={{ fontSize: 10, color: '#92400e', lineHeight: 1.7, width: '100%' }} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 16 }}>
+              <div style={{ padding: 18, borderRadius: 14, background: c.warning + '12', textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 700, color: c.warning }}>{totalExec.toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: c.muted, marginTop: 6 }}>سعر التنفيذ (للعميل)</div>
+              </div>
+              <div style={{ padding: 18, borderRadius: 14, background: c.info + '12', textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 700, color: c.info }}>{totalCont.toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: c.muted, marginTop: 6 }}>تكلفة المقاول</div>
               </div>
             </div>
-          </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+              <div style={{ padding: 18, borderRadius: 14, background: c.success + '12', textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: c.success }}>{profit.toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: c.muted, marginTop: 6 }}>صافي الربح</div>
+              </div>
+              <div style={{ padding: 18, borderRadius: 14, background: c.danger + '12', textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: c.danger }}>{vatAmount.toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: c.muted, marginTop: 6 }}>الضريبة {reportData.vatRate}%</div>
+              </div>
+              <div style={{ padding: 18, borderRadius: 14, background: c.accent + '15', textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: c.accent }}>{grandTotal.toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: c.muted, marginTop: 6 }}>الإجمالي شامل الضريبة</div>
+              </div>
+            </div>
+          </div>)}
 
-          {/* === الشروط وبيانات التحويل === */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: '1px solid #e0e0e0' }}>
-            {/* الشروط */}
-            <div style={{ padding: '20px 24px', borderLeft: '1px solid #e0e0e0' }}>
-              <EditableText value={reportData.termsTitle} onChange={(v) => setReportData({...reportData, termsTitle: v})} style={{ fontSize: 12, fontWeight: 700, marginBottom: 12, display: 'block' }} />
-              <ul style={{ fontSize: 10, color: '#666', paddingRight: 18, margin: 0, lineHeight: 2 }}>
-                {reportData.terms.map((term, idx) => (
-                  <li key={idx} className="editable-row" style={{ position: 'relative' }}>
-                    <EditableText value={term} onChange={(v) => updateTerm(idx, v)} style={{ width: '90%' }} />
-                    <button className="delete-btn no-print" onClick={() => deleteTerm(idx)} style={{ position: 'absolute', left: 0, top: 0, background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 10, padding: 2 }}>✕</button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {/* بيانات التحويل */}
-            <div style={{ padding: '20px 24px' }}>
-              <EditableText value={reportData.bankTitle} onChange={(v) => setReportData({...reportData, bankTitle: v})} style={{ fontSize: 12, fontWeight: 700, marginBottom: 12, display: 'block', color: '#5a6a3a' }} />
-              <div style={{ fontSize: 11, lineHeight: 2.2 }}>
-                <div>
-                  <EditableText value={reportData.bankNameLabel} onChange={(v) => setReportData({...reportData, bankNameLabel: v})} style={{ color: '#888' }} />
-                  {' '}<EditableText value={reportData.bankName} onChange={(v) => setReportData({...reportData, bankName: v})} style={{ fontWeight: 600 }} />
-                </div>
-                <div>
-                  <EditableText value={reportData.accountLabel} onChange={(v) => setReportData({...reportData, accountLabel: v})} style={{ color: '#888' }} />
-                  {' '}<EditableText value={reportData.accountNumber} onChange={(v) => setReportData({...reportData, accountNumber: v})} style={{ fontWeight: 600 }} />
-                </div>
-                <div>
-                  <EditableText value={reportData.ibanLabel} onChange={(v) => setReportData({...reportData, ibanLabel: v})} style={{ color: '#888' }} />
-                  {' '}<EditableText value={reportData.iban} onChange={(v) => setReportData({...reportData, iban: v})} style={{ fontWeight: 600, fontSize: 10 }} />
-                </div>
-              </div>
-              {/* التوقيع والختم */}
-              <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'flex-end' }}>
-                <EditableImage imageKey="stamp" placeholder="الختم" />
-                <EditableImage imageKey="signature" placeholder="التوقيع" />
-              </div>
-            </div>
-          </div>
+          {/* زر عرض التقرير في الأسفل */}
+          {Object.keys(addedItems).length > 0 && !showReport && (
+            <button onClick={() => setShowReport(true)} style={{ width: '100%', padding: 18, borderRadius: 14, border: 'none', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
+              <FileText size={22} /> عرض التقرير وطباعته
+            </button>
+          )}
 
-          {/* === Footer === */}
-          <div style={{ background: '#5a6a3a', padding: '12px 24px', textAlign: 'center' }}>
-            <EditableText value={reportData.footerEmail} onChange={(v) => setReportData({...reportData, footerEmail: v})} style={{ fontSize: 12, color: '#fff', background: 'transparent' }} />
-          </div>
-        </div>
+          {/* التقرير */}
+          {showReport && Object.keys(addedItems).length > 0 && (<>
+            <div className="no-print" style={{ ...cardStyle, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button onClick={() => setShowReport(false)} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: c.danger + '15', color: c.danger, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}><X size={16} /> إغلاق التقرير</button>
+              <button onClick={addNewFreeItem} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#8b5cf6', color: '#fff', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}><Plus size={16} /> خدمة</button>
+              <button onClick={addNewTerm} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#f59e0b', color: '#fff', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}><Plus size={16} /> شرط</button>
+              <div style={{ flex: 1 }} />
+              <button onClick={handlePrint} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#667eea', color: '#fff', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}><Printer size={16} /> طباعة</button>
+            </div>
+            <div className="no-print" style={{ background: '#e0f2fe', padding: '12px 16px', borderRadius: 8, marginBottom: 16, fontSize: 12, color: '#0369a1' }}>💡 انقر على أي نص للتحرير</div>
+            <div className="report-print" style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', border: '1px solid #e0e0e0', marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '20px 24px', borderBottom: '1px solid #e0e0e0' }}><div><EditableImage imageKey="logo" placeholder="الشعار" /><div style={{ marginTop: 8 }}><EditableText value={reportData.companyName} onChange={(v) => setReportData({...reportData, companyName: v})} style={{ fontSize: 16, fontWeight: 700, color: '#2d5a3d', display: 'block' }} /><EditableText value={reportData.companySubtitle} onChange={(v) => setReportData({...reportData, companySubtitle: v})} style={{ fontSize: 11, color: '#666' }} /></div></div><div style={{ textAlign: 'center', flex: 1 }}><div style={{ background: '#6b7b3d', color: '#fff', padding: '12px 30px', borderRadius: 25, display: 'inline-block', marginBottom: 12 }}><EditableText value={reportData.headerTitle} onChange={(v) => setReportData({...reportData, headerTitle: v})} style={{ fontSize: 18, fontWeight: 700, color: '#fff', background: 'transparent' }} /></div><div style={{ fontSize: 11, color: '#666', textAlign: 'right' }}><div>رقم: <EditableText value={reportData.quoteNumber} onChange={(v) => setReportData({...reportData, quoteNumber: v})} style={{ fontWeight: 600 }} /></div><div>التاريخ: <EditableText value={reportData.quoteDate} onChange={(v) => setReportData({...reportData, quoteDate: v})} style={{ fontWeight: 600 }} /></div><div>الهاتف: <EditableText value={reportData.contactPhone} onChange={(v) => setReportData({...reportData, contactPhone: v})} style={{ fontWeight: 600 }} /></div></div></div></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid #e0e0e0' }}><div style={{ padding: '16px 24px', borderLeft: '1px solid #e0e0e0' }}><div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>بيانات العميل:</div><div style={{ fontSize: 12, lineHeight: 2.2 }}><div>الاسم: <EditableText value={reportData.clientName} onChange={(v) => setReportData({...reportData, clientName: v})} placeholder="اسم العميل" /></div><div>الهاتف: <EditableText value={reportData.clientPhone} onChange={(v) => setReportData({...reportData, clientPhone: v})} placeholder="رقم الهاتف" /></div><div>الموقع: <EditableText value={reportData.clientLocation} onChange={(v) => setReportData({...reportData, clientLocation: v})} placeholder="الموقع" /></div></div></div><div style={{ padding: '16px 24px' }}><div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>المقدمة</div><div style={{ fontSize: 11, color: '#666' }}>نقدم لكم عرض سعر لتنفيذ أعمال المشروع</div></div></div>
+              <div style={{ background: '#5a6a3a', padding: '14px 24px' }}><EditableText value={reportData.projectTitle} onChange={(v) => setReportData({...reportData, projectTitle: v})} style={{ fontSize: 18, fontWeight: 700, color: '#fff', background: 'transparent' }} /></div>
+              <div style={{ display: 'flex' }}><div style={{ flex: 1 }}>{Object.entries(getItemsByCategory()).map(([catKey, cat]) => (<React.Fragment key={catKey}>{cat.items.map((item, idx) => (<div key={item.key} style={{ display: 'flex', borderBottom: '1px solid #eee', background: idx % 2 === 0 ? '#fff' : '#fafafa' }}><div style={{ width: 70, padding: '14px 10px', textAlign: 'center', borderLeft: '1px solid #eee' }}><span style={{ fontSize: 10, fontWeight: 600, color: '#5a6a3a' }}>{item.id}</span></div><div style={{ flex: 1, padding: '14px' }}><div style={{ fontSize: 14, fontWeight: 700, color: '#333', marginBottom: 4 }}>{item.name}</div><div style={{ fontSize: 10, color: '#888' }}>{item.place} • {item.area} م²</div></div><div style={{ width: 100, padding: '14px', textAlign: 'right', borderRight: '1px solid #eee' }}><div style={{ fontSize: 13, fontWeight: 700 }}>{item.total.toLocaleString()}</div><div style={{ fontSize: 9, color: '#888' }}>ريال</div></div></div>))}</React.Fragment>))}{freeItems.map((item, idx) => (<div key={idx} className="item-row" style={{ display: 'flex', borderBottom: '1px solid #eee', background: '#f0fff0', position: 'relative' }}><button className="delete-btn no-print" onClick={() => deleteFreeItem(idx)} style={{ position: 'absolute', left: 8, top: 8, background: '#fee2e2', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '4px', borderRadius: 4 }}><Trash2 size={12} /></button><div style={{ width: 70, padding: '14px 10px', textAlign: 'center', borderLeft: '1px solid #eee' }}><EditableText value={item.id} onChange={(v) => updateFreeItem(idx, 'id', v)} style={{ fontSize: 10, fontWeight: 600, color: '#5a6a3a' }} /></div><div style={{ flex: 1, padding: '14px' }}><EditableText value={item.title} onChange={(v) => updateFreeItem(idx, 'title', v)} style={{ fontSize: 14, fontWeight: 700, color: '#333', display: 'block', marginBottom: 8 }} /><EditableText value={item.desc} onChange={(v) => updateFreeItem(idx, 'desc', v)} style={{ fontSize: 10, color: '#666' }} /></div><div style={{ width: 100, padding: '14px', textAlign: 'right', borderRight: '1px solid #eee' }}><EditableText value={item.price} onChange={(v) => updateFreeItem(idx, 'price', v)} style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }} /></div></div>))}</div><div style={{ width: 100, background: '#f8f8f8', borderRight: '2px solid #5a6a3a', padding: '20px 10px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}><div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>ريال</div><div style={{ fontSize: 18, fontWeight: 700, color: '#333' }}>{totalExec.toLocaleString()}</div></div></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: '3px solid #5a6a3a' }}><div style={{ padding: '20px 24px', borderLeft: '1px solid #e0e0e0' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontSize: 12 }}><span style={{ fontWeight: 600 }}>{totalExec.toLocaleString()}</span><span style={{ color: '#888' }}>المبلغ</span></div><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontSize: 12 }}><span style={{ fontWeight: 600 }}>{vatAmount.toLocaleString()}</span><span style={{ color: '#888' }}>ضريبة ({reportData.vatRate}%)</span></div><div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12, borderTop: '2px solid #5a6a3a', fontSize: 14 }}><span style={{ fontWeight: 700, color: '#5a6a3a', fontSize: 16 }}>{grandTotal.toLocaleString()} ريال</span><span style={{ fontWeight: 700 }}>الإجمالي</span></div></div><div style={{ padding: '20px 24px' }}><div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: '#92400e' }}>📌 ملاحظة:</div><div style={{ background: '#fef3c7', padding: 12, borderRadius: 8 }}><EditableText value={reportData.noteText} onChange={(v) => setReportData({...reportData, noteText: v})} multiline style={{ fontSize: 10, color: '#92400e', width: '100%' }} /></div></div></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: '1px solid #e0e0e0' }}><div style={{ padding: '20px 24px', borderLeft: '1px solid #e0e0e0' }}><div style={{ fontSize: 12, fontWeight: 700, marginBottom: 12 }}>📋 الشروط:</div><ul style={{ fontSize: 10, color: '#666', paddingRight: 18, margin: 0, lineHeight: 2 }}>{reportData.terms.map((t, i) => (<li key={i} className="item-row" style={{ position: 'relative' }}><EditableText value={t} onChange={(v) => updateTerm(i, v)} style={{ width: '90%' }} /><button className="delete-btn no-print" onClick={() => deleteTerm(i)} style={{ position: 'absolute', left: 0, top: 0, background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 10 }}>✕</button></li>))}</ul></div><div style={{ padding: '20px 24px' }}><div style={{ fontSize: 12, fontWeight: 700, marginBottom: 12, color: '#5a6a3a' }}>🏦 بيانات التحويل</div><div style={{ fontSize: 11, lineHeight: 2.2 }}><div>البنك: <EditableText value={reportData.bankName} onChange={(v) => setReportData({...reportData, bankName: v})} /></div><div>الحساب: <EditableText value={reportData.accountNumber} onChange={(v) => setReportData({...reportData, accountNumber: v})} placeholder="رقم الحساب" /></div><div>الآيبان: <EditableText value={reportData.iban} onChange={(v) => setReportData({...reportData, iban: v})} placeholder="الآيبان" /></div></div><div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'flex-end' }}><EditableImage imageKey="stamp" placeholder="الختم" /><EditableImage imageKey="signature" placeholder="التوقيع" /></div></div></div>
+              <div style={{ background: '#5a6a3a', padding: '12px 24px', textAlign: 'center' }}><EditableText value={reportData.footerEmail} onChange={(v) => setReportData({...reportData, footerEmail: v})} style={{ fontSize: 12, color: '#fff', background: 'transparent' }} /></div>
+            </div>
+          </>)}
+        </div>)}
+
+        {mainTab === 'items' && (<div>
+          <div style={cardStyle}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}><h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}><Settings size={20} /> أنواع الأماكن</h3></div><div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>{Object.entries(places).map(([pk, place]) => (<div key={pk} onClick={() => setPlaces(p => ({ ...p, [pk]: { ...p[pk], enabled: !p[pk].enabled } }))} style={{ padding: '12px 16px', borderRadius: 12, background: place.enabled ? place.color + '15' : c.cardAlt, border: '1px solid ' + (place.enabled ? place.color : c.border), display: 'flex', alignItems: 'center', gap: 10, opacity: place.enabled ? 1 : 0.5, cursor: 'pointer' }}><span style={{ fontSize: 20 }}>{place.icon}</span><span style={{ fontSize: 14, fontWeight: 600, color: place.enabled ? place.color : c.muted }}>{place.name}</span><div style={{ width: 40, height: 22, borderRadius: 11, background: place.enabled ? place.color : c.border, position: 'relative' }}><div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, right: place.enabled ? 2 : 20, transition: 'right 0.2s' }} /></div></div>))}</div></div>
+          <div style={cardStyle}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}><h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}><Layers size={20} /> البنود والأسعار</h3></div><div style={{ display: 'grid', gap: 10 }}>{Object.entries(workItems).map(([catKey, cat]) => (<div key={catKey} style={{ background: c.cardAlt, borderRadius: 14, border: '1px solid ' + c.border, overflow: 'hidden' }}><button onClick={() => toggleCategory(catKey)} style={{ width: '100%', padding: '16px 18px', border: 'none', background: expandedCategories[catKey] ? c.accent + '10' : 'transparent', color: c.text, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'right' }}><span style={{ fontSize: 24 }}>{cat.icon}</span><span style={{ flex: 1, fontWeight: 700 }}>{cat.name}</span><span style={{ fontSize: 12, color: c.muted, background: c.card, padding: '4px 12px', borderRadius: 8 }}>{cat.items.length} بند</span>{expandedCategories[catKey] ? <ChevronUp size={20} color={c.muted} /> : <ChevronDown size={20} color={c.muted} />}</button>{expandedCategories[catKey] && (<div style={{ padding: '12px 16px', borderTop: '1px solid ' + c.border }}>{cat.items.map(item => { const isEditing = editingItem?.catKey === catKey && editingItem?.itemId === item.id; const typeColor = item.type === 'floor' ? c.success : item.type === 'wall' ? c.info : c.warning; return (<div key={item.id} style={{ padding: 16, background: isEditing ? c.accent + '10' : c.card, borderRadius: 12, border: '1px solid ' + (isEditing ? c.accent : c.border), marginBottom: 10 }}>{isEditing ? (<div><div style={{ display: 'grid', gap: 12, marginBottom: 12 }}><div><label style={{ fontSize: 12, color: c.muted, marginBottom: 6, display: 'block' }}>اسم البند</label><input type="text" value={editingItem.name} onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })} style={inputStyle} /></div><div><label style={{ fontSize: 12, color: c.muted, marginBottom: 6, display: 'block' }}>الوصف</label><textarea value={editingItem.desc} onChange={(e) => setEditingItem({ ...editingItem, desc: e.target.value })} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} /></div><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}><div><label style={{ fontSize: 12, color: c.warning, marginBottom: 6, display: 'block' }}>سعر التنفيذ</label><input type="number" value={editingItem.exec} onChange={(e) => setEditingItem({ ...editingItem, exec: parseFloat(e.target.value) || 0 })} style={{ ...inputStyle, borderColor: c.warning, color: c.warning, fontWeight: 700 }} /></div><div><label style={{ fontSize: 12, color: c.info, marginBottom: 6, display: 'block' }}>سعر المقاول</label><input type="number" value={editingItem.cont} onChange={(e) => setEditingItem({ ...editingItem, cont: parseFloat(e.target.value) || 0 })} style={{ ...inputStyle, borderColor: c.info, color: c.info, fontWeight: 700 }} /></div><div><label style={{ fontSize: 12, color: c.success, marginBottom: 6, display: 'block' }}>الربح</label><div style={{ ...inputStyle, background: c.success + '15', color: c.success, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{editingItem.exec - editingItem.cont}</div></div></div><div><label style={{ fontSize: 12, color: c.muted, marginBottom: 6, display: 'block' }}>نوع البند</label><div style={{ display: 'flex', gap: 8 }}>{[{ k: 'floor', l: 'أرضية', col: c.success }, { k: 'wall', l: 'جدران', col: c.info }, { k: 'ceiling', l: 'أسقف', col: c.warning }].map(ty => (<button key={ty.k} onClick={() => setEditingItem({ ...editingItem, type: ty.k })} style={{ flex: 1, padding: 10, borderRadius: 8, border: editingItem.type === ty.k ? '2px solid ' + ty.col : '1px solid ' + c.border, background: editingItem.type === ty.k ? ty.col + '15' : 'transparent', color: editingItem.type === ty.k ? ty.col : c.muted, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>{ty.l}</button>))}</div></div></div><div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}><button onClick={() => deleteItem(catKey, item.id)} style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: c.danger + '15', color: c.danger, fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><Trash2 size={14} /> حذف</button><button onClick={() => setEditingItem(null)} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid ' + c.border, background: 'transparent', color: c.muted, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>إلغاء</button><button onClick={saveEditItem} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: c.accentGradient, color: '#fff', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><Save size={14} /> حفظ</button></div></div>) : (<div><div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}><div style={{ flex: 1 }}><div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{item.name}</div>{item.desc && <div style={{ fontSize: 12, color: c.muted }}>{item.desc}</div>}</div><button onClick={() => startEditItem(catKey, item)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: c.accent + '15', color: c.accent, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit3 size={16} /></button></div><div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}><span style={{ fontSize: 11, color: typeColor, background: typeColor + '15', padding: '4px 10px', borderRadius: 6, fontWeight: 600 }}>{item.type === 'floor' ? 'أرضية' : item.type === 'wall' ? 'جدران' : 'أسقف'}</span><span style={{ fontSize: 11, color: c.warning, background: c.warning + '15', padding: '4px 10px', borderRadius: 6, fontWeight: 600 }}>تنفيذ: {item.exec}</span><span style={{ fontSize: 11, color: c.info, background: c.info + '15', padding: '4px 10px', borderRadius: 6, fontWeight: 600 }}>مقاول: {item.cont}</span><span style={{ fontSize: 11, color: c.success, background: c.success + '15', padding: '4px 10px', borderRadius: 6, fontWeight: 600 }}>ربح: {item.exec - item.cont}</span></div><div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}><span style={{ fontSize: 12, color: c.muted }}>متاح في:</span>{Object.entries(places).map(([pk, place]) => { const isEnabled = programming[pk]?.[catKey]?.includes(item.id); return (<button key={pk} onClick={() => toggleProgramming(pk, catKey, item.id)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid ' + (isEnabled ? place.color : c.border), background: isEnabled ? place.color + '15' : 'transparent', color: isEnabled ? place.color : c.muted, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>{isEnabled && <Check size={12} />}<span>{place.icon}</span><span>{place.name}</span></button>); })}</div></div>)}</div>); })}</div>)}</div>))}</div></div>
+        </div>)}
       </div>
-
-      {/* Modal تعديل الصورة */}
-      {imageEditModal && (
-        <div className="no-print" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 400, width: '90%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 16 }}>تعديل الصورة</h3>
-              <button onClick={() => setImageEditModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button>
-            </div>
-            
-            {images[imageEditModal]?.src && (
-              <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                <img src={images[imageEditModal].src} alt="" style={{ maxWidth: '100%', maxHeight: 150, objectFit: 'contain' }} />
-              </div>
-            )}
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-              <div>
-                <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>العرض (px)</label>
-                <input
-                  type="number"
-                  value={images[imageEditModal]?.width || 80}
-                  onChange={(e) => updateImageSize(imageEditModal, 'width', e.target.value)}
-                  style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14 }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>الارتفاع (px)</label>
-                <input
-                  type="number"
-                  value={images[imageEditModal]?.height || 60}
-                  onChange={(e) => updateImageSize(imageEditModal, 'height', e.target.value)}
-                  style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14 }}
-                />
-              </div>
-            </div>
-            
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/*';
-                  input.onchange = (e) => handleImageUpload(imageEditModal, e);
-                  input.click();
-                }}
-                style={{ flex: 1, padding: '12px', borderRadius: 8, border: 'none', background: '#0099bb', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
-              >
-                تغيير الصورة
-              </button>
-              <button
-                onClick={() => removeImage(imageEditModal)}
-                style={{ padding: '12px 20px', borderRadius: 8, border: 'none', background: '#fee2e2', color: '#dc2626', fontWeight: 600, cursor: 'pointer' }}
-              >
-                حذف
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {imageEditModal && (<div className="no-print" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 400, width: '90%' }}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}><h3 style={{ margin: 0, fontSize: 16 }}>تعديل الصورة</h3><button onClick={() => setImageEditModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button></div>{images[imageEditModal]?.src && (<div style={{ textAlign: 'center', marginBottom: 20 }}><img src={images[imageEditModal].src} alt="" style={{ maxWidth: '100%', maxHeight: 150, objectFit: 'contain' }} /></div>)}<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}><div><label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>العرض</label><input type="number" value={images[imageEditModal]?.width || 80} onChange={(e) => updateImageSize(imageEditModal, 'width', e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14 }} /></div><div><label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>الارتفاع</label><input type="number" value={images[imageEditModal]?.height || 60} onChange={(e) => updateImageSize(imageEditModal, 'height', e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14 }} /></div></div><div style={{ display: 'flex', gap: 10 }}><button onClick={() => { const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.onchange = (e) => handleImageUpload(imageEditModal, e); input.click(); }} style={{ flex: 1, padding: '12px', borderRadius: 8, border: 'none', background: '#0099bb', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>تغيير</button><button onClick={() => removeImage(imageEditModal)} style={{ padding: '12px 20px', borderRadius: 8, border: 'none', background: '#fee2e2', color: '#dc2626', fontWeight: 600, cursor: 'pointer' }}>حذف</button></div></div></div>)}
     </div>
   );
 };
 
-export default QuantityCalculatorPro;
+export default QuantityCalculator;
+Items: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid ' + (isEnabled ? place.color : c.border), background: isEnabled ? place.color + '15' : 'transparent', color: isEnabled ? place.color : c.muted, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>{isEnabled && <Check size={12} />}<span>{place.icon}</span><span>{place.name}</span></button>); })}</div></div>)}</div>); })}</div>)}</div>))}</div></div>
+        </div>)}
+      </div>
+      {imageEditModal && (<div className="no-print" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 400, width: '90%' }}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}><h3 style={{ margin: 0, fontSize: 16 }}>تعديل الصورة</h3><button onClick={() => setImageEditModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}>✕</button></div>{images[imageEditModal]?.src && (<div style={{ textAlign: 'center', marginBottom: 20 }}><img src={images[imageEditModal].src} alt="" style={{ maxWidth: '100%', maxHeight: 150, objectFit: 'contain' }} /></div>)}<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}><div><label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>العرض</label><input type="number" value={images[imageEditModal]?.width || 80} onFocus={handleInputFocus} onChange={(e) => updateImageSize(imageEditModal, 'width', e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14 }} /></div><div><label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>الارتفاع</label><input type="number" value={images[imageEditModal]?.height || 60} onFocus={handleInputFocus} onChange={(e) => updateImageSize(imageEditModal, 'height', e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14 }} /></div></div><div style={{ display: 'flex', gap: 10 }}><button onClick={() => { const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.onchange = (e) => handleImageUpload(imageEditModal, e); input.click(); }} style={{ flex: 1, padding: '12px', borderRadius: 8, border: 'none', background: '#0099bb', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>تغيير</button><button onClick={() => removeImage(imageEditModal)} style={{ padding: '12px 20px', borderRadius: 8, border: 'none', background: '#fee2e2', color: '#dc2626', fontWeight: 600, cursor: 'pointer' }}>حذف</button></div></div></div>)}
+    </div>
+  );
+};
+
+export default QuantityCalculator;
