@@ -24,7 +24,6 @@ import Projects from './components/Projects';
 import Accounts from './components/Accounts';
 import Users from './components/Users';
 import Resources from './components/Resources';
-import DataImport from './components/DataImport';
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -508,26 +507,10 @@ function App() {
       
       case 'import':
         return (
-          <DataImport
-            onImportExpenses={handleImportExpense}
-            onImportTasks={handleImportTask}
-            onImportProjects={handleImportProject}
-            onImportAccounts={handleImportAccount}
-            onImportClients={handleImportClient}
-            onImportSuppliers={handleImportSupplier}
-            onImportMaterials={handleImportMaterial}
-            onImportEquipment={handleImportEquipment}
-            expenses={expenses}
-            tasks={tasks}
-            projects={projects}
-            accounts={accounts}
-            clients={clients}
-            suppliers={suppliers}
-            materials={materials}
-            equipment={equipment}
-            darkMode={darkMode}
-            theme={theme}
-          />
+          <div style={{ padding: 40, textAlign: 'center' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📥</div>
+            <div style={{ fontSize: 18, color: theme.text.secondary }}>قريباً - استيراد البيانات</div>
+          </div>
         );
       
       default:
