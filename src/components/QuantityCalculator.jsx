@@ -1215,11 +1215,20 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
 
       {/* نافذة تحرير البند */}
       {editingItem && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 }} onClick={() => setEditingItem(null)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: 20 }} onClick={() => setEditingItem(null)}>
           <div style={{ background: t?.bg?.secondary, borderRadius: 16, padding: 24, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', border: `1px solid ${t?.border?.primary}`, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <div style={{ fontSize: 17, fontWeight: 700, color: t?.text?.primary }}>✏️ تحرير البند</div>
-              <button onClick={() => setEditingItem(null)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: t?.bg?.tertiary, color: t?.text?.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
+            {/* الهيدر مع العنوان ورقم البند والأزرار */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${t?.border?.primary}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 20 }}>✏️</span>
+                <span style={{ fontSize: 17, fontWeight: 700, color: t?.text?.primary }}>تحرير البند</span>
+                <span style={{ fontSize: 12, color: t?.text?.muted, background: t?.bg?.tertiary, padding: '4px 10px', borderRadius: 6 }}>#{editingItem.item.id}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button onClick={() => { deleteWorkItem(editingItem.catKey, editingItem.item.id); setEditingItem(null); }} style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${t?.status?.danger?.border}`, background: 'transparent', color: t?.status?.danger?.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}><Trash2 size={14} /> حذف</button>
+                <button onClick={() => setEditingItem(null)} style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+                <button onClick={() => { setWorkItems(prev => ({ ...prev, [editingItem.catKey]: { ...prev[editingItem.catKey], items: prev[editingItem.catKey].items.map(item => item.id === editingItem.item.id ? editingItem.item : item) } })); setEditingItem(null); }} style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: t?.button?.gradient, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>✓ حفظ</button>
+              </div>
             </div>
             
             {/* القسم الرئيسي */}
@@ -1273,30 +1282,34 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
               <div><div style={{ fontSize: 13, color: t?.text?.secondary, marginBottom: 6, fontWeight: 600 }}>سعر التنفيذ</div><input type="number" value={editingItem.item.exec} onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, exec: parseFloat(e.target.value) || 0 } })} onFocus={handleInputFocus} style={{ ...inputStyle, borderColor: `${t?.status?.warning?.text}50`, background: `${t?.status?.warning?.text}10`, color: t?.status?.warning?.text, fontSize: 18, fontWeight: 700, textAlign: 'center' }} /></div>
               <div><div style={{ fontSize: 13, color: t?.text?.secondary, marginBottom: 6, fontWeight: 600 }}>سعر المقاول</div><input type="number" value={editingItem.item.cont} onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, cont: parseFloat(e.target.value) || 0 } })} onFocus={handleInputFocus} style={{ ...inputStyle, borderColor: `${t?.status?.info?.text}50`, background: `${t?.status?.info?.text}10`, color: t?.status?.info?.text, fontSize: 18, fontWeight: 700, textAlign: 'center' }} /></div>
             </div>
-            <div style={{ padding: 14, borderRadius: 10, background: t?.status?.success?.bg, textAlign: 'center', marginBottom: 20 }}><div style={{ fontSize: 11, color: t?.text?.muted, marginBottom: 4 }}>صافي الربح</div><div style={{ fontSize: 24, fontWeight: 700, color: t?.status?.success?.text }}>{formatNum(editingItem.item.exec - editingItem.item.cont)} ر.س</div></div>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-              <button onClick={() => { deleteWorkItem(editingItem.catKey, editingItem.item.id); setEditingItem(null); }} style={{ padding: '12px 16px', borderRadius: 10, border: `1px solid ${t?.status?.danger?.border}`, background: 'transparent', color: t?.status?.danger?.text, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}><Trash2 size={16} /> حذف</button>
-              <button onClick={() => { setWorkItems(prev => ({ ...prev, [editingItem.catKey]: { ...prev[editingItem.catKey], items: prev[editingItem.catKey].items.map(item => item.id === editingItem.item.id ? editingItem.item : item) } })); setEditingItem(null); }} style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', background: t?.button?.gradient, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>✓ حفظ التعديلات</button>
-            </div>
-            <button onClick={() => setEditingItem(null)} style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: `1px solid ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+            <div style={{ padding: 14, borderRadius: 10, background: t?.status?.success?.bg, textAlign: 'center' }}><div style={{ fontSize: 11, color: t?.text?.muted, marginBottom: 4 }}>صافي الربح</div><div style={{ fontSize: 24, fontWeight: 700, color: t?.status?.success?.text }}>{formatNum(editingItem.item.exec - editingItem.item.cont)} ر.س</div></div>
           </div>
         </div>
       )}
 
       {/* نافذة تحرير القسم الرئيسي */}
       {editingCategory && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 }} onClick={() => setEditingCategory(null)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: 20 }} onClick={() => setEditingCategory(null)}>
           <div style={{ background: t?.bg?.secondary, borderRadius: 16, padding: 24, width: '100%', maxWidth: 450, maxHeight: '90vh', overflowY: 'auto', border: `1px solid ${t?.border?.primary}`, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <div style={{ fontSize: 17, fontWeight: 700, color: t?.text?.primary }}>✏️ تحرير القسم</div>
-              <button onClick={() => setEditingCategory(null)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: t?.bg?.tertiary, color: t?.text?.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
+            {/* الهيدر مع العنوان والأزرار */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${t?.border?.primary}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 20 }}>✏️</span>
+                <span style={{ fontSize: 17, fontWeight: 700, color: t?.text?.primary }}>تحرير القسم</span>
+                <span style={{ fontSize: 12, color: t?.text?.muted, background: t?.bg?.tertiary, padding: '4px 10px', borderRadius: 6 }}>#{editingCategory.catKey}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button onClick={() => deleteCategory(editingCategory.catKey)} style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${t?.status?.danger?.border}`, background: 'transparent', color: t?.status?.danger?.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}><Trash2 size={14} /> حذف</button>
+                <button onClick={() => setEditingCategory(null)} style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+                <button onClick={() => { updateCategoryName(editingCategory.catKey, editingCategory.name); updateCategoryIcon(editingCategory.catKey, editingCategory.icon); setEditingCategory(null); }} style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: t?.button?.gradient, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>✓ حفظ</button>
+              </div>
             </div>
             
             {/* أيقونة القسم */}
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 13, color: t?.text?.secondary, marginBottom: 8, fontWeight: 600 }}>أيقونة القسم</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {['🔲', '🎨', '🏛️', '⚡', '🔧', '🪵', '🚪', '🪟', '💡', '❄️', '🔥', '🛁', '🪠', '🧱', '🏗️', '📦'].map(icon => (
+                {['🔲', '🎨', '🏛️', '⚡', '🔧', '🪵', '🚪', '🪟', '💡', '❄️', '🔥', '🛁', '🪠', '🧱', '🏗️', '📦', '🪨', '🔄', '✨', '🏺'].map(icon => (
                   <button 
                     key={icon} 
                     onClick={() => setEditingCategory({ ...editingCategory, icon })}
@@ -1359,42 +1372,32 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
             </div>
 
             {/* معاينة */}
-            <div style={{ padding: 16, borderRadius: 10, background: t?.bg?.tertiary, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ padding: 16, borderRadius: 10, background: t?.bg?.tertiary, display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 28 }}>{editingCategory.icon}</span>
               <span style={{ fontSize: 16, fontWeight: 600, color: t?.text?.primary }}>{editingCategory.name}</span>
             </div>
-
-            {/* أزرار */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-              <button 
-                onClick={() => deleteCategory(editingCategory.catKey)}
-                style={{ padding: '12px 16px', borderRadius: 10, border: `1px solid ${t?.status?.danger?.border}`, background: 'transparent', color: t?.status?.danger?.text, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}
-              >
-                <Trash2 size={16} /> حذف
-              </button>
-              <button 
-                onClick={() => {
-                  updateCategoryName(editingCategory.catKey, editingCategory.name);
-                  updateCategoryIcon(editingCategory.catKey, editingCategory.icon);
-                  setEditingCategory(null);
-                }} 
-                style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', background: t?.button?.gradient, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-              >
-                ✓ حفظ التعديلات
-              </button>
-            </div>
-            <button onClick={() => setEditingCategory(null)} style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: `1px solid ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
           </div>
         </div>
       )}
 
       {/* نافذة تحرير نوع المكان */}
       {editingPlaceType && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 }} onClick={() => setEditingPlaceType(null)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: 20 }} onClick={() => setEditingPlaceType(null)}>
           <div style={{ background: t?.bg?.secondary, borderRadius: 16, padding: 24, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', border: `1px solid ${t?.border?.primary}`, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <div style={{ fontSize: 17, fontWeight: 700, color: t?.text?.primary }}>📍 تحرير نوع المكان</div>
-              <button onClick={() => setEditingPlaceType(null)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: t?.bg?.tertiary, color: t?.text?.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
+            {/* الهيدر مع العنوان والأزرار */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${t?.border?.primary}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 20 }}>📍</span>
+                <span style={{ fontSize: 17, fontWeight: 700, color: t?.text?.primary }}>تحرير نوع المكان</span>
+                <span style={{ fontSize: 12, color: t?.text?.muted, background: t?.bg?.tertiary, padding: '4px 10px', borderRadius: 6 }}>#{editingPlaceType.key}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {Object.keys(places).length > 1 && (
+                  <button onClick={() => deletePlaceType(editingPlaceType.key)} style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${t?.status?.danger?.border}`, background: 'transparent', color: t?.status?.danger?.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}><Trash2 size={14} /> حذف</button>
+                )}
+                <button onClick={() => setEditingPlaceType(null)} style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+                <button onClick={() => { updatePlaceType(editingPlaceType.key, { name: editingPlaceType.name, icon: editingPlaceType.icon, places: editingPlaceType.places }); setEditingPlaceType(null); }} style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: t?.button?.gradient, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>✓ حفظ</button>
+              </div>
             </div>
             
             {/* أيقونة نوع المكان */}
@@ -1478,39 +1481,13 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
             </div>
 
             {/* معاينة */}
-            <div style={{ padding: 16, borderRadius: 10, background: t?.bg?.tertiary, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ padding: 16, borderRadius: 10, background: t?.bg?.tertiary, display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 32 }}>{editingPlaceType.icon}</span>
               <div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: t?.text?.primary }}>{editingPlaceType.name}</div>
                 <div style={{ fontSize: 12, color: t?.text?.muted }}>{editingPlaceType.places.length} مكان</div>
               </div>
             </div>
-
-            {/* أزرار */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-              {Object.keys(places).length > 1 && (
-                <button 
-                  onClick={() => deletePlaceType(editingPlaceType.key)}
-                  style={{ padding: '12px 16px', borderRadius: 10, border: `1px solid ${t?.status?.danger?.border}`, background: 'transparent', color: t?.status?.danger?.text, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}
-                >
-                  <Trash2 size={16} /> حذف
-                </button>
-              )}
-              <button 
-                onClick={() => {
-                  updatePlaceType(editingPlaceType.key, { 
-                    name: editingPlaceType.name, 
-                    icon: editingPlaceType.icon,
-                    places: editingPlaceType.places 
-                  });
-                  setEditingPlaceType(null);
-                }} 
-                style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', background: t?.button?.gradient, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-              >
-                ✓ حفظ التعديلات
-              </button>
-            </div>
-            <button onClick={() => setEditingPlaceType(null)} style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: `1px solid ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
           </div>
         </div>
       )}
