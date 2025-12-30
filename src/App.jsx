@@ -571,7 +571,7 @@ function App() {
         justifyContent: 'space-between',
         position: 'sticky',
         top: 0,
-        zIndex: 50
+        zIndex: 100
       }}>
         <h1 style={{ 
           fontSize: 20, 
