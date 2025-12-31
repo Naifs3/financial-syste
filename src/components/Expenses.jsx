@@ -1,20 +1,25 @@
 // src/components/Expenses.jsx
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { 
   Receipt, Plus, Search, Edit, Trash2, CheckCircle, RefreshCw,
   Calendar, AlertTriangle, X, ChevronDown
 } from 'lucide-react';
 import { calcDaysRemaining, formatNumber, generateCode } from '../utils/helpers';
 
-// ═══════════════ Modal Component (خارج المكون الرئيسي) ═══════════════
-const Modal = ({ show, onClose, title, children, onSubmit, submitText, danger, loading, theme }) => {
+// ═══════════════ Modal Component with Portal ═══════════════
+const Modal = ({ show, onClose, title, code, children, onSubmit, submitText, danger, loading, theme }) => {
   const t = theme;
   if (!show) return null;
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 }} onClick={onClose}>
+  
+  const modalContent = (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999999, padding: 20 }} onClick={onClose}>
       <div style={{ background: t.bg.secondary, borderRadius: 16, width: '100%', maxWidth: 500, border: `1px solid ${t.border.primary}`, maxHeight: '90vh', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }} onClick={e => e.stopPropagation()}>
         <div style={{ padding: '16px 20px', borderBottom: `1px solid ${t.border.primary}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: t.bg.tertiary }}>
-          <h3 style={{ fontSize: 17, fontWeight: 700, color: t.text.primary, margin: 0 }}>{title}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: t.text.primary, margin: 0 }}>{title}</h3>
+            {code && <span style={{ fontSize: 12, fontWeight: 700, color: t.button.primary, background: `${t.button.primary}15`, padding: '4px 10px', borderRadius: 6, fontFamily: 'monospace' }}>{code}</span>}
+          </div>
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: t.bg.secondary, color: t.text.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
         </div>
         <div style={{ padding: 20, overflowY: 'auto', maxHeight: 'calc(90vh - 130px)' }}>{children}</div>
@@ -25,6 +30,8 @@ const Modal = ({ show, onClose, title, children, onSubmit, submitText, danger, l
       </div>
     </div>
   );
+  
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 const Expenses = ({ expenses, accounts = [], onAdd, onEdit, onDelete, onMarkPaid, onRefresh, darkMode, theme }) => {
@@ -191,12 +198,8 @@ const Expenses = ({ expenses, accounts = [], onAdd, onEdit, onDelete, onMarkPaid
         </div>
       )}
 
-      <Modal show={showAddModal} onClose={() => setShowAddModal(false)} title="إضافة مصروف جديد" onSubmit={handleAdd} submitText="إضافة" loading={loading} theme={t}>
+      <Modal show={showAddModal} onClose={() => setShowAddModal(false)} title="إضافة مصروف جديد" code={formData.code} onSubmit={handleAdd} submitText="إضافة" loading={loading} theme={t}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ background: `${t.button.primary}15`, padding: 12, borderRadius: 12, textAlign: 'center' }}>
-            <span style={{ fontSize: 12, color: t.text.muted }}>رقم المصروف</span>
-            <p style={{ fontSize: 18, fontWeight: 700, color: t.button.primary, margin: '4px 0 0 0', fontFamily: 'monospace' }}>{formData.code}</p>
-          </div>
           <div><label style={labelStyle}>اسم المصروف *</label><input type="text" value={formData.name} onChange={(e) => updateForm('name', e.target.value)} style={{...inputStyle, borderColor: errors.name ? t.status.danger.text : t.border.primary}} placeholder="مثال: إيجار المكتب" />{errors.name && <span style={{ fontSize: 12, color: t.status.danger.text }}>{errors.name}</span>}</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div><label style={labelStyle}>المبلغ *</label><input type="number" value={formData.amount} onChange={(e) => updateForm('amount', e.target.value)} style={{...inputStyle, borderColor: errors.amount ? t.status.danger.text : t.border.primary}} placeholder="0" /></div>
@@ -211,12 +214,8 @@ const Expenses = ({ expenses, accounts = [], onAdd, onEdit, onDelete, onMarkPaid
         </div>
       </Modal>
 
-      <Modal show={showEditModal} onClose={() => setShowEditModal(false)} title="تعديل المصروف" onSubmit={handleEdit} submitText="حفظ التعديلات" loading={loading} theme={t}>
+      <Modal show={showEditModal} onClose={() => setShowEditModal(false)} title="تعديل المصروف" code={formData.code || 'E-0000'} onSubmit={handleEdit} submitText="حفظ التعديلات" loading={loading} theme={t}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ background: `${t.button.primary}15`, padding: 12, borderRadius: 12, textAlign: 'center' }}>
-            <span style={{ fontSize: 12, color: t.text.muted }}>رقم المصروف</span>
-            <p style={{ fontSize: 18, fontWeight: 700, color: t.button.primary, margin: '4px 0 0 0', fontFamily: 'monospace' }}>{formData.code || 'E-0000'}</p>
-          </div>
           <div><label style={labelStyle}>اسم المصروف *</label><input type="text" value={formData.name} onChange={(e) => updateForm('name', e.target.value)} style={{...inputStyle, borderColor: errors.name ? t.status.danger.text : t.border.primary}} /></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div><label style={labelStyle}>المبلغ *</label><input type="number" value={formData.amount} onChange={(e) => updateForm('amount', e.target.value)} style={{...inputStyle, borderColor: errors.amount ? t.status.danger.text : t.border.primary}} /></div>
@@ -231,7 +230,7 @@ const Expenses = ({ expenses, accounts = [], onAdd, onEdit, onDelete, onMarkPaid
         </div>
       </Modal>
 
-      <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="حذف المصروف" onSubmit={handleDelete} submitText="حذف" danger loading={loading} theme={t}>
+      <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="حذف المصروف" code={selectedExpense?.code} onSubmit={handleDelete} submitText="حذف" danger loading={loading} theme={t}>
         <div style={{ textAlign: 'center', padding: 20 }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: t.status.danger.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><AlertTriangle size={32} color={t.status.danger.text} /></div>
           <p style={{ fontSize: 16, color: t.text.primary, marginBottom: 8 }}>هل أنت متأكد من حذف المصروف؟</p>
