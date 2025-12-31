@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calculator, ChevronDown, ChevronUp, Plus, Trash2, Layers, FileText, X, MapPin, RefreshCw, Edit3 } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp, Plus, Trash2, Layers, FileText, X, MapPin, RefreshCw, Edit3, Copy, Check, Truck, Box, Ruler } from 'lucide-react';
 
 const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
   const t = theme;
@@ -148,6 +148,77 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
   const [editingItem, setEditingItem] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [reportData, setReportData] = useState({ companyName: 'ركائز الأولى', headerTitle: 'تقدير تكلفة', projectTitle: 'مشروع ترميم', vatRate: 15, footerEmail: 'info@company.com' });
+
+  // States للملخص العام
+  const [summaryExpanded, setSummaryExpanded] = useState({});
+  const [categoryOptions, setCategoryOptions] = useState({});
+  const [copiedCategoryId, setCopiedCategoryId] = useState(null);
+
+  // Toggle فئة في الملخص العام
+  const toggleSummaryCategory = (catKey) => {
+    setSummaryExpanded(prev => ({ ...prev, [catKey]: !prev[catKey] }));
+  };
+
+  // Toggle خيار في الملخص العام
+  const toggleCategoryOption = (catKey, option) => {
+    setCategoryOptions(prev => ({
+      ...prev,
+      [catKey]: { 
+        ...prev[catKey], 
+        [option]: !(prev[catKey]?.[option] ?? (option === 'withMaterials')) 
+      }
+    }));
+  };
+
+  // الحصول على خيارات الفئة
+  const getCategoryOptions = (catKey) => {
+    return {
+      withContainer: categoryOptions[catKey]?.withContainer ?? false,
+      withMaterials: categoryOptions[catKey]?.withMaterials ?? true
+    };
+  };
+
+  // إنشاء ملخص الخدمة النصي الكامل
+  const getFullServiceSummary = (catKey, catData) => {
+    const options = getCategoryOptions(catKey);
+    const itemsWithQty = catData.items.map(item => 
+      `${item.name} (${formatNum(item.area)} م²)`
+    );
+    
+    let summary = 'تشمل الخدمة: ';
+    if (itemsWithQty.length === 1) {
+      summary += itemsWithQty[0];
+    } else {
+      const lastItem = itemsWithQty.pop();
+      summary += itemsWithQty.join('، و') + '، و' + lastItem;
+    }
+    summary += '.';
+    
+    const optionsParts = [];
+    optionsParts.push(options.withContainer ? 'مع حاوية نقل' : 'بدون حاوية');
+    optionsParts.push(options.withMaterials ? 'شامل المواد' : 'بدون مواد (مصنعية فقط)');
+    
+    summary += ' ' + optionsParts.join('، ') + '.';
+    
+    return summary;
+  };
+
+  // نسخ ملخص الخدمة
+  const copyServiceSummary = (catKey, catData) => {
+    const summary = getFullServiceSummary(catKey, catData);
+    navigator.clipboard.writeText(summary);
+    setCopiedCategoryId(catKey);
+    setTimeout(() => setCopiedCategoryId(null), 2000);
+  };
+
+  // حساب إجمالي الكميات لفئة
+  const getCategoryQuantitySummary = (catData) => {
+    let totalArea = 0;
+    catData.items.forEach(item => {
+      totalArea += item.area;
+    });
+    return `${formatNum(totalArea)} م²`;
+  };
 
   // دوال تحرير البنود
   const deleteWorkItem = (catKey, itemId) => {
@@ -790,6 +861,414 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* الملخص العام - قسم جديد */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {Object.keys(addedItems).length > 0 && (
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Layers size={20} color={t?.button?.primary} />
+                  <span style={{ fontSize: 16, fontWeight: 700, color: t?.text?.primary }}>الملخص العام</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button 
+                    onClick={() => {
+                      const all = {};
+                      Object.keys(getItemsByCategory()).forEach(k => all[k] = true);
+                      setSummaryExpanded(all);
+                    }}
+                    style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, cursor: 'pointer', fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}
+                  >
+                    عرض الكل
+                  </button>
+                  <button 
+                    onClick={() => setSummaryExpanded({})}
+                    style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${t?.border?.primary}`, background: 'transparent', color: t?.text?.muted, cursor: 'pointer', fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}
+                  >
+                    إخفاء الكل
+                  </button>
+                </div>
+              </div>
+
+              {/* الفئات */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {Object.entries(getItemsByCategory()).map(([catKey, catData], catIdx) => {
+                  const color = getCategoryColor(catIdx);
+                  const isExpanded = summaryExpanded[catKey];
+                  const options = getCategoryOptions(catKey);
+                  const quantitySummary = getCategoryQuantitySummary(catData);
+                  const catIcon = workItems[catKey]?.icon || '📦';
+
+                  return (
+                    <div key={catKey} style={{ background: t?.bg?.tertiary, borderRadius: 14, border: `1px solid ${t?.border?.primary}`, overflow: 'hidden' }}>
+                      {/* رأس الفئة */}
+                      <div style={{ 
+                        padding: '14px 16px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between', 
+                        background: isExpanded ? `${color.main}10` : 'transparent', 
+                        borderBottom: isExpanded ? `1px solid ${t?.border?.primary}` : 'none',
+                        flexWrap: 'wrap',
+                        gap: 10
+                      }}>
+                        {/* الأيقونة والاسم */}
+                        <div 
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', flex: 1, minWidth: 180 }} 
+                          onClick={() => toggleSummaryCategory(catKey)}
+                        >
+                          <div style={{ 
+                            width: 44, 
+                            height: 44, 
+                            borderRadius: 10, 
+                            background: `linear-gradient(135deg, ${color.main}20 0%, ${color.main}40 100%)`, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            border: `1px solid ${color.main}30`,
+                            position: 'relative',
+                            flexShrink: 0
+                          }}>
+                            <span style={{ fontSize: 22 }}>{catIcon}</span>
+                            <span style={{ 
+                              position: 'absolute', 
+                              top: -5, 
+                              right: -5, 
+                              width: 18, 
+                              height: 18, 
+                              borderRadius: '50%', 
+                              background: color.main, 
+                              color: '#fff', 
+                              fontSize: 10, 
+                              fontWeight: 700, 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center' 
+                            }}>{catIdx + 1}</span>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: t?.text?.primary }}>{catData.name}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 10, color: t?.text?.muted, background: t?.bg?.secondary, padding: '2px 6px', borderRadius: 4 }}>{catData.items.length} بند</span>
+                              <span style={{ fontSize: 10, color: color.main, background: `${color.main}15`, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>{quantitySummary}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* أزرار الخيارات */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleCategoryOption(catKey, 'withContainer'); }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              padding: '5px 8px',
+                              borderRadius: 6,
+                              border: `1px solid ${options.withContainer ? '#f59e0b' : t?.border?.primary}`,
+                              background: options.withContainer ? '#f59e0b15' : 'transparent',
+                              color: options.withContainer ? '#f59e0b' : t?.text?.muted,
+                              cursor: 'pointer',
+                              fontSize: 10,
+                              fontWeight: 600,
+                              fontFamily: 'inherit'
+                            }}
+                          >
+                            <Truck size={12} />
+                            {options.withContainer ? 'حاوية' : 'بدون'}
+                          </button>
+                          
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleCategoryOption(catKey, 'withMaterials'); }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              padding: '5px 8px',
+                              borderRadius: 6,
+                              border: `1px solid ${options.withMaterials ? '#10b981' : t?.border?.primary}`,
+                              background: options.withMaterials ? '#10b98115' : 'transparent',
+                              color: options.withMaterials ? '#10b981' : t?.text?.muted,
+                              cursor: 'pointer',
+                              fontSize: 10,
+                              fontWeight: 600,
+                              fontFamily: 'inherit'
+                            }}
+                          >
+                            <Box size={12} />
+                            {options.withMaterials ? 'مواد' : 'بدون'}
+                          </button>
+                        </div>
+
+                        {/* السعر وزر التوسيع */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => toggleSummaryCategory(catKey)}>
+                          <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontSize: 18, fontWeight: 800, color: color.main }}>{formatNum(catData.total)}</div>
+                            <div style={{ fontSize: 10, color: t?.text?.muted }}>ريال</div>
+                          </div>
+                          <div style={{ 
+                            width: 28, 
+                            height: 28, 
+                            borderRadius: 6, 
+                            background: t?.bg?.secondary, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            transition: 'transform 0.2s',
+                            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
+                          }}>
+                            <ChevronDown size={16} color={t?.text?.muted} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* تفاصيل الفئة */}
+                      {isExpanded && (
+                        <div style={{ padding: '12px 14px 14px' }}>
+                          
+                          {/* ملخص الخدمة */}
+                          <div style={{
+                            background: `${color.main}08`,
+                            border: `1px solid ${color.main}30`,
+                            borderRadius: 10,
+                            padding: 14,
+                            marginBottom: 14
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 10, color: color.main, marginBottom: 8, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  📋 ملخص الخدمة
+                                </div>
+                                <div style={{ 
+                                  fontSize: 12, 
+                                  color: t?.text?.primary, 
+                                  lineHeight: 1.7, 
+                                  background: t?.bg?.secondary, 
+                                  padding: 10, 
+                                  borderRadius: 6, 
+                                  border: `1px solid ${t?.border?.primary}` 
+                                }}>
+                                  {getFullServiceSummary(catKey, catData)}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => copyServiceSummary(catKey, catData)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  padding: '8px 12px',
+                                  borderRadius: 6,
+                                  border: `1px solid ${color.main}40`,
+                                  background: copiedCategoryId === catKey ? `${color.main}30` : `${color.main}15`,
+                                  color: copiedCategoryId === catKey ? '#fff' : color.main,
+                                  cursor: 'pointer',
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  fontFamily: 'inherit',
+                                  flexShrink: 0
+                                }}
+                              >
+                                {copiedCategoryId === catKey ? <Check size={14} /> : <Copy size={14} />}
+                                {copiedCategoryId === catKey ? 'تم!' : 'نسخ'}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* جدول البنود */}
+                          <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: '2fr 1fr 1fr 1fr', 
+                            gap: 6, 
+                            padding: '6px 10px', 
+                            background: t?.bg?.secondary, 
+                            borderRadius: 6, 
+                            marginBottom: 6, 
+                            fontSize: 10, 
+                            fontWeight: 700, 
+                            color: t?.text?.muted 
+                          }}>
+                            <span>البند</span>
+                            <span style={{ textAlign: 'center' }}>المساحة</span>
+                            <span style={{ textAlign: 'center' }}>سعر م²</span>
+                            <span style={{ textAlign: 'left' }}>الإجمالي</span>
+                          </div>
+
+                          {catData.items.map((item, idx) => (
+                            <div 
+                              key={item.key}
+                              style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: '2fr 1fr 1fr 1fr', 
+                                gap: 6, 
+                                alignItems: 'center', 
+                                padding: '10px', 
+                                background: idx % 2 === 0 ? `${color.main}05` : 'transparent', 
+                                borderRadius: 6, 
+                                marginBottom: 3,
+                                borderRight: `3px solid ${color.main}40`
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ 
+                                  width: 18, 
+                                  height: 18, 
+                                  borderRadius: 4, 
+                                  background: `${color.main}20`, 
+                                  color: color.main, 
+                                  fontSize: 9, 
+                                  fontWeight: 700, 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center' 
+                                }}>{idx + 1}</span>
+                                <span style={{ fontSize: 12, color: t?.text?.primary, fontWeight: 500 }}>{item.name}</span>
+                              </div>
+                              <span style={{ 
+                                textAlign: 'center', 
+                                fontSize: 11, 
+                                color: t?.text?.secondary, 
+                                background: t?.bg?.secondary, 
+                                padding: '3px 6px', 
+                                borderRadius: 4, 
+                                border: `1px solid ${t?.border?.primary}` 
+                              }}>
+                                {formatNum(item.area)} م²
+                              </span>
+                              <span style={{ textAlign: 'center', fontSize: 11, color: t?.text?.muted }}>{formatNum(item.exec)} ﷼</span>
+                              <span style={{ textAlign: 'left', fontSize: 12, fontWeight: 700, color: t?.text?.primary }}>{formatNum(item.total)} ﷼</span>
+                            </div>
+                          ))}
+
+                          {/* إجمالي الفئة */}
+                          <div style={{ 
+                            marginTop: 12, 
+                            padding: 12, 
+                            background: `${color.main}10`, 
+                            borderRadius: 8, 
+                            border: `1px solid ${color.main}30` 
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, marginBottom: 10, borderBottom: `1px dashed ${color.main}30` }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Ruler size={14} color={color.main} />
+                                <span style={{ fontSize: 11, color: t?.text?.secondary }}>إجمالي المساحة:</span>
+                              </div>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: color.main, background: `${color.main}20`, padding: '3px 10px', borderRadius: 4 }}>{quantitySummary}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Calculator size={14} color={color.main} />
+                                <span style={{ fontSize: 12, fontWeight: 700, color: color.main }}>إجمالي {catData.name}</span>
+                              </div>
+                              <span style={{ fontSize: 16, fontWeight: 800, color: color.main }}>{formatNum(catData.total)} ريال</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* الإجمالي النهائي للملخص العام */}
+              <div style={{
+                marginTop: 16,
+                background: t?.bg?.secondary,
+                borderRadius: 14,
+                border: `2px solid ${t?.status?.success?.text}`,
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  background: `${t?.status?.success?.text}15`,
+                  padding: '12px 16px',
+                  borderBottom: `1px solid ${t?.border?.primary}`
+                }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: t?.status?.success?.text, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Calculator size={18} />
+                    ملخص جميع الأقسام
+                  </div>
+                </div>
+
+                <div style={{ padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {Object.entries(getItemsByCategory()).map(([catKey, catData], catIdx) => {
+                      const color = getCategoryColor(catIdx);
+                      const options = getCategoryOptions(catKey);
+                      const catIcon = workItems[catKey]?.icon || '📦';
+                      const qSummary = getCategoryQuantitySummary(catData);
+
+                      return (
+                        <div key={catKey} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 12px',
+                          background: t?.bg?.tertiary,
+                          borderRadius: 8,
+                          borderRight: `4px solid ${color.main}`,
+                          flexWrap: 'wrap',
+                          gap: 6
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 150 }}>
+                            <span style={{ fontSize: 16 }}>{catIcon}</span>
+                            <span style={{ fontSize: 12, color: t?.text?.primary, fontWeight: 500 }}>{catData.name}</span>
+                            <span style={{ fontSize: 9, color: color.main, background: `${color.main}15`, padding: '1px 5px', borderRadius: 3, fontWeight: 600 }}>{qSummary}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ 
+                              fontSize: 9, 
+                              padding: '2px 6px', 
+                              borderRadius: 3, 
+                              background: options.withContainer ? '#f59e0b20' : t?.bg?.secondary,
+                              color: options.withContainer ? '#f59e0b' : t?.text?.muted,
+                              border: `1px solid ${options.withContainer ? '#f59e0b40' : t?.border?.primary}`,
+                              fontWeight: 600
+                            }}>
+                              {options.withContainer ? '🚛' : '—'}
+                            </span>
+                            <span style={{ 
+                              fontSize: 9, 
+                              padding: '2px 6px', 
+                              borderRadius: 3, 
+                              background: options.withMaterials ? '#10b98120' : t?.bg?.secondary,
+                              color: options.withMaterials ? '#10b981' : t?.text?.muted,
+                              border: `1px solid ${options.withMaterials ? '#10b98140' : t?.border?.primary}`,
+                              fontWeight: 600
+                            }}>
+                              {options.withMaterials ? '📦' : '—'}
+                            </span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: color.main, minWidth: 70, textAlign: 'left' }}>{formatNum(catData.total)} ﷼</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{
+                  padding: '14px 16px',
+                  background: t?.bg?.tertiary,
+                  borderTop: `1px solid ${t?.border?.primary}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: t?.text?.secondary }}>إجمالي الملخص العام</div>
+                    <div style={{ fontSize: 10, color: t?.text?.muted, marginTop: 2 }}>
+                      {Object.keys(getItemsByCategory()).length} أقسام • {itemCount} بند
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: t?.status?.success?.text }}>{formatNum(totalExec)}</div>
+                    <div style={{ fontSize: 10, color: t?.text?.muted }}>ريال سعودي</div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
