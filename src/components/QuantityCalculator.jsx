@@ -1,5 +1,119 @@
-import React, { useState } from 'react';
-import { Calculator, ChevronDown, ChevronUp, Plus, Trash2, Layers, FileText, X, MapPin, RefreshCw, Edit3, Copy, Check, Truck, Box, Ruler } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calculator, ChevronDown, ChevronUp, Plus, Trash2, Layers, FileText, X, MapPin, RefreshCw, Edit3, Copy, Check, Truck, Box, Ruler, AlertCircle } from 'lucide-react';
+
+// البيانات الافتراضية
+const defaultWorkItems = {
+  tiles: { name: 'البلاط', icon: '🔲', items: [
+    { id: 't1', name: 'إزالة بلاط (كمية متوسطة)', desc: 'إزالة البلاط القديم بدون حاوية', exec: 13, cont: 10, type: 'floor' },
+    { id: 't2', name: 'إزالة بلاط (كمية كبيرة)', desc: 'إزالة البلاط القديم بدون حاوية', exec: 20, cont: 15, type: 'floor' },
+    { id: 't3', name: 'صبة ميزانية (شامل المواد)', desc: 'صبة أرضية بدون سباكة أو كهرباء - شامل المواد', exec: 47, cont: 35, type: 'floor' },
+    { id: 't4', name: 'صبة ميزانية (بدون مواد)', desc: 'صبة أرضية بدون سباكة أو كهرباء - بدون مواد', exec: 20, cont: 15, type: 'floor' },
+    { id: 't5', name: 'تركيب بلاط (أكبر من 120مم)', desc: 'تركيب بالغراء أو الخلطة الأسمنتية - بدون مواد', exec: 33, cont: 25, type: 'floor' },
+    { id: 't6', name: 'تركيب بلاط (أصغر من 120مم)', desc: 'تركيب بالغراء أو الخلطة الأسمنتية - بدون مواد', exec: 25, cont: 19, type: 'floor' },
+    { id: 't7', name: 'تركيب نعلات', desc: 'نعلات داخلية أو خارجية بورسلان أو سيراميك - بدون مواد', exec: 13, cont: 10, type: 'wall' },
+    { id: 't8', name: 'تركيب بلدورات الرصيف', desc: 'بدون أعمال الري أو السباكة أو الكهرباء - بدون مواد', exec: 33, cont: 25, type: 'floor' },
+    { id: 't9', name: 'تركيب بلاط الرصيف', desc: 'بدون أعمال الري أو السباكة أو الكهرباء - بدون مواد', exec: 33, cont: 25, type: 'floor' }
+  ]},
+  marble: { name: 'الرخام', icon: '🪨', items: [
+    { id: 'm1', name: 'تركيب نعلات درج', desc: 'رخام نعلات الدرج - بدون مواد', exec: 13, cont: 10, type: 'wall' },
+    { id: 'm2', name: 'تركيب بسطات درج', desc: 'رخام بسطات الدرج', exec: 33, cont: 25, type: 'floor' },
+    { id: 'm3', name: 'تركيب رخام (مقاسات كبيرة)', desc: 'تركيب رخام مقاسات كبيرة - بدون مواد', exec: 100, cont: 75, type: 'floor' },
+    { id: 'm4', name: 'تركيب رخام (مقاسات صغيرة)', desc: 'تركيب رخام مقاسات صغيرة - بدون مواد', exec: 60, cont: 45, type: 'floor' },
+    { id: 'm5', name: 'تركيب رخام درج', desc: 'تركيب رخام الدرج - بدون مواد', exec: 67, cont: 50, type: 'floor' }
+  ]},
+  paint: { name: 'الدهانات', icon: '🎨', items: [
+    { id: 'p1', name: 'دهان داخلي (جوتن)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 21, cont: 16, type: 'wall' },
+    { id: 'p2', name: 'دهان داخلي (الجزيرة)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 20, cont: 15, type: 'wall' },
+    { id: 'p3', name: 'دهان داخلي (عسيب)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 19, cont: 14, type: 'wall' },
+    { id: 'p4', name: 'دهان داخلي (بدون مواد)', desc: 'بدون مواد - طبقتين معجون + طبقتين دهان', exec: 12, cont: 9, type: 'wall' },
+    { id: 'p5', name: 'زيادة طبقة معجون ثالثة', desc: 'طبقة إضافية - بدون مواد', exec: 3, cont: 2, type: 'wall' },
+    { id: 'p6', name: 'دهان خارجي رشة (مع مواد)', desc: 'رشة من جميع الشركات - مع المواد', exec: 19, cont: 14, type: 'wall' },
+    { id: 'p7', name: 'دهان خارجي بروفايل (جوتن)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 33, cont: 25, type: 'wall' },
+    { id: 'p8', name: 'دهان خارجي بروفايل (الجزيرة)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 33, cont: 25, type: 'wall' },
+    { id: 'p9', name: 'دهان خارجي بروفايل (عسيب)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 29, cont: 22, type: 'wall' },
+    { id: 'p10', name: 'دهان خارجي (بدون مواد)', desc: 'دهان فقط - بدون مواد', exec: 11, cont: 8, type: 'wall' },
+    { id: 'p11', name: 'دهان خارجي رشة (بدون مواد)', desc: 'رشة - بدون مواد', exec: 8, cont: 6, type: 'wall' },
+    { id: 'p12', name: 'دهان خارجي بروفايل (بدون مواد)', desc: 'بروفايل - بدون مواد', exec: 7, cont: 5, type: 'wall' }
+  ]},
+  paintRenew: { name: 'تجديد الدهانات', icon: '🔄', items: [
+    { id: 'rp1', name: 'إزالة الدهانات', desc: 'إزالة الدهانات الداخلية والخارجية', exec: 5, cont: 4, type: 'wall' },
+    { id: 'rp2', name: 'تجديد دهان (جوتن)', desc: 'تجديد داخلي أو خارجي - مع المواد', exec: 16, cont: 12, type: 'wall' },
+    { id: 'rp3', name: 'تجديد دهان (الجزيرة)', desc: 'تجديد داخلي أو خارجي - مع المواد', exec: 15, cont: 11, type: 'wall' },
+    { id: 'rp4', name: 'تجديد دهان (عسيب)', desc: 'تجديد داخلي أو خارجي - مع المواد', exec: 13, cont: 10, type: 'wall' },
+    { id: 'rp5', name: 'تجديد دهان (بدون مواد)', desc: 'دهان فقط - بدون مواد', exec: 7, cont: 5, type: 'wall' }
+  ]},
+  gypsumBoardPaint: { name: 'دهانات الجبسمبورد', icon: '✨', items: [
+    { id: 'gb1', name: 'دهان جبسمبورد (جوتن)', desc: 'مع المواد من شركة جوتن', exec: 21, cont: 16, type: 'ceiling' },
+    { id: 'gb2', name: 'دهان جبسمبورد (الجزيرة)', desc: 'مع المواد من شركة الجزيرة', exec: 20, cont: 15, type: 'ceiling' },
+    { id: 'gb3', name: 'دهان جبسمبورد (عسيب)', desc: 'مع المواد من شركة عسيب', exec: 19, cont: 14, type: 'ceiling' },
+    { id: 'gb4', name: 'دهان جبسمبورد (بدون مواد)', desc: 'بدون مواد', exec: 16, cont: 12, type: 'ceiling' }
+  ]},
+  localGypsumPaint: { name: 'دهانات الجبس البلدي', icon: '🏺', items: [
+    { id: 'gp1', name: 'دهان جبس بلدي (جوتن)', desc: 'مع المواد من شركة جوتن', exec: 17, cont: 13, type: 'ceiling' },
+    { id: 'gp2', name: 'دهان جبس بلدي (الجزيرة)', desc: 'مع المواد من شركة الجزيرة', exec: 17, cont: 13, type: 'ceiling' },
+    { id: 'gp3', name: 'دهان جبس بلدي (عسيب)', desc: 'مع المواد من شركة عسيب', exec: 15, cont: 11, type: 'ceiling' },
+    { id: 'gp4', name: 'دهان جبس بلدي (بدون مواد)', desc: 'بدون مواد', exec: 9, cont: 7, type: 'ceiling' }
+  ]},
+  gypsum: { name: 'الجبس', icon: '🏗️', items: [
+    { id: 'g1', name: 'تركيب جبسمبورد', desc: 'تركيب ألواح جبسمبورد', exec: 60, cont: 45, type: 'ceiling' },
+    { id: 'g2', name: 'تركيب واجهات جبسمبورد', desc: 'تركيب واجهات وديكورات جبسمبورد', exec: 120, cont: 90, type: 'wall' },
+    { id: 'g3', name: 'تركيب جبس بلدي', desc: 'تركيب جبس بلدي للأسقف', exec: 53, cont: 40, type: 'ceiling' },
+    { id: 'g4', name: 'تركيب واجهات جبس بلدي', desc: 'تركيب واجهات وديكورات جبس بلدي', exec: 120, cont: 90, type: 'wall' },
+    { id: 'g5', name: 'إزالة الجبس القديم', desc: 'إزالة الجبس القديم - بدون حاوية', exec: 5, cont: 4, type: 'ceiling' }
+  ]},
+  plaster: { name: 'اللياسة', icon: '🧱', items: [
+    { id: 'l1', name: 'لياسة قدة وزاوية', desc: 'مع تجهيز السطح وإزالة الأجزاء التالفة - سماكة لا تزيد عن 2 سم - بدون مواد', exec: 13, cont: 10, type: 'wall' },
+    { id: 'l2', name: 'لياسة ودع وقدة زاوية', desc: 'مع تجهيز السطح وإزالة الأجزاء التالفة - سماكة لا تزيد عن 2 سم - بدون مواد', exec: 20, cont: 15, type: 'wall' },
+    { id: 'l3', name: 'مواد اللياسة', desc: 'مواد اللياسة فقط - بدون عمالة', exec: 19, cont: 14, type: 'wall' }
+  ]},
+  structure: { name: 'العظم', icon: '🏛️', items: [
+    { id: 'b1', name: 'أعمال عظم (بالمواد)', desc: 'أعمال العظم الإنشائية شاملة المواد', exec: 998, cont: 750, type: 'floor' },
+    { id: 'b2', name: 'أعمال عظم (بدون مواد)', desc: 'أعمال العظم الإنشائية بدون مواد', exec: 665, cont: 500, type: 'floor' },
+    { id: 'b3', name: 'إنشاءات متفرقة', desc: 'أعمال إنشائية متفرقة', exec: 333, cont: 250, type: 'floor' }
+  ]}
+};
+
+const defaultPlaces = { 
+  dry: { name: 'جاف', icon: '🏠', enabled: true, places: ['صالة', 'مجلس', 'غرفة نوم', 'ممر'] }, 
+  wet: { name: 'رطب', icon: '🚿', enabled: true, places: ['مطبخ', 'دورة مياه', 'غسيل'] }, 
+  outdoor: { name: 'خارجي', icon: '🌳', enabled: true, places: ['حوش', 'سطح', 'موقف'] } 
+};
+
+const defaultProgramming = { 
+  dry: { 
+    tiles: { enabled: true, items: ['t1', 't2', 't3', 't4', 't5', 't6', 't7'] },
+    marble: { enabled: true, items: ['m1', 'm2', 'm3', 'm4', 'm5'] },
+    paint: { enabled: true, items: ['p1', 'p2', 'p3', 'p4', 'p5'] },
+    paintRenew: { enabled: true, items: ['rp1', 'rp2', 'rp3', 'rp4', 'rp5'] },
+    gypsumBoardPaint: { enabled: true, items: ['gb1', 'gb2', 'gb3', 'gb4'] },
+    localGypsumPaint: { enabled: true, items: ['gp1', 'gp2', 'gp3', 'gp4'] },
+    gypsum: { enabled: true, items: ['g1', 'g2', 'g3', 'g4', 'g5'] },
+    plaster: { enabled: true, items: ['l1', 'l2', 'l3'] },
+    structure: { enabled: true, items: ['b1', 'b2', 'b3'] }
+  }, 
+  wet: { 
+    tiles: { enabled: true, items: ['t1', 't2', 't3', 't4', 't5', 't6', 't7'] },
+    marble: { enabled: true, items: ['m1', 'm2', 'm3', 'm4', 'm5'] },
+    paint: { enabled: true, items: ['p1', 'p2', 'p3', 'p4', 'p5'] },
+    paintRenew: { enabled: true, items: ['rp1', 'rp2', 'rp3', 'rp4', 'rp5'] },
+    gypsumBoardPaint: { enabled: true, items: ['gb1', 'gb2', 'gb3', 'gb4'] },
+    localGypsumPaint: { enabled: true, items: ['gp1', 'gp2', 'gp3', 'gp4'] },
+    gypsum: { enabled: true, items: ['g1', 'g2', 'g3', 'g4', 'g5'] },
+    plaster: { enabled: true, items: ['l1', 'l2', 'l3'] },
+    structure: { enabled: true, items: ['b1', 'b2', 'b3'] }
+  }, 
+  outdoor: { 
+    tiles: { enabled: true, items: ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9'] },
+    marble: { enabled: true, items: ['m1', 'm2', 'm3', 'm4', 'm5'] },
+    paint: { enabled: true, items: ['p6', 'p7', 'p8', 'p9', 'p10', 'p11', 'p12'] },
+    paintRenew: { enabled: true, items: ['rp1', 'rp2', 'rp3', 'rp4', 'rp5'] },
+    gypsumBoardPaint: { enabled: false, items: [] },
+    localGypsumPaint: { enabled: false, items: [] },
+    gypsum: { enabled: false, items: [] },
+    plaster: { enabled: true, items: ['l1', 'l2', 'l3'] },
+    structure: { enabled: true, items: ['b1', 'b2', 'b3'] }
+  } 
+};
 
 const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
   const t = theme;
@@ -10,137 +124,49 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
   const [placeMode, setPlaceMode] = useState('single');
   const [multiPlaces, setMultiPlaces] = useState([]);
 
-  const [workItems, setWorkItems] = useState({
-    // 1. البلاط (9 بنود)
-    tiles: { name: 'البلاط', icon: '🔲', items: [
-      { id: 't1', name: 'إزالة بلاط (كمية متوسطة)', desc: 'إزالة البلاط القديم بدون حاوية', exec: 13, cont: 10, type: 'floor' },
-      { id: 't2', name: 'إزالة بلاط (كمية كبيرة)', desc: 'إزالة البلاط القديم بدون حاوية', exec: 20, cont: 15, type: 'floor' },
-      { id: 't3', name: 'صبة ميزانية (شامل المواد)', desc: 'صبة أرضية بدون سباكة أو كهرباء - شامل المواد', exec: 47, cont: 35, type: 'floor' },
-      { id: 't4', name: 'صبة ميزانية (بدون مواد)', desc: 'صبة أرضية بدون سباكة أو كهرباء - بدون مواد', exec: 20, cont: 15, type: 'floor' },
-      { id: 't5', name: 'تركيب بلاط (أكبر من 120مم)', desc: 'تركيب بالغراء أو الخلطة الأسمنتية - بدون مواد', exec: 33, cont: 25, type: 'floor' },
-      { id: 't6', name: 'تركيب بلاط (أصغر من 120مم)', desc: 'تركيب بالغراء أو الخلطة الأسمنتية - بدون مواد', exec: 25, cont: 19, type: 'floor' },
-      { id: 't7', name: 'تركيب نعلات', desc: 'نعلات داخلية أو خارجية بورسلان أو سيراميك - بدون مواد', exec: 13, cont: 10, type: 'wall' },
-      { id: 't8', name: 'تركيب بلدورات الرصيف', desc: 'بدون أعمال الري أو السباكة أو الكهرباء - بدون مواد', exec: 33, cont: 25, type: 'floor' },
-      { id: 't9', name: 'تركيب بلاط الرصيف', desc: 'بدون أعمال الري أو السباكة أو الكهرباء - بدون مواد', exec: 33, cont: 25, type: 'floor' }
-    ]},
-    // 2. الرخام (5 بنود)
-    marble: { name: 'الرخام', icon: '🪨', items: [
-      { id: 'm1', name: 'تركيب نعلات درج', desc: 'رخام نعلات الدرج - بدون مواد', exec: 13, cont: 10, type: 'wall' },
-      { id: 'm2', name: 'تركيب بسطات درج', desc: 'رخام بسطات الدرج', exec: 33, cont: 25, type: 'floor' },
-      { id: 'm3', name: 'تركيب رخام (مقاسات كبيرة)', desc: 'تركيب رخام مقاسات كبيرة - بدون مواد', exec: 100, cont: 75, type: 'floor' },
-      { id: 'm4', name: 'تركيب رخام (مقاسات صغيرة)', desc: 'تركيب رخام مقاسات صغيرة - بدون مواد', exec: 60, cont: 45, type: 'floor' },
-      { id: 'm5', name: 'تركيب رخام درج', desc: 'تركيب رخام الدرج - بدون مواد', exec: 67, cont: 50, type: 'floor' }
-    ]},
-    // 3. الدهانات (12 بند)
-    paint: { name: 'الدهانات', icon: '🎨', items: [
-      { id: 'p1', name: 'دهان داخلي (جوتن)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 21, cont: 16, type: 'wall' },
-      { id: 'p2', name: 'دهان داخلي (الجزيرة)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 20, cont: 15, type: 'wall' },
-      { id: 'p3', name: 'دهان داخلي (عسيب)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 19, cont: 14, type: 'wall' },
-      { id: 'p4', name: 'دهان داخلي (بدون مواد)', desc: 'بدون مواد - طبقتين معجون + طبقتين دهان', exec: 12, cont: 9, type: 'wall' },
-      { id: 'p5', name: 'زيادة طبقة معجون ثالثة', desc: 'طبقة إضافية - بدون مواد', exec: 3, cont: 2, type: 'wall' },
-      { id: 'p6', name: 'دهان خارجي رشة (مع مواد)', desc: 'رشة من جميع الشركات - مع المواد', exec: 19, cont: 14, type: 'wall' },
-      { id: 'p7', name: 'دهان خارجي بروفايل (جوتن)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 33, cont: 25, type: 'wall' },
-      { id: 'p8', name: 'دهان خارجي بروفايل (الجزيرة)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 33, cont: 25, type: 'wall' },
-      { id: 'p9', name: 'دهان خارجي بروفايل (عسيب)', desc: 'مع المواد - طبقتين معجون + طبقتين دهان', exec: 29, cont: 22, type: 'wall' },
-      { id: 'p10', name: 'دهان خارجي (بدون مواد)', desc: 'دهان فقط - بدون مواد', exec: 11, cont: 8, type: 'wall' },
-      { id: 'p11', name: 'دهان خارجي رشة (بدون مواد)', desc: 'رشة - بدون مواد', exec: 8, cont: 6, type: 'wall' },
-      { id: 'p12', name: 'دهان خارجي بروفايل (بدون مواد)', desc: 'بروفايل - بدون مواد', exec: 7, cont: 5, type: 'wall' }
-    ]},
-    // 4. تجديد الدهانات (5 بنود)
-    paintRenew: { name: 'تجديد الدهانات', icon: '🔄', items: [
-      { id: 'rp1', name: 'إزالة الدهانات', desc: 'إزالة الدهانات الداخلية والخارجية', exec: 5, cont: 4, type: 'wall' },
-      { id: 'rp2', name: 'تجديد دهان (جوتن)', desc: 'تجديد داخلي أو خارجي - مع المواد', exec: 16, cont: 12, type: 'wall' },
-      { id: 'rp3', name: 'تجديد دهان (الجزيرة)', desc: 'تجديد داخلي أو خارجي - مع المواد', exec: 15, cont: 11, type: 'wall' },
-      { id: 'rp4', name: 'تجديد دهان (عسيب)', desc: 'تجديد داخلي أو خارجي - مع المواد', exec: 13, cont: 10, type: 'wall' },
-      { id: 'rp5', name: 'تجديد دهان (بدون مواد)', desc: 'دهان فقط - بدون مواد', exec: 7, cont: 5, type: 'wall' }
-    ]},
-    // 5. دهانات الجبسمبورد (4 بنود)
-    gypsumBoardPaint: { name: 'دهانات الجبسمبورد', icon: '✨', items: [
-      { id: 'gb1', name: 'دهان جبسمبورد (جوتن)', desc: 'مع المواد من شركة جوتن', exec: 21, cont: 16, type: 'ceiling' },
-      { id: 'gb2', name: 'دهان جبسمبورد (الجزيرة)', desc: 'مع المواد من شركة الجزيرة', exec: 20, cont: 15, type: 'ceiling' },
-      { id: 'gb3', name: 'دهان جبسمبورد (عسيب)', desc: 'مع المواد من شركة عسيب', exec: 19, cont: 14, type: 'ceiling' },
-      { id: 'gb4', name: 'دهان جبسمبورد (بدون مواد)', desc: 'بدون مواد', exec: 16, cont: 12, type: 'ceiling' }
-    ]},
-    // 6. دهانات الجبس البلدي (4 بنود)
-    localGypsumPaint: { name: 'دهانات الجبس البلدي', icon: '🏺', items: [
-      { id: 'gp1', name: 'دهان جبس بلدي (جوتن)', desc: 'مع المواد من شركة جوتن', exec: 17, cont: 13, type: 'ceiling' },
-      { id: 'gp2', name: 'دهان جبس بلدي (الجزيرة)', desc: 'مع المواد من شركة الجزيرة', exec: 17, cont: 13, type: 'ceiling' },
-      { id: 'gp3', name: 'دهان جبس بلدي (عسيب)', desc: 'مع المواد من شركة عسيب', exec: 15, cont: 11, type: 'ceiling' },
-      { id: 'gp4', name: 'دهان جبس بلدي (بدون مواد)', desc: 'بدون مواد', exec: 9, cont: 7, type: 'ceiling' }
-    ]},
-    // 7. الجبس (5 بنود)
-    gypsum: { name: 'الجبس', icon: '🏗️', items: [
-      { id: 'g1', name: 'تركيب جبسمبورد', desc: 'تركيب ألواح جبسمبورد', exec: 60, cont: 45, type: 'ceiling' },
-      { id: 'g2', name: 'تركيب واجهات جبسمبورد', desc: 'تركيب واجهات وديكورات جبسمبورد', exec: 120, cont: 90, type: 'wall' },
-      { id: 'g3', name: 'تركيب جبس بلدي', desc: 'تركيب جبس بلدي للأسقف', exec: 53, cont: 40, type: 'ceiling' },
-      { id: 'g4', name: 'تركيب واجهات جبس بلدي', desc: 'تركيب واجهات وديكورات جبس بلدي', exec: 120, cont: 90, type: 'wall' },
-      { id: 'g5', name: 'إزالة الجبس القديم', desc: 'إزالة الجبس القديم - بدون حاوية', exec: 5, cont: 4, type: 'ceiling' }
-    ]},
-    // 8. اللياسة (3 بنود)
-    plaster: { name: 'اللياسة', icon: '🧱', items: [
-      { id: 'l1', name: 'لياسة قدة وزاوية', desc: 'مع تجهيز السطح وإزالة الأجزاء التالفة - سماكة لا تزيد عن 2 سم - بدون مواد', exec: 13, cont: 10, type: 'wall' },
-      { id: 'l2', name: 'لياسة ودع وقدة زاوية', desc: 'مع تجهيز السطح وإزالة الأجزاء التالفة - سماكة لا تزيد عن 2 سم - بدون مواد', exec: 20, cont: 15, type: 'wall' },
-      { id: 'l3', name: 'مواد اللياسة', desc: 'مواد اللياسة فقط - بدون عمالة', exec: 19, cont: 14, type: 'wall' }
-    ]},
-    // 9. العظم (3 بنود)
-    structure: { name: 'العظم', icon: '🏛️', items: [
-      { id: 'b1', name: 'أعمال عظم (بالمواد)', desc: 'أعمال العظم الإنشائية شاملة المواد', exec: 998, cont: 750, type: 'floor' },
-      { id: 'b2', name: 'أعمال عظم (بدون مواد)', desc: 'أعمال العظم الإنشائية بدون مواد', exec: 665, cont: 500, type: 'floor' },
-      { id: 'b3', name: 'إنشاءات متفرقة', desc: 'أعمال إنشائية متفرقة', exec: 333, cont: 250, type: 'floor' }
-    ]}
+  // تحميل البيانات من localStorage
+  const [workItems, setWorkItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('calc_workItems');
+      return saved ? JSON.parse(saved) : defaultWorkItems;
+    } catch { return defaultWorkItems; }
   });
 
-  const [places, setPlaces] = useState({ 
-    dry: { name: 'جاف', icon: '🏠', enabled: true, places: ['صالة', 'مجلس', 'غرفة نوم', 'ممر'] }, 
-    wet: { name: 'رطب', icon: '🚿', enabled: true, places: ['مطبخ', 'دورة مياه', 'غسيل'] }, 
-    outdoor: { name: 'خارجي', icon: '🌳', enabled: true, places: ['حوش', 'سطح', 'موقف'] } 
+  const [places, setPlaces] = useState(() => {
+    try {
+      const saved = localStorage.getItem('calc_places');
+      return saved ? JSON.parse(saved) : defaultPlaces;
+    } catch { return defaultPlaces; }
   });
   
-  // البرمجة: أي قسم وأي بند يظهر في أي نوع مكان
-  const [programming, setProgramming] = useState({ 
-    dry: { 
-      tiles: { enabled: true, items: ['t1', 't2', 't3', 't4', 't5', 't6', 't7'] },
-      marble: { enabled: true, items: ['m1', 'm2', 'm3', 'm4', 'm5'] },
-      paint: { enabled: true, items: ['p1', 'p2', 'p3', 'p4', 'p5'] },
-      paintRenew: { enabled: true, items: ['rp1', 'rp2', 'rp3', 'rp4', 'rp5'] },
-      gypsumBoardPaint: { enabled: true, items: ['gb1', 'gb2', 'gb3', 'gb4'] },
-      localGypsumPaint: { enabled: true, items: ['gp1', 'gp2', 'gp3', 'gp4'] },
-      gypsum: { enabled: true, items: ['g1', 'g2', 'g3', 'g4', 'g5'] },
-      plaster: { enabled: true, items: ['l1', 'l2', 'l3'] },
-      structure: { enabled: true, items: ['b1', 'b2', 'b3'] }
-    }, 
-    wet: { 
-      tiles: { enabled: true, items: ['t1', 't2', 't3', 't4', 't5', 't6', 't7'] },
-      marble: { enabled: true, items: ['m1', 'm2', 'm3', 'm4', 'm5'] },
-      paint: { enabled: true, items: ['p1', 'p2', 'p3', 'p4', 'p5'] },
-      paintRenew: { enabled: true, items: ['rp1', 'rp2', 'rp3', 'rp4', 'rp5'] },
-      gypsumBoardPaint: { enabled: true, items: ['gb1', 'gb2', 'gb3', 'gb4'] },
-      localGypsumPaint: { enabled: true, items: ['gp1', 'gp2', 'gp3', 'gp4'] },
-      gypsum: { enabled: true, items: ['g1', 'g2', 'g3', 'g4', 'g5'] },
-      plaster: { enabled: true, items: ['l1', 'l2', 'l3'] },
-      structure: { enabled: true, items: ['b1', 'b2', 'b3'] }
-    }, 
-    outdoor: { 
-      tiles: { enabled: true, items: ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9'] },
-      marble: { enabled: true, items: ['m1', 'm2', 'm3', 'm4', 'm5'] },
-      paint: { enabled: true, items: ['p6', 'p7', 'p8', 'p9', 'p10', 'p11', 'p12'] },
-      paintRenew: { enabled: true, items: ['rp1', 'rp2', 'rp3', 'rp4', 'rp5'] },
-      gypsumBoardPaint: { enabled: false, items: [] },
-      localGypsumPaint: { enabled: false, items: [] },
-      gypsum: { enabled: false, items: [] },
-      plaster: { enabled: true, items: ['l1', 'l2', 'l3'] },
-      structure: { enabled: true, items: ['b1', 'b2', 'b3'] }
-    } 
+  const [programming, setProgramming] = useState(() => {
+    try {
+      const saved = localStorage.getItem('calc_programming');
+      return saved ? JSON.parse(saved) : defaultProgramming;
+    } catch { return defaultProgramming; }
+  });
+  
+  const [addedItems, setAddedItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('calc_addedItems');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+  
+  const [categoryOptions, setCategoryOptions] = useState(() => {
+    try {
+      const saved = localStorage.getItem('calc_categoryOptions');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
   });
   
   const [programmingTab, setProgrammingTab] = useState('dry');
-  const [programmingSection, setProgrammingSection] = useState('places'); // places أو items
+  const [programmingSection, setProgrammingSection] = useState('places');
   const [editingPlaceType, setEditingPlaceType] = useState(null);
 
   const [selectedPlaceType, setSelectedPlaceType] = useState('');
   const [selectedPlace, setSelectedPlace] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
-  const [addedItems, setAddedItems] = useState({});
   const [length, setLength] = useState(4);
   const [width, setWidth] = useState(4);
   const [height, setHeight] = useState(4);
@@ -151,34 +177,77 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
 
   // States للملخص العام
   const [summaryExpanded, setSummaryExpanded] = useState({});
-  const [categoryOptions, setCategoryOptions] = useState({});
   const [copiedCategoryId, setCopiedCategoryId] = useState(null);
+
+  // حفظ البيانات في localStorage
+  useEffect(() => {
+    localStorage.setItem('calc_workItems', JSON.stringify(workItems));
+  }, [workItems]);
+
+  useEffect(() => {
+    localStorage.setItem('calc_places', JSON.stringify(places));
+  }, [places]);
+
+  useEffect(() => {
+    localStorage.setItem('calc_programming', JSON.stringify(programming));
+  }, [programming]);
+
+  useEffect(() => {
+    localStorage.setItem('calc_addedItems', JSON.stringify(addedItems));
+  }, [addedItems]);
+
+  useEffect(() => {
+    localStorage.setItem('calc_categoryOptions', JSON.stringify(categoryOptions));
+  }, [categoryOptions]);
 
   // Toggle فئة في الملخص العام
   const toggleSummaryCategory = (catKey) => {
     setSummaryExpanded(prev => ({ ...prev, [catKey]: !prev[catKey] }));
   };
 
-  // Toggle خيار في الملخص العام
+  // Toggle خيار في الملخص العام (يبدأ بـ null)
   const toggleCategoryOption = (catKey, option) => {
-    setCategoryOptions(prev => ({
-      ...prev,
-      [catKey]: { 
-        ...prev[catKey], 
-        [option]: !(prev[catKey]?.[option] ?? (option === 'withMaterials')) 
+    setCategoryOptions(prev => {
+      const currentValue = prev[catKey]?.[option];
+      let newValue;
+      if (currentValue === null || currentValue === undefined) {
+        newValue = true;
+      } else if (currentValue === true) {
+        newValue = false;
+      } else {
+        newValue = true;
       }
-    }));
+      return {
+        ...prev,
+        [catKey]: { 
+          ...prev[catKey], 
+          [option]: newValue 
+        }
+      };
+    });
   };
 
-  // الحصول على خيارات الفئة
+  // الحصول على خيارات الفئة (تبدأ بـ null)
   const getCategoryOptions = (catKey) => {
     return {
-      withContainer: categoryOptions[catKey]?.withContainer ?? false,
-      withMaterials: categoryOptions[catKey]?.withMaterials ?? true
+      withContainer: categoryOptions[catKey]?.withContainer ?? null,
+      withMaterials: categoryOptions[catKey]?.withMaterials ?? null
     };
   };
 
-  // إنشاء ملخص الخدمة النصي الكامل
+  // التحقق من اكتمال الخيارات
+  const isOptionsComplete = (catKey) => {
+    const options = getCategoryOptions(catKey);
+    return options.withContainer !== null && options.withMaterials !== null;
+  };
+
+  // التحقق من وجود بنود مختارة من فئة معينة
+  const hasSelectedItemsFromCategory = (catKey) => {
+    const catItems = workItems[catKey]?.items || [];
+    return selectedItems.some(id => catItems.some(item => item.id === id));
+  };
+
+  // إنشاء ملخص الخدمة النصي الكامل مع العبارات الجديدة
   const getFullServiceSummary = (catKey, catData) => {
     const options = getCategoryOptions(catKey);
     const itemsWithQty = catData.items.map(item => 
@@ -194,11 +263,27 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
     }
     summary += '.';
     
-    const optionsParts = [];
-    optionsParts.push(options.withContainer ? 'مع حاوية نقل' : 'بدون حاوية');
-    optionsParts.push(options.withMaterials ? 'شامل المواد' : 'بدون مواد (مصنعية فقط)');
+    // تنسيق العبارات حسب الخيارات
+    const withMaterials = options.withMaterials;
+    const withContainer = options.withContainer;
     
-    summary += ' ' + optionsParts.join('، ') + '.';
+    if (withMaterials === false && withContainer === false) {
+      summary += ' لاتشمل الأسعار تكلفة المواد أو الحاوية.';
+    } else if (withMaterials === true && withContainer === true) {
+      summary += ' تشمل الأسعار تكلفة المواد والحاوية.';
+    } else if (withMaterials === true && withContainer === false) {
+      summary += ' تشمل الأسعار تكلفة المواد، ولاتشمل تكلفة الحاوية.';
+    } else if (withMaterials === false && withContainer === true) {
+      summary += ' تشمل الأسعار تكلفة الحاوية، ولاتشمل تكلفة المواد.';
+    } else if (withMaterials === null && withContainer === null) {
+      summary += ' (يرجى تحديد خيارات المواد والحاوية)';
+    } else if (withMaterials === null) {
+      summary += withContainer ? ' تشمل الأسعار تكلفة الحاوية.' : ' لاتشمل الأسعار تكلفة الحاوية.';
+      summary += ' (يرجى تحديد خيار المواد)';
+    } else if (withContainer === null) {
+      summary += withMaterials ? ' تشمل الأسعار تكلفة المواد.' : ' لاتشمل الأسعار تكلفة المواد.';
+      summary += ' (يرجى تحديد خيار الحاوية)';
+    }
     
     return summary;
   };
@@ -764,12 +849,14 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                         {Object.entries(workItems).filter(([ck]) => isCategoryEnabledInPlace(selectedPlaceType, ck)).map(([key, cat], idx) => {
                           const color = getCategoryColor(idx);
                           const isSelected = selectedCategory === key;
+                          const hasItems = hasSelectedItemsFromCategory(key);
+                          const isHighlighted = isSelected || hasItems;
                           const enabledItemsCount = cat.items.filter(i => isItemEnabledInPlace(selectedPlaceType, key, i.id)).length;
                           return (
                             <div key={key} onClick={() => toggleCategory(key)}
-                              style={{ padding: '14px 10px', borderRadius: 10, border: isSelected ? `2px solid ${color.main}` : `1px solid ${t?.border?.primary}`, background: isSelected ? `${color.main}15` : t?.bg?.secondary, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
+                              style={{ padding: '14px 10px', borderRadius: 10, border: isHighlighted ? `2px solid ${color.main}` : `1px solid ${t?.border?.primary}`, background: isHighlighted ? `${color.main}15` : t?.bg?.secondary, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
                               <div style={{ fontSize: 26, marginBottom: 6 }}>{cat.icon}</div>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? color.main : t?.text?.primary }}>{cat.name}</div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: isHighlighted ? color.main : t?.text?.primary }}>{cat.name}</div>
                               <div style={{ fontSize: 11, color: t?.text?.muted, marginTop: 4 }}>{enabledItemsCount} بند</div>
                             </div>
                           );
@@ -780,24 +867,41 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                     {/* تفاصيل البند */}
                     {selectedCategory && workItems[selectedCategory] && (
                       <>
-                        <div style={{ fontSize: 14, marginBottom: 12, fontWeight: 600, color: t?.text?.secondary }}>📋 تفاصيل {workItems[selectedCategory].name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: t?.text?.secondary }}>📋 تفاصيل {workItems[selectedCategory].name}</div>
+                          <button 
+                            onClick={() => setEditingCategory({ catKey: selectedCategory, name: workItems[selectedCategory].name, icon: workItems[selectedCategory].icon })}
+                            style={{ padding: '6px 12px', borderRadius: 8, border: 'none', background: `${t?.button?.primary}15`, color: t?.button?.primary, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}
+                          >
+                            <Edit3 size={14} />
+                            تحرير القسم
+                          </button>
+                        </div>
                         <div style={{ background: t?.bg?.tertiary, borderRadius: 10, border: `1px solid ${t?.border?.primary}`, padding: 12, marginBottom: 16 }}>
                           <div className="work-items-scroll" style={{ display: 'grid', gap: 8, maxHeight: 220, overflowY: 'auto', paddingLeft: 8 }}>
                             {workItems[selectedCategory].items.filter(i => isItemEnabledInPlace(selectedPlaceType, selectedCategory, i.id)).map(item => {
                               const isSelected = selectedItems.includes(item.id);
                               return (
-                                <div key={item.id} onClick={() => toggleItem(item.id)} 
-                                  style={{ padding: '12px 14px', borderRadius: 10, border: isSelected ? `2px solid ${t?.button?.primary}` : `1px solid ${t?.border?.primary}`, background: isSelected ? `${t?.button?.primary}15` : t?.bg?.secondary, cursor: 'pointer' }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                      <span style={{ fontSize: 14, fontWeight: 600, color: t?.text?.primary }}>{item.name}</span>
-                                      <span style={{ fontSize: 10, color: item.type === 'wall' ? t?.status?.info?.text : item.type === 'ceiling' ? t?.status?.warning?.text : t?.status?.success?.text, background: item.type === 'wall' ? t?.status?.info?.bg : item.type === 'ceiling' ? t?.status?.warning?.bg : t?.status?.success?.bg, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
-                                        {item.type === 'wall' ? 'جدران' : item.type === 'ceiling' ? 'أسقف' : 'أرضية'}
-                                      </span>
+                                <div key={item.id} style={{ padding: '12px 14px', borderRadius: 10, border: isSelected ? `2px solid ${t?.button?.primary}` : `1px solid ${t?.border?.primary}`, background: isSelected ? `${t?.button?.primary}15` : t?.bg?.secondary, display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => toggleItem(item.id)}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <span style={{ fontSize: 14, fontWeight: 600, color: t?.text?.primary }}>{item.name}</span>
+                                        <span style={{ fontSize: 10, color: item.type === 'wall' ? t?.status?.info?.text : item.type === 'ceiling' ? t?.status?.warning?.text : t?.status?.success?.text, background: item.type === 'wall' ? t?.status?.info?.bg : item.type === 'ceiling' ? t?.status?.warning?.bg : t?.status?.success?.bg, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
+                                          {item.type === 'wall' ? 'جدران' : item.type === 'ceiling' ? 'أسقف' : 'أرضية'}
+                                        </span>
+                                      </div>
+                                      <span style={{ fontSize: 13, color: t?.status?.success?.text, fontWeight: 600 }}>{formatNum(item.exec)} ر.س</span>
                                     </div>
-                                    <span style={{ fontSize: 13, color: t?.status?.success?.text, fontWeight: 600 }}>{formatNum(item.exec)} ر.س</span>
+                                    <div style={{ fontSize: 11, color: t?.text?.muted }}>{item.desc}</div>
                                   </div>
-                                  <div style={{ fontSize: 11, color: t?.text?.muted }}>{item.desc}</div>
+                                  {/* زر التحرير */}
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); setEditingItem({ catKey: selectedCategory, item: { ...item } }); }}
+                                    style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: `${t?.button?.primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                                  >
+                                    <Edit3 size={16} color={t?.button?.primary} />
+                                  </button>
                                 </div>
                               );
                             })}
@@ -827,37 +931,51 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                       <span style={{ fontWeight: 600, color: t?.text?.primary }}>{cat.name}</span>
                       <span style={{ marginRight: 'auto', fontWeight: 700, color: color.main }}>{formatNum(cat.total)} ر.س</span>
                     </div>
-                    {cat.items.map(item => (
-                      <div key={item.key} style={{ background: t?.bg?.tertiary, borderRadius: 10, padding: 14, marginBottom: 10, border: `1px solid ${t?.border?.primary}` }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-                          <div>
-                            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4, color: t?.text?.primary }}>{item.name}</div>
-                            <div style={{ fontSize: 12, color: t?.text?.muted }}>{item.desc}</div>
+                    {cat.items.map(item => {
+                      // البحث عن البند الأصلي للتحرير
+                      const originalItem = workItems[catKey]?.items.find(i => i.id === item.id);
+                      return (
+                        <div key={item.key} style={{ background: t?.bg?.tertiary, borderRadius: 10, padding: 14, marginBottom: 10, border: `1px solid ${t?.border?.primary}` }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+                            <div>
+                              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4, color: t?.text?.primary }}>{item.name}</div>
+                              <div style={{ fontSize: 12, color: t?.text?.muted }}>{item.desc}</div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              {originalItem && (
+                                <button 
+                                  onClick={() => setEditingItem({ catKey, item: { ...originalItem } })}
+                                  style={{ background: `${t?.button?.primary}15`, border: 'none', color: t?.button?.primary, padding: '6px', borderRadius: 6, cursor: 'pointer' }}
+                                >
+                                  <Edit3 size={14} />
+                                </button>
+                              )}
+                              <button onClick={() => removeAddedItem(item.key)} style={{ background: t?.status?.danger?.bg, border: 'none', color: t?.status?.danger?.text, padding: '6px', borderRadius: 6, cursor: 'pointer' }}><Trash2 size={14} /></button>
+                            </div>
                           </div>
-                          <button onClick={() => removeAddedItem(item.key)} style={{ background: t?.status?.danger?.bg, border: 'none', color: t?.status?.danger?.text, padding: '6px', borderRadius: 6, cursor: 'pointer' }}><Trash2 size={14} /></button>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-                          <MapPin size={14} color={t?.button?.primary} />
-                          <span style={{ fontSize: 13, color: t?.button?.primary, fontWeight: 600 }}>{item.place}</span>
-                          {item.isMulti && <span style={{ fontSize: 11, background: t?.status?.success?.bg, color: t?.status?.success?.text, padding: '2px 8px', borderRadius: 6 }}>{item.placesCount} أماكن</span>}
-                        </div>
-                        <div style={{ background: t?.bg?.secondary, borderRadius: 8, padding: 10, marginBottom: 10 }}>
-                          <div style={{ fontSize: 11, color: t?.text?.muted, marginBottom: 4 }}>📐 المعادلة:</div>
-                          <div style={{ fontSize: 12, color: t?.status?.info?.text, fontFamily: 'monospace' }}>{item.formula}</div>
-                          {item.isMulti && <div style={{ fontSize: 12, color: t?.status?.success?.text, fontWeight: 600, marginTop: 6 }}>{item.totalFormula}</div>}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <input type="number" value={item.area} onFocus={handleInputFocus} onChange={(e) => updateAddedItemArea(item.key, e.target.value)} style={{ width: 70, padding: '6px 8px', borderRadius: 6, border: `1px solid ${t?.border?.primary}`, background: t?.bg?.secondary, color: t?.text?.primary, fontSize: 14, textAlign: 'center', fontFamily: 'inherit', ...noSpinner }} />
-                            <span style={{ fontSize: 12, color: t?.text?.muted }}>م²</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+                            <MapPin size={14} color={t?.button?.primary} />
+                            <span style={{ fontSize: 13, color: t?.button?.primary, fontWeight: 600 }}>{item.place}</span>
+                            {item.isMulti && <span style={{ fontSize: 11, background: t?.status?.success?.bg, color: t?.status?.success?.text, padding: '2px 8px', borderRadius: 6 }}>{item.placesCount} أماكن</span>}
                           </div>
-                          <span style={{ fontSize: 14, color: t?.text?.muted }}>×</span>
-                          <span style={{ fontSize: 14, color: t?.status?.warning?.text }}>{formatNum(item.exec)} ر.س</span>
-                          <span style={{ fontSize: 14, color: t?.text?.muted }}>=</span>
-                          <span style={{ fontSize: 16, fontWeight: 700, color: color.main }}>{formatNum(item.total)} ر.س</span>
+                          <div style={{ background: t?.bg?.secondary, borderRadius: 8, padding: 10, marginBottom: 10 }}>
+                            <div style={{ fontSize: 11, color: t?.text?.muted, marginBottom: 4 }}>📐 المعادلة:</div>
+                            <div style={{ fontSize: 12, color: t?.status?.info?.text, fontFamily: 'monospace' }}>{item.formula}</div>
+                            {item.isMulti && <div style={{ fontSize: 12, color: t?.status?.success?.text, fontWeight: 600, marginTop: 6 }}>{item.totalFormula}</div>}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <input type="number" value={item.area} onFocus={handleInputFocus} onChange={(e) => updateAddedItemArea(item.key, e.target.value)} style={{ width: 70, padding: '6px 8px', borderRadius: 6, border: `1px solid ${t?.border?.primary}`, background: t?.bg?.secondary, color: t?.text?.primary, fontSize: 14, textAlign: 'center', fontFamily: 'inherit', ...noSpinner }} />
+                              <span style={{ fontSize: 12, color: t?.text?.muted }}>م²</span>
+                            </div>
+                            <span style={{ fontSize: 14, color: t?.text?.muted }}>×</span>
+                            <span style={{ fontSize: 14, color: t?.status?.warning?.text }}>{formatNum(item.exec)} ر.س</span>
+                            <span style={{ fontSize: 14, color: t?.text?.muted }}>=</span>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: color.main }}>{formatNum(item.total)} ر.س</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })}
@@ -959,49 +1077,61 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                           </div>
                         </div>
 
-                        {/* أزرار الخيارات */}
+                        {/* أزرار الخيارات مع علامة إجبارية */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); toggleCategoryOption(catKey, 'withContainer'); }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              padding: '5px 8px',
-                              borderRadius: 6,
-                              border: `1px solid ${options.withContainer ? '#f59e0b' : t?.border?.primary}`,
-                              background: options.withContainer ? '#f59e0b15' : 'transparent',
-                              color: options.withContainer ? '#f59e0b' : t?.text?.muted,
-                              cursor: 'pointer',
-                              fontSize: 10,
-                              fontWeight: 600,
-                              fontFamily: 'inherit'
-                            }}
-                          >
-                            <Truck size={12} />
-                            {options.withContainer ? 'حاوية' : 'بدون'}
-                          </button>
+                          {/* زر الحاوية */}
+                          <div style={{ position: 'relative' }}>
+                            {options.withContainer === null && (
+                              <div style={{ position: 'absolute', top: -4, right: -4, width: 8, height: 8, borderRadius: '50%', background: '#ef4444', zIndex: 1 }} />
+                            )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleCategoryOption(catKey, 'withContainer'); }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '5px 8px',
+                                borderRadius: 6,
+                                border: `1px solid ${options.withContainer === true ? '#f59e0b' : options.withContainer === false ? t?.border?.primary : '#ef4444'}`,
+                                background: options.withContainer === true ? '#f59e0b15' : 'transparent',
+                                color: options.withContainer === true ? '#f59e0b' : options.withContainer === false ? t?.text?.muted : '#ef4444',
+                                cursor: 'pointer',
+                                fontSize: 10,
+                                fontWeight: 600,
+                                fontFamily: 'inherit'
+                              }}
+                            >
+                              <Truck size={12} />
+                              {options.withContainer === true ? 'حاوية' : options.withContainer === false ? 'بدون' : 'حاوية؟'}
+                            </button>
+                          </div>
                           
-                          <button
-                            onClick={(e) => { e.stopPropagation(); toggleCategoryOption(catKey, 'withMaterials'); }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              padding: '5px 8px',
-                              borderRadius: 6,
-                              border: `1px solid ${options.withMaterials ? '#10b981' : t?.border?.primary}`,
-                              background: options.withMaterials ? '#10b98115' : 'transparent',
-                              color: options.withMaterials ? '#10b981' : t?.text?.muted,
-                              cursor: 'pointer',
-                              fontSize: 10,
-                              fontWeight: 600,
-                              fontFamily: 'inherit'
-                            }}
-                          >
-                            <Box size={12} />
-                            {options.withMaterials ? 'مواد' : 'بدون'}
-                          </button>
+                          {/* زر المواد */}
+                          <div style={{ position: 'relative' }}>
+                            {options.withMaterials === null && (
+                              <div style={{ position: 'absolute', top: -4, right: -4, width: 8, height: 8, borderRadius: '50%', background: '#ef4444', zIndex: 1 }} />
+                            )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleCategoryOption(catKey, 'withMaterials'); }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '5px 8px',
+                                borderRadius: 6,
+                                border: `1px solid ${options.withMaterials === true ? '#10b981' : options.withMaterials === false ? t?.border?.primary : '#ef4444'}`,
+                                background: options.withMaterials === true ? '#10b98115' : 'transparent',
+                                color: options.withMaterials === true ? '#10b981' : options.withMaterials === false ? t?.text?.muted : '#ef4444',
+                                cursor: 'pointer',
+                                fontSize: 10,
+                                fontWeight: 600,
+                                fontFamily: 'inherit'
+                              }}
+                            >
+                              <Box size={12} />
+                              {options.withMaterials === true ? 'مواد' : options.withMaterials === false ? 'بدون' : 'مواد؟'}
+                            </button>
+                          </div>
                         </div>
 
                         {/* السعر وزر التوسيع */}
@@ -1030,6 +1160,25 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                       {isExpanded && (
                         <div style={{ padding: '12px 14px 14px' }}>
                           
+                          {/* تحذير عدم اكتمال الخيارات */}
+                          {!isOptionsComplete(catKey) && (
+                            <div style={{
+                              background: t?.status?.danger?.bg,
+                              border: `1px solid ${t?.status?.danger?.text}40`,
+                              borderRadius: 8,
+                              padding: 12,
+                              marginBottom: 14,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8
+                            }}>
+                              <AlertCircle size={16} color={t?.status?.danger?.text} />
+                              <span style={{ fontSize: 12, color: t?.status?.danger?.text, fontWeight: 600 }}>
+                                يرجى تحديد خيارات المواد والحاوية لإكمال الملخص
+                              </span>
+                            </div>
+                          )}
+
                           {/* ملخص الخدمة */}
                           <div style={{
                             background: `${color.main}08`,
@@ -1046,17 +1195,34 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                                 <div style={{ 
                                   fontSize: 12, 
                                   color: t?.text?.primary, 
-                                  lineHeight: 1.7, 
+                                  lineHeight: 1.8, 
                                   background: t?.bg?.secondary, 
                                   padding: 10, 
                                   borderRadius: 6, 
                                   border: `1px solid ${t?.border?.primary}` 
                                 }}>
-                                  {getFullServiceSummary(catKey, catData)}
+                                  {(() => {
+                                    const summary = getFullServiceSummary(catKey, catData);
+                                    const parts = summary.split('.');
+                                    return parts.map((part, idx) => {
+                                      if (!part.trim()) return null;
+                                      const isOptionsStatement = part.includes('تشمل الأسعار') || part.includes('لاتشمل الأسعار');
+                                      return (
+                                        <span key={idx}>
+                                          {isOptionsStatement ? (
+                                            <strong style={{ color: color.main }}>{part.trim()}.</strong>
+                                          ) : (
+                                            part.trim() + (idx < parts.length - 1 ? '. ' : '')
+                                          )}
+                                        </span>
+                                      );
+                                    });
+                                  })()}
                                 </div>
                               </div>
                               <button
                                 onClick={() => copyServiceSummary(catKey, catData)}
+                                disabled={!isOptionsComplete(catKey)}
                                 style={{
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1066,11 +1232,12 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                                   border: `1px solid ${color.main}40`,
                                   background: copiedCategoryId === catKey ? `${color.main}30` : `${color.main}15`,
                                   color: copiedCategoryId === catKey ? '#fff' : color.main,
-                                  cursor: 'pointer',
+                                  cursor: isOptionsComplete(catKey) ? 'pointer' : 'not-allowed',
                                   fontSize: 11,
                                   fontWeight: 600,
                                   fontFamily: 'inherit',
-                                  flexShrink: 0
+                                  flexShrink: 0,
+                                  opacity: isOptionsComplete(catKey) ? 1 : 0.5
                                 }}
                               >
                                 {copiedCategoryId === catKey ? <Check size={14} /> : <Copy size={14} />}
@@ -1223,23 +1390,23 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                               fontSize: 9, 
                               padding: '2px 6px', 
                               borderRadius: 3, 
-                              background: options.withContainer ? '#f59e0b20' : t?.bg?.secondary,
-                              color: options.withContainer ? '#f59e0b' : t?.text?.muted,
-                              border: `1px solid ${options.withContainer ? '#f59e0b40' : t?.border?.primary}`,
+                              background: options.withContainer === true ? '#f59e0b20' : options.withContainer === null ? '#ef444420' : t?.bg?.secondary,
+                              color: options.withContainer === true ? '#f59e0b' : options.withContainer === null ? '#ef4444' : t?.text?.muted,
+                              border: `1px solid ${options.withContainer === true ? '#f59e0b40' : options.withContainer === null ? '#ef444440' : t?.border?.primary}`,
                               fontWeight: 600
                             }}>
-                              {options.withContainer ? '🚛' : '—'}
+                              {options.withContainer === true ? '🚛' : options.withContainer === false ? '—' : '❓'}
                             </span>
                             <span style={{ 
                               fontSize: 9, 
                               padding: '2px 6px', 
                               borderRadius: 3, 
-                              background: options.withMaterials ? '#10b98120' : t?.bg?.secondary,
-                              color: options.withMaterials ? '#10b981' : t?.text?.muted,
-                              border: `1px solid ${options.withMaterials ? '#10b98140' : t?.border?.primary}`,
+                              background: options.withMaterials === true ? '#10b98120' : options.withMaterials === null ? '#ef444420' : t?.bg?.secondary,
+                              color: options.withMaterials === true ? '#10b981' : options.withMaterials === null ? '#ef4444' : t?.text?.muted,
+                              border: `1px solid ${options.withMaterials === true ? '#10b98140' : options.withMaterials === null ? '#ef444440' : t?.border?.primary}`,
                               fontWeight: 600
                             }}>
-                              {options.withMaterials ? '📦' : '—'}
+                              {options.withMaterials === true ? '📦' : options.withMaterials === false ? '—' : '❓'}
                             </span>
                             <span style={{ fontSize: 13, fontWeight: 700, color: color.main, minWidth: 70, textAlign: 'left' }}>{formatNum(catData.total)} ﷼</span>
                           </div>
