@@ -177,7 +177,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
 
   // حذف مشروع
   const deleteProject = (projectId) => {
-    if (confirm('هل تريد حذف هذا المشروع؟')) {
+    if (window.confirm('هل تريد حذف هذا المشروع؟')) {
       setProjects(prev => prev.filter(p => p.id !== projectId));
       if (currentProjectId === projectId) {
         setCurrentProjectId(null);
@@ -2494,7 +2494,7 @@ const QuantityCalculator = ({ theme, darkMode, onRefresh }) => {
                         </button>
                         <button 
                           onClick={() => {
-                            if (placeType.places.length > 1 && confirm(`حذف "${place}"؟`)) {
+                            if (placeType.places.length > 1 && window.confirm(`حذف "${place}"؟`)) {
                               setPlaces(prev => ({
                                 ...prev,
                                 [typeKey]: {
