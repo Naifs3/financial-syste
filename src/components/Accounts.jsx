@@ -1,13 +1,15 @@
 // src/components/Accounts.jsx
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { Wallet, Plus, Search, Edit, Trash2, AlertTriangle, X, CreditCard, Building2, Smartphone, Globe } from 'lucide-react';
 import { formatNumber, generateCode } from '../utils/helpers';
 
-// ═══════════════ Modal Component (خارج المكون الرئيسي) ═══════════════
+// ═══════════════ Modal Component with Portal ═══════════════
 const Modal = ({ show, onClose, title, children, onSubmit, submitText, danger, loading, theme }) => {
   const t = theme;
   if (!show) return null;
-  return (
+  
+  const modalContent = (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999999, padding: 20 }} onClick={onClose}>
       <div style={{ background: t.bg.secondary, borderRadius: 16, width: '100%', maxWidth: 500, border: `1px solid ${t.border.primary}`, maxHeight: '90vh', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }} onClick={e => e.stopPropagation()}>
         <div style={{ padding: '16px 20px', borderBottom: `1px solid ${t.border.primary}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: t.bg.tertiary }}>
@@ -22,6 +24,9 @@ const Modal = ({ show, onClose, title, children, onSubmit, submitText, danger, l
       </div>
     </div>
   );
+  
+  // استخدام Portal لعرض النافذة في body مباشرة
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 const Accounts = ({ accounts, onAdd, onEdit, onDelete, darkMode, theme }) => {
