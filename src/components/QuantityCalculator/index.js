@@ -1,2 +1,2 @@
 // QuantityCalculator - Main Export
-export { default } from './QuantityCalculator';
+export { default } from './Quantitycalculator';
