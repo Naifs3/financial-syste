@@ -1,5 +1,5 @@
 import { STORAGE_KEYS } from './ColorsAndConstants';
-import { defaultItemTypes, defaultPlaces, defaultWorkItems, defaultProgramming } from './States';
+import { defaultItemTypes, defaultPlaces, defaultWorkItems, defaultProgramming } from './states';
 
 export const saveItemTypes = (data) => {
   try { localStorage.setItem(STORAGE_KEYS.ITEM_TYPES, JSON.stringify(data)); return true; }
