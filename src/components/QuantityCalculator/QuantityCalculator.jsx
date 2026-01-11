@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { colors, placeTypeColors, getColor, formatNumber, debounce } from './ColorsAndConstants';
+import { colors, placeTypeColors, getColor, formatNumber, debounce } from './colorsandconstants';
 import { defaultItemTypes, defaultPlaces, defaultWorkItems, defaultProgramming } from './states';
-import { loadAllData, saveAllData } from './LocalStorage';
-import { useUndoRedo, restoreFromSnapshot } from './UndoRedo';
+import { loadAllData, saveAllData } from './localstorage';
+import { useUndoRedo, restoreFromSnapshot } from './undoredo';
 import TabBar from './tabs';
-import CalculatorSection from './CalculatorSection';
-import PlacesSection from './PlacesSection';
-import WorkItemsSection from './WorkItemsSection';
-import AreaTypesSection from './AreaTypesSection';
+import CalculatorSection from './calculatorsection';
+import PlacesSection from './placessection';
+import WorkItemsSection from './workitemssection';
+import AreaTypesSection from './areatypessection';
 
 const QuantityCalculator = () => {
   const [itemTypes, setItemTypes] = useState(defaultItemTypes);
