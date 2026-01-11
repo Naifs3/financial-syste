@@ -1,1 +1,1 @@
-export { default } from './QuantityCalculator';
+export { default } from './quantitycalculator';
