@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { colors, placeTypeColors, getColor, formatNumber, debounce } from './ColorsAndConstants';
-import { defaultItemTypes, defaultPlaces, defaultWorkItems, defaultProgramming } from './States';
+import { defaultItemTypes, defaultPlaces, defaultWorkItems, defaultProgramming } from './states';
 import { loadAllData, saveAllData } from './LocalStorage';
 import { useUndoRedo, restoreFromSnapshot } from './UndoRedo';
 import TabBar from './Tabs';
