@@ -1,13 +1,6 @@
-// ╔═══════════════════════════════════════════════════════════════════════════════════╗
-// ║                           التخزين المحلي - LocalStorage                           ║
-// ╚═══════════════════════════════════════════════════════════════════════════════════╝
-
 import { STORAGE_KEYS } from './ColorsAndConstants';
 import { defaultItemTypes, defaultPlaces, defaultWorkItems, defaultProgramming } from './States';
 
-// ═══════════════════════════════════════════════════════════════════════════════════
-// دوال الحفظ
-// ═══════════════════════════════════════════════════════════════════════════════════
 export const saveItemTypes = (data) => {
   try { localStorage.setItem(STORAGE_KEYS.ITEM_TYPES, JSON.stringify(data)); return true; }
   catch (e) { console.error('خطأ في حفظ أنواع المساحات:', e); return false; }
@@ -44,9 +37,6 @@ export const saveAllData = (data) => {
   } catch (e) { console.error('خطأ في حفظ البيانات:', e); return false; }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════════
-// دوال التحميل
-// ═══════════════════════════════════════════════════════════════════════════════════
 export const loadItemTypes = () => {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.ITEM_TYPES);
@@ -92,9 +82,6 @@ export const loadAllData = () => {
   };
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════════
-// دوال المسح
-// ═══════════════════════════════════════════════════════════════════════════════════
 export const clearAllData = () => {
   try {
     Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
