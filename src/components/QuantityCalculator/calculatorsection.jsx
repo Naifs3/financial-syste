@@ -164,4 +164,112 @@ const CalculatorSection = ({ colors, places, workItems, programming, itemTypes, 
               <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: colors.success, marginBottom: 4, textAlign: 'center' }}>المساحة</div><div style={{ height: 36, borderRadius: 8, border: `1px solid ${colors.success}`, background: `${colors.success}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 14, fontWeight: 700 }}>{dimensions.length * dimensions.width} م²</div></div>
             </div>
 
-            <button onClick={addPlaceToActiveCategories} disabled={!selectedPlace || !Object.values(activeMainItems).some(v => v)} style={{ width: '100%', height: 56, borderRadius: 10, border: `1px solid ${colors.success}`, background: `${colors.success}15`, color: colors.success, fontSize: 14, fontWeight: 700, cursor: (selectedPlace && Object.values(activeMainItems).some(v => v)) ? 'pointer' : 'not-allowed', opacity: (selectedPlace && Object.values(activeMainItems).some(v => v)) ? 1 : 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><span style={{ fontSize: 20, fontWeight: 900 }}>+</span>إ
+            <button onClick={addPlaceToActiveCategories} disabled={!selectedPlace || !Object.values(activeMainItems).some(v => v)} style={{ width: '100%', height: 56, borderRadius: 10, border: `1px solid ${colors.success}`, background: `${colors.success}15`, color: colors.success, fontSize: 14, fontWeight: 700, cursor: (selectedPlace && Object.values(activeMainItems).some(v => v)) ? 'pointer' : 'not-allowed', opacity: (selectedPlace && Object.values(activeMainItems).some(v => v)) ? 1 : 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><span style={{ fontSize: 20, fontWeight: 900 }}>+</span>إضافة مكان</button>
+          </div>
+        )}
+      </div>
+
+      {!hasCategories && (<div style={{ textAlign: 'center', padding: 40, color: colors.muted, fontSize: 14, background: colors.card, borderRadius: 16, border: `1px solid ${colors.border}`, marginBottom: 16 }}><div style={{ fontSize: 50, marginBottom: 16, opacity: 0.3 }}>📦</div><div style={{ fontWeight: 600, marginBottom: 8 }}>لا توجد فئات</div><div style={{ fontSize: 12 }}>اختر مكان ثم اضغط إضافة</div></div>)}
+
+      {(categories || []).filter(cat => cat.items?.length > 0 || cat.pendingPlaces?.length > 0).map((cat) => {
+        const isExpanded = expandedCategory === cat.id;
+        const catTotals = calculateCategoryTotals(cat);
+        const pendingPlaces = cat.pendingPlaces || [];
+
+        return (
+          <div key={cat.id} style={{ background: colors.card, borderRadius: 16, overflow: 'hidden', marginBottom: 12, border: isExpanded ? `2px solid ${cat.color}` : `1px solid ${colors.border}` }}>
+            <div onClick={() => { setExpandedCategory(isExpanded ? null : cat.id); setEditingItemId(null); }} style={{ display: 'flex', alignItems: 'stretch', cursor: 'pointer', background: isExpanded ? `${cat.color}08` : 'transparent' }}>
+              <div style={{ width: 4, background: cat.color }} />
+              <div style={{ padding: '16px 20px' }}><div style={{ width: 50, height: 50, borderRadius: 12, background: `${cat.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: cat.color }}>{cat.code}</div></div>
+              <div style={{ flex: 1, padding: '16px 18px' }}>
+                <div style={{ fontSize: 17, fontWeight: 700, color: colors.text, marginBottom: 6 }}>{cat.name}</div>
+                <div style={{ fontSize: 11, color: colors.muted }}>📦 {cat.items?.length || 0} بنود {pendingPlaces.length > 0 && <span style={{ color: colors.warning }}>• ⏳ {pendingPlaces.length} معلق</span>}</div>
+              </div>
+              <div style={{ background: `${colors.success}12`, padding: '16px 22px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRight: `1px solid ${colors.border}` }}><div style={{ fontSize: 9, color: colors.muted }}>الإجمالي</div><div style={{ fontSize: 20, fontWeight: 700, color: colors.success }}>{formatNumber(catTotals.finalTotal)}</div></div>
+              <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', background: colors.bg }}><span style={{ fontSize: 16, color: isExpanded ? cat.color : colors.muted, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }}>▼</span></div>
+            </div>
+
+            {isExpanded && (
+              <div style={{ padding: 16, background: `${cat.color}05`, borderTop: `1px dashed ${cat.color}40` }}>
+                {pendingPlaces.length > 0 && (
+                  <div style={{ marginBottom: 16, background: `${colors.warning}10`, borderRadius: 12, padding: 14, border: `1px solid ${colors.warning}30` }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: colors.warning, marginBottom: 10 }}>⚠️ أماكن معلقة ({pendingPlaces.length})</div>
+                    {pendingPlaces.map(place => (
+                      <div key={place.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, padding: 10, background: colors.card, borderRadius: 8 }}>
+                        <span style={{ fontSize: 12, color: colors.text }}>{place.name} ({place.area}م²)</span>
+                        <select defaultValue="" onChange={(e) => { if (e.target.value) selectPendingSubItem(cat.id, place.id, e.target.value); }} style={{ flex: 1, height: 34, borderRadius: 6, border: `1px solid ${cat.color}50`, background: colors.bg, color: colors.text, fontSize: 12, padding: '0 10px' }}>
+                          <option value="">-- اختر البند --</option>
+                          {(cat.subItems || []).map(s => (<option key={s.code} value={s.code}>{s.name} ({s.price}﷼)</option>))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {(cat.items || []).map(item => {
+                  const isEditing = editingItemId === item.id;
+                  const itemArea = getItemArea(item);
+                  return (
+                    <div key={item.id} style={{ background: colors.card, borderRadius: 12, overflow: 'hidden', marginBottom: 8, border: isEditing ? `2px solid ${colors.primary}` : `1px solid ${colors.border}` }}>
+                      <div onClick={() => setEditingItemId(isEditing ? null : item.id)} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '12px 14px', background: isEditing ? `${colors.primary}10` : 'transparent' }}>
+                        <div style={{ background: cat.color, padding: '8px 12px', borderRadius: 6, marginLeft: 12 }}><span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{item.code}</span></div>
+                        <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600, color: colors.text }}>{item.name}</div><div style={{ fontSize: 11, color: colors.muted }}>{itemArea} م² × {item.price}﷼</div></div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: colors.success }}>{formatNumber(itemArea * item.price)}﷼</div>
+                      </div>
+
+                      {isEditing && (
+                        <div style={{ padding: 14, background: `${colors.primary}08`, borderTop: `1px dashed ${colors.primary}30` }}>
+                          <select value={item.code} onChange={(e) => changeSubItem(cat.id, item.id, e.target.value)} style={{ width: '100%', height: 36, marginBottom: 12, borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 12, padding: '0 12px' }}>
+                            {(cat.subItems || []).map(s => (<option key={s.code} value={s.code}>[{s.code}] {s.name}</option>))}
+                          </select>
+
+                          {(item.places || []).map((place, pIdx) => (
+                            <div key={place.id} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, padding: 8, background: pIdx % 2 === 0 ? `${colors.primary}08` : 'transparent', borderRadius: 8, flexWrap: 'wrap' }}>
+                              <select value={place.name} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'name', e.target.value)} style={{ width: 100, height: 32, borderRadius: 6, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 12 }}>
+                                {placesList.map(p => (<option key={p} value={p}>{p}</option>))}
+                              </select>
+                              {['length', 'width'].map(dim => (
+                                <select key={dim} value={place[dim]} onChange={(e) => updatePlace(cat.id, item.id, place.id, dim, e.target.value)} style={{ width: 55, height: 32, borderRadius: 6, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 12 }}>
+                                  {[1,2,3,4,5,6,7,8,9,10,12,14,16,18,20].map(n => (<option key={n} value={n}>{n}م</option>))}
+                                </select>
+                              ))}
+                              <span style={{ padding: '6px 10px', borderRadius: 6, background: `${colors.success}15`, color: colors.success, fontSize: 12, fontWeight: 700 }}>{place.area}م²</span>
+                              {item.places.length > 1 && <button onClick={() => deletePlace(cat.id, item.id, place.id)} style={{ width: 32, height: 32, borderRadius: 6, border: `1px solid ${colors.danger}`, background: `${colors.danger}10`, color: colors.danger, cursor: 'pointer' }}>✕</button>}
+                            </div>
+                          ))}
+
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => addPlace(cat.id, item.id)} style={{ flex: 1, height: 32, borderRadius: 6, border: `1px solid ${colors.success}`, background: `${colors.success}15`, color: colors.success, fontSize: 12, cursor: 'pointer' }}>+ مكان</button>
+                            <button onClick={() => deleteItem(cat.id, item.id)} style={{ height: 32, padding: '0 12px', borderRadius: 6, border: `1px solid ${colors.danger}`, background: `${colors.danger}10`, color: colors.danger, fontSize: 12, cursor: 'pointer' }}>حذف</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                <button onClick={() => addItem(cat.id)} style={{ width: '100%', height: 44, borderRadius: 10, border: `1px solid ${colors.success}`, background: `${colors.success}15`, color: colors.success, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 8 }}>+ إضافة بند</button>
+
+                <div style={{ padding: 14, background: `${colors.primary}10`, borderRadius: 10, marginTop: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ color: colors.text, fontSize: 12 }}>البنود</span><span style={{ color: colors.text, fontSize: 12, fontWeight: 600 }}>{formatNumber(catTotals.totalPrice)}﷼</span></div>
+                  {cat.options?.taxPercent > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ color: colors.primary, fontSize: 12 }}>+ ضريبة {cat.options.taxPercent}%</span><span style={{ color: colors.primary, fontSize: 12 }}>{formatNumber(catTotals.taxAmount)}﷼</span></div>}
+                  <div style={{ borderTop: `1px solid ${colors.primary}30`, paddingTop: 8, display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 14, fontWeight: 700, color: colors.text }}>الإجمالي</span><span style={{ fontSize: 18, fontWeight: 800, color: colors.success }}>{formatNumber(catTotals.finalTotal)}﷼</span></div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {hasCategories && (
+        <div style={{ background: `linear-gradient(135deg, ${colors.success}20, ${colors.primary}20)`, borderRadius: 16, padding: 24, border: `2px solid ${colors.success}50`, textAlign: 'center', marginTop: 20 }}>
+          <div style={{ fontSize: 14, color: colors.muted, marginBottom: 8 }}>💰 الإجمالي الكلي</div>
+          <div style={{ fontSize: 36, fontWeight: 800, color: '#fff' }}>{formatNumber(getGrandTotal())}</div>
+          <div style={{ fontSize: 14, color: colors.success, fontWeight: 600 }}>ريال سعودي</div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default CalculatorSection;
