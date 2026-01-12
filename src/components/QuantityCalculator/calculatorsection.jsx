@@ -387,12 +387,12 @@ const CalculatorSection = ({ colors, places, workItems, programming, itemTypes, 
                                   <select value={place.name} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'name', e.target.value)} style={{ ...selectStyle, flex: 1, minWidth: 80, height: 30, borderRadius: 4, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 11 }}>
                                     {placesList.map(p => (<option key={p} value={p}>{p}</option>))}
                                   </select>
-                                  <select value={place.measureType || 'auto'} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'measureType', e.target.value)} style={{ ...selectStyle, width: 75, height: 30, borderRadius: 4, border: `1px solid ${colors.cyan}`, background: colors.bg, color: colors.cyan, fontSize: 10 }}>
-                                    <option value="auto">{place.length || 4}×{place.width || 4}</option>
-                                    <option value="manual">يدوي</option>
-                                  </select>
                                   {(place.measureType || 'auto') === 'auto' ? (
                                     <>
+                                      <select value="auto" onChange={(e) => updatePlace(cat.id, item.id, place.id, 'measureType', e.target.value)} style={{ ...selectStyle, width: 70, height: 30, borderRadius: 4, border: `1px solid ${colors.cyan}`, background: colors.bg, color: colors.cyan, fontSize: 10, fontWeight: 700 }}>
+                                        <option value="auto">{place.length || 4}×{place.width || 4}</option>
+                                        <option value="manual">يدوي</option>
+                                      </select>
                                       <select value={place.length} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'length', e.target.value)} style={{ ...selectStyle, width: 70, height: 30, borderRadius: 4, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 11 }}>
                                         {[1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,12,14,16,18,20].map(n => (<option key={n} value={n}>الطول {n}</option>))}
                                       </select>
@@ -402,9 +402,15 @@ const CalculatorSection = ({ colors, places, workItems, programming, itemTypes, 
                                       </select>
                                     </>
                                   ) : (
-                                    <input type="number" value={place.manualArea || place.area || ''} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'manualArea', e.target.value)} onFocus={(e) => e.target.select()} placeholder="المساحة" style={{ width: 70, height: 30, padding: '0 8px', borderRadius: 4, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 11, textAlign: 'center' }} />
+                                    <>
+                                      <select value="manual" onChange={(e) => updatePlace(cat.id, item.id, place.id, 'measureType', e.target.value)} style={{ ...selectStyle, width: 70, height: 30, borderRadius: 4, border: `1px solid ${colors.cyan}`, background: colors.bg, color: colors.cyan, fontSize: 10, fontWeight: 700 }}>
+                                        <option value="auto">{place.length || 4}×{place.width || 4}</option>
+                                        <option value="manual">يدوي</option>
+                                      </select>
+                                      <input type="number" value={place.manualArea || place.area || ''} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'manualArea', e.target.value)} onFocus={(e) => e.target.select()} placeholder="المساحة م²" style={{ width: 100, height: 30, padding: '0 8px', borderRadius: 4, border: `1px solid ${colors.success}`, background: colors.bg, color: colors.success, fontSize: 12, textAlign: 'center', fontWeight: 700 }} />
+                                    </>
                                   )}
-                                  <select value={place.height || 3} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'height', e.target.value)} style={{ ...selectStyle, width: 75, height: 30, borderRadius: 4, border: `1px solid ${colors.purple}`, background: colors.bg, color: colors.purple, fontSize: 11 }}>
+                                  <select value={place.height || 3} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'height', e.target.value)} style={{ ...selectStyle, width: 80, height: 30, borderRadius: 4, border: `1px solid ${colors.purple}`, background: colors.bg, color: colors.purple, fontSize: 11 }}>
                                     {[2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6].map(n => (<option key={n} value={n}>الارتفاع {n}</option>))}
                                   </select>
                                   <span style={{ padding: '4px 8px', borderRadius: 4, background: `${colors.success}20`, color: colors.success, fontSize: 11, fontWeight: 700, minWidth: 50, textAlign: 'center' }}>{place.area}م²</span>
