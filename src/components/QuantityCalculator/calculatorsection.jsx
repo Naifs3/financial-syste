@@ -31,6 +31,8 @@ const CalculatorSection = ({ colors, places, workItems, programming, itemTypes, 
   const [editingItemId, setEditingItemId] = useState(null);
   const [newCategoryConditionText, setNewCategoryConditionText] = useState('');
   const [addingCategoryCondition, setAddingCategoryCondition] = useState(null);
+  const [newItemConditionText, setNewItemConditionText] = useState('');
+  const [addingItemCondition, setAddingItemCondition] = useState(null);
   const [editingSummary, setEditingSummary] = useState(null);
   const [customSummary, setCustomSummary] = useState({});
   const [phase1Expanded, setPhase1Expanded] = useState(true);
@@ -149,8 +151,17 @@ const CalculatorSection = ({ colors, places, workItems, programming, itemTypes, 
         if (item.id !== itemId) return item;
         return { ...item, places: item.places.map(place => {
           if (place.id !== placeId) return place;
-          const updated = { ...place, [field]: field === 'name' ? value : parseFloat(value) || 0 };
-          if (field === 'length' || field === 'width') { updated.area = updated.length * updated.width; }
+          const updated = { ...place, [field]: field === 'name' || field === 'measureType' ? value : parseFloat(value) || 0 };
+          if (field === 'manualArea') { 
+            updated.area = parseFloat(value) || 0; 
+            updated.manualArea = parseFloat(value) || 0; 
+          } else if (field === 'measureType' && value === 'auto') {
+            updated.area = updated.length * updated.width;
+            delete updated.manualArea;
+          } else if (field === 'length' || field === 'width') { 
+            updated.area = updated.length * updated.width; 
+            delete updated.manualArea;
+          }
           return updated;
         })};
       })};
@@ -193,6 +204,8 @@ const CalculatorSection = ({ colors, places, workItems, programming, itemTypes, 
         return { ...item, conditions: [...(item.conditions || []), conditionText.trim()] };
       })};
     }));
+    setNewItemConditionText('');
+    setAddingItemCondition(null);
   };
 
   const deleteCondition = (catId, itemId, conditionIndex) => {
@@ -370,16 +383,29 @@ const CalculatorSection = ({ colors, places, workItems, programming, itemTypes, 
                             <div style={{ fontSize: 10, color: colors.muted, marginBottom: 6 }}>📍 الأماكن</div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
                               {(item.places || []).map((place) => (
-                                <div key={place.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: `${colors.primary}08`, borderRadius: 6, border: `1px solid ${colors.primary}20` }}>
-                                  <select value={place.name} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'name', e.target.value)} style={{ ...selectStyle, flex: 1, height: 30, borderRadius: 4, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 11 }}>
+                                <div key={place.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: `${colors.primary}08`, borderRadius: 6, border: `1px solid ${colors.primary}20`, flexWrap: 'wrap' }}>
+                                  <select value={place.name} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'name', e.target.value)} style={{ ...selectStyle, flex: 1, minWidth: 80, height: 30, borderRadius: 4, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 11 }}>
                                     {placesList.map(p => (<option key={p} value={p}>{p}</option>))}
                                   </select>
-                                  <select value={place.length} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'length', e.target.value)} style={{ ...selectStyle, width: 55, height: 30, borderRadius: 4, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 11 }}>
-                                    {[1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,12,14,16,18,20].map(n => (<option key={n} value={n}>{n}</option>))}
+                                  <select value={place.measureType || 'auto'} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'measureType', e.target.value)} style={{ ...selectStyle, width: 70, height: 30, borderRadius: 4, border: `1px solid ${colors.cyan}`, background: colors.bg, color: colors.cyan, fontSize: 10 }}>
+                                    <option value="auto">ط×ع</option>
+                                    <option value="manual">يدوي</option>
                                   </select>
-                                  <span style={{ color: colors.muted, fontSize: 12 }}>×</span>
-                                  <select value={place.width} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'width', e.target.value)} style={{ ...selectStyle, width: 55, height: 30, borderRadius: 4, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 11 }}>
-                                    {[1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,12,14,16,18,20].map(n => (<option key={n} value={n}>{n}</option>))}
+                                  {(place.measureType || 'auto') === 'auto' ? (
+                                    <>
+                                      <select value={place.length} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'length', e.target.value)} style={{ ...selectStyle, width: 55, height: 30, borderRadius: 4, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 11 }}>
+                                        {[1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,12,14,16,18,20].map(n => (<option key={n} value={n}>{n}</option>))}
+                                      </select>
+                                      <span style={{ color: colors.muted, fontSize: 12 }}>×</span>
+                                      <select value={place.width} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'width', e.target.value)} style={{ ...selectStyle, width: 55, height: 30, borderRadius: 4, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 11 }}>
+                                        {[1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,12,14,16,18,20].map(n => (<option key={n} value={n}>{n}</option>))}
+                                      </select>
+                                    </>
+                                  ) : (
+                                    <input type="number" value={place.manualArea || place.area || ''} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'manualArea', e.target.value)} onFocus={(e) => e.target.select()} placeholder="المساحة" style={{ width: 70, height: 30, padding: '0 8px', borderRadius: 4, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 11, textAlign: 'center' }} />
+                                  )}
+                                  <select value={place.height || 3} onChange={(e) => updatePlace(cat.id, item.id, place.id, 'height', e.target.value)} style={{ ...selectStyle, width: 55, height: 30, borderRadius: 4, border: `1px solid ${colors.purple}`, background: colors.bg, color: colors.purple, fontSize: 11 }}>
+                                    {[2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6].map(n => (<option key={n} value={n}>{n}م</option>))}
                                   </select>
                                   <span style={{ padding: '4px 8px', borderRadius: 4, background: `${colors.success}20`, color: colors.success, fontSize: 11, fontWeight: 700, minWidth: 50, textAlign: 'center' }}>{place.area}م²</span>
                                   <button onClick={() => deletePlace(cat.id, item.id, place.id)} style={{ width: 26, height: 26, borderRadius: 4, border: `1px solid ${colors.danger}50`, background: `${colors.danger}10`, color: colors.danger, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
@@ -398,10 +424,19 @@ const CalculatorSection = ({ colors, places, workItems, programming, itemTypes, 
                                 </div>
                               ))}
                             </div>
-                            <select onChange={(e) => { if (e.target.value) { addCondition(cat.id, item.id, e.target.value); e.target.value = ''; } }} style={{ ...selectStyle, width: '100%', height: 32, marginBottom: 12, borderRadius: 6, border: `1px solid ${colors.warning}`, background: colors.bg, color: colors.text, fontSize: 11 }}>
-                              <option value="">+ إضافة شرط</option>
-                              {predefinedConditions.filter(c => !item.conditions?.includes(c)).map((c, i) => (<option key={i} value={c}>{c}</option>))}
-                            </select>
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                              <select onChange={(e) => { if (e.target.value) { addCondition(cat.id, item.id, e.target.value); e.target.value = ''; } }} style={{ ...selectStyle, flex: 1, height: 32, borderRadius: 6, border: `1px solid ${colors.warning}`, background: colors.bg, color: colors.text, fontSize: 11 }}>
+                                <option value="">+ إضافة شرط</option>
+                                {predefinedConditions.filter(c => !item.conditions?.includes(c)).map((c, i) => (<option key={i} value={c}>{c}</option>))}
+                              </select>
+                              <button onClick={() => setAddingItemCondition(addingItemCondition === item.id ? null : item.id)} style={{ height: 32, padding: '0 12px', borderRadius: 6, border: `1px solid ${colors.warning}`, background: `${colors.warning}15`, color: colors.warning, fontSize: 11, cursor: 'pointer' }}>+ يدوي</button>
+                            </div>
+                            {addingItemCondition === item.id && (
+                              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                                <input type="text" value={newItemConditionText} onChange={(e) => setNewItemConditionText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addCondition(cat.id, item.id, newItemConditionText); }} placeholder="اكتب الشرط..." style={{ flex: 1, height: 32, padding: '0 12px', borderRadius: 6, border: `1px solid ${colors.border}`, background: colors.bg, color: colors.text, fontSize: 12 }} />
+                                <button onClick={() => addCondition(cat.id, item.id, newItemConditionText)} style={{ height: 32, padding: '0 12px', borderRadius: 6, background: colors.success, color: '#fff', fontSize: 12, cursor: 'pointer', border: 'none' }}>إضافة</button>
+                              </div>
+                            )}
 
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                               <button onClick={() => deleteItem(cat.id, item.id)} style={{ height: 32, padding: '0 12px', borderRadius: 6, border: `1px solid ${colors.danger}`, background: `${colors.danger}10`, color: colors.danger, fontSize: 12, cursor: 'pointer' }}>حذف</button>
