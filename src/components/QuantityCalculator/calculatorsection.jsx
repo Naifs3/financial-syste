@@ -518,37 +518,127 @@ const CalculatorSection = ({ colors, places, workItems, programming, itemTypes, 
                   <div style={{ fontSize: 12, fontWeight: 700, color: colors.warning, marginBottom: 12 }}>📋 الشروط والملاحظات</div>
                   
                   {/* أزرار الخيارات */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
                     
-                    {/* صف الحاوية والمواد */}
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      {/* الحاوية */}
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <div onClick={() => {
+                    {/* صف الحاوية والمواد - النمط 7 */}
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      {/* الحاوية - النمط 7 */}
+                      <div 
+                        onClick={() => {
                           const states = ['with', 'notMentioned', 'without'];
                           const currentIndex = states.indexOf(cat.options?.containerState || 'notMentioned');
                           updateCategoryOptions(cat.id, 'containerState', states[(currentIndex + 1) % states.length]);
-                        }} style={{ ...optionButtonStyle(cat.options?.containerState !== 'notMentioned', cat.options?.containerState === 'with' ? colors.warning : colors.danger), minWidth: 90, flex: 'none' }}>
-                          <span>{cat.options?.containerState === 'with' ? '🚛' : cat.options?.containerState === 'without' ? '🚫' : '➖'}</span>
-                          <span>{cat.options?.containerState === 'with' ? 'شامل' : cat.options?.containerState === 'without' ? 'بدون' : 'الحاوية'}</span>
-                        </div>
+                        }}
+                        style={{ 
+                          flex: 1, 
+                          position: 'relative', 
+                          display: 'flex', 
+                          alignItems: 'center',
+                          height: 44,
+                          borderRadius: 10,
+                          border: `1px solid ${cat.options?.containerState === 'with' ? colors.warning : cat.options?.containerState === 'without' ? colors.danger : colors.border}40`,
+                          background: cat.options?.containerState === 'with' ? `${colors.warning}12` : cat.options?.containerState === 'without' ? `${colors.danger}08` : `${colors.border}15`,
+                          cursor: 'pointer',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        <span style={{ 
+                          position: 'absolute', 
+                          right: 12, 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 6, 
+                          color: cat.options?.containerState === 'with' ? colors.warning : cat.options?.containerState === 'without' ? colors.danger : colors.muted, 
+                          fontSize: 12, 
+                          fontWeight: 600,
+                          pointerEvents: 'none'
+                        }}>
+                          {cat.options?.containerState === 'with' ? '🚛' : cat.options?.containerState === 'without' ? '🚫' : '➖'}
+                          {cat.options?.containerState === 'with' ? 'الحاوية' : cat.options?.containerState === 'without' ? 'بدون حاوية' : 'الحاوية'}
+                        </span>
                         {cat.options?.containerState === 'with' && (
-                          <input type="number" value={cat.options?.totalsContainerAmount || ''} onChange={(e) => updateCategoryOptions(cat.id, 'totalsContainerAmount', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="السعر" style={{ flex: 1, minWidth: 60, height: 34, padding: '0 8px', borderRadius: 8, border: `1px solid ${colors.warning}50`, background: colors.bg, color: colors.warning, fontSize: 12, fontWeight: 500, textAlign: 'center' }} />
+                          <>
+                            <input 
+                              type="number" 
+                              value={cat.options?.totalsContainerAmount || ''} 
+                              onChange={(e) => { e.stopPropagation(); updateCategoryOptions(cat.id, 'totalsContainerAmount', parseFloat(e.target.value) || 0); }} 
+                              onClick={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.target.select()} 
+                              placeholder="0" 
+                              style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                padding: '0 40px 0 100px', 
+                                border: 'none', 
+                                background: 'transparent', 
+                                color: '#fff', 
+                                fontSize: 14, 
+                                fontWeight: 600,
+                                textAlign: 'left'
+                              }} 
+                            />
+                            <span style={{ position: 'absolute', left: 12, color: colors.warning, fontSize: 12, pointerEvents: 'none' }}>﷼</span>
+                          </>
                         )}
                       </div>
 
-                      {/* المواد */}
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <div onClick={() => {
+                      {/* المواد - النمط 7 */}
+                      <div 
+                        onClick={() => {
                           const states = ['with', 'notMentioned', 'without'];
                           const currentIndex = states.indexOf(cat.options?.materialsState || 'notMentioned');
                           updateCategoryOptions(cat.id, 'materialsState', states[(currentIndex + 1) % states.length]);
-                        }} style={{ ...optionButtonStyle(cat.options?.materialsState !== 'notMentioned', cat.options?.materialsState === 'with' ? colors.success : colors.danger), minWidth: 90, flex: 'none' }}>
-                          <span>{cat.options?.materialsState === 'with' ? '🧱' : cat.options?.materialsState === 'without' ? '🚫' : '➖'}</span>
-                          <span>{cat.options?.materialsState === 'with' ? 'شامل' : cat.options?.materialsState === 'without' ? 'بدون' : 'المواد'}</span>
-                        </div>
+                        }}
+                        style={{ 
+                          flex: 1, 
+                          position: 'relative', 
+                          display: 'flex', 
+                          alignItems: 'center',
+                          height: 44,
+                          borderRadius: 10,
+                          border: `1px solid ${cat.options?.materialsState === 'with' ? colors.success : cat.options?.materialsState === 'without' ? colors.danger : colors.border}40`,
+                          background: cat.options?.materialsState === 'with' ? `${colors.success}12` : cat.options?.materialsState === 'without' ? `${colors.danger}08` : `${colors.border}15`,
+                          cursor: 'pointer',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        <span style={{ 
+                          position: 'absolute', 
+                          right: 12, 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 6, 
+                          color: cat.options?.materialsState === 'with' ? colors.success : cat.options?.materialsState === 'without' ? colors.danger : colors.muted, 
+                          fontSize: 12, 
+                          fontWeight: 600,
+                          pointerEvents: 'none'
+                        }}>
+                          {cat.options?.materialsState === 'with' ? '🧱' : cat.options?.materialsState === 'without' ? '🚫' : '➖'}
+                          {cat.options?.materialsState === 'with' ? 'المواد' : cat.options?.materialsState === 'without' ? 'بدون مواد' : 'المواد'}
+                        </span>
                         {cat.options?.materialsState === 'with' && (
-                          <input type="number" value={cat.options?.materialsAmount || ''} onChange={(e) => updateCategoryOptions(cat.id, 'materialsAmount', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="السعر" style={{ flex: 1, minWidth: 60, height: 34, padding: '0 8px', borderRadius: 8, border: `1px solid ${colors.success}50`, background: colors.bg, color: colors.success, fontSize: 12, fontWeight: 500, textAlign: 'center' }} />
+                          <>
+                            <input 
+                              type="number" 
+                              value={cat.options?.materialsAmount || ''} 
+                              onChange={(e) => { e.stopPropagation(); updateCategoryOptions(cat.id, 'materialsAmount', parseFloat(e.target.value) || 0); }} 
+                              onClick={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.target.select()} 
+                              placeholder="0" 
+                              style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                padding: '0 40px 0 90px', 
+                                border: 'none', 
+                                background: 'transparent', 
+                                color: '#fff', 
+                                fontSize: 14, 
+                                fontWeight: 600,
+                                textAlign: 'left'
+                              }} 
+                            />
+                            <span style={{ position: 'absolute', left: 12, color: colors.success, fontSize: 12, pointerEvents: 'none' }}>﷼</span>
+                          </>
                         )}
                       </div>
                     </div>
@@ -667,81 +757,99 @@ const CalculatorSection = ({ colors, places, workItems, programming, itemTypes, 
                 </div>
 
                 {/* ═══════════════════════════════════════════════════════════════════ */}
-                {/* ملخص السعر - ظاهر دائماً بدون زر */}
+                {/* ملخص السعر - النمط 3 (زر تبديل + حقل) */}
                 {/* ═══════════════════════════════════════════════════════════════════ */}
                 <div style={{ padding: 16, background: `${colors.primary}10`, borderRadius: 12, border: `1px solid ${colors.primary}30` }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: colors.primary, marginBottom: 16 }}>💰 ملخص السعر</div>
                   
-                  {/* جدول الأسعار */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {/* جدول الأسعار - النمط 3 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     
                     {/* الأسعار الأساسية */}
-                    <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: 8, background: `${colors.text}08` }}>
-                      <div style={{ flex: 1, color: colors.text, fontSize: 12, fontWeight: 600 }}>الأسعار الأساسية</div>
-                      <div style={{ minWidth: 100, textAlign: 'left', fontSize: 13, fontWeight: 700, color: colors.text }}>{formatNumber(catTotals.totalPrice)} ر.س</div>
+                    <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: `1px solid ${colors.text}30` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: `${colors.text}15`, color: colors.text, fontSize: 12, fontWeight: 600 }}>💵 الأسعار الأساسية</div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 16px', background: colors.bg, borderRight: `1px solid ${colors.text}20` }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: colors.text }}>{formatNumber(catTotals.totalPrice)} ر.س</span>
+                      </div>
                     </div>
 
                     {/* الحاوية - يظهر فقط إذا كان شامل */}
                     {cat.options?.containerState === 'with' && (
-                      <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: 8 }}>
-                        <div style={{ flex: 1, color: colors.warning, fontSize: 12, fontWeight: 600 }}>🚛 الحاوية</div>
-                        <div style={{ minWidth: 100, textAlign: 'left', fontSize: 13, fontWeight: 700, color: colors.warning }}>+{formatNumber(cat.options?.totalsContainerAmount || 0)} ر.س</div>
+                      <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: `1px solid ${colors.warning}40` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: `${colors.warning}20`, color: colors.warning, fontSize: 12, fontWeight: 600 }}>🚛 الحاوية</div>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 16px', background: colors.bg, borderRight: `1px solid ${colors.warning}30` }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: colors.warning }}>+{formatNumber(cat.options?.totalsContainerAmount || 0)} ر.س</span>
+                        </div>
                       </div>
                     )}
 
                     {/* المواد - يظهر فقط إذا كان شامل */}
                     {cat.options?.materialsState === 'with' && (
-                      <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: 8, background: `${colors.text}08` }}>
-                        <div style={{ flex: 1, color: colors.success, fontSize: 12, fontWeight: 600 }}>🧱 المواد</div>
-                        <div style={{ minWidth: 100, textAlign: 'left', fontSize: 13, fontWeight: 700, color: colors.success }}>+{formatNumber(cat.options?.materialsAmount || 0)} ر.س</div>
+                      <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: `1px solid ${colors.success}40` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: `${colors.success}20`, color: colors.success, fontSize: 12, fontWeight: 600 }}>🧱 المواد</div>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 16px', background: colors.bg, borderRight: `1px solid ${colors.success}30` }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: colors.success }}>+{formatNumber(cat.options?.materialsAmount || 0)} ر.س</span>
+                        </div>
                       </div>
                     )}
 
                     {/* مبلغ إضافي */}
-                    <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: 8 }}>
-                      <div style={{ flex: 1, color: colors.success, fontSize: 12, fontWeight: 600 }}>➕ مبلغ إضافي</div>
-                      <input type="number" value={cat.options?.customAmount || ''} onChange={(e) => updateCategoryOptions(cat.id, 'customAmount', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="0" style={{ width: 70, height: 28, padding: '0 8px', borderRadius: 6, border: `1px solid ${colors.success}50`, background: colors.bg, color: colors.success, fontSize: 12, fontWeight: 500, textAlign: 'center' }} />
-                      <div style={{ minWidth: 100, textAlign: 'left', fontSize: 13, fontWeight: 700, color: (cat.options?.customAmount || 0) > 0 ? colors.success : colors.muted, marginRight: 8 }}>
-                        {(cat.options?.customAmount || 0) > 0 ? `+${formatNumber(cat.options?.customAmount)} ر.س` : '—'}
+                    <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: `1px solid ${colors.success}40` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: `${colors.success}20`, color: colors.success, fontSize: 12, fontWeight: 600 }}>➕ مبلغ إضافي</div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: colors.bg, borderRight: `1px solid ${colors.success}30` }}>
+                        <input type="number" value={cat.options?.customAmount || ''} onChange={(e) => updateCategoryOptions(cat.id, 'customAmount', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="0" style={{ flex: 1, height: 40, padding: '0 12px', border: 'none', background: 'transparent', color: '#fff', fontSize: 13, textAlign: 'center' }} />
+                        <span style={{ padding: '0 12px', color: colors.success, fontSize: 12 }}>﷼</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', padding: '0 14px', background: `${colors.success}10`, color: (cat.options?.customAmount || 0) > 0 ? colors.success : colors.muted, fontSize: 13, fontWeight: 700 }}>
+                        {(cat.options?.customAmount || 0) > 0 ? `+${formatNumber(cat.options?.customAmount)}` : '—'}
                       </div>
                     </div>
 
                     {/* إضافة نسبة */}
-                    <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: 8, background: `${colors.text}08` }}>
-                      <div style={{ flex: 1, color: colors.success, fontSize: 12, fontWeight: 600 }}>📈 إضافة نسبة</div>
-                      <input type="number" value={cat.options?.profitPercent || ''} onChange={(e) => updateCategoryOptions(cat.id, 'profitPercent', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="0" style={{ width: 50, height: 28, padding: '0 6px', borderRadius: 6, border: `1px solid ${colors.success}50`, background: colors.bg, color: colors.success, fontSize: 12, fontWeight: 500, textAlign: 'center' }} />
-                      <span style={{ color: colors.success, fontSize: 11, marginLeft: 4 }}>%</span>
-                      <div style={{ minWidth: 100, textAlign: 'left', fontSize: 13, fontWeight: 700, color: (cat.options?.profitPercent || 0) > 0 ? colors.success : colors.muted, marginRight: 8 }}>
-                        {(cat.options?.profitPercent || 0) > 0 ? `+${formatNumber(catTotals.profitAmount)} ر.س` : '—'}
+                    <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: `1px solid ${colors.success}40` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: `${colors.success}20`, color: colors.success, fontSize: 12, fontWeight: 600 }}>📈 إضافة نسبة</div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: colors.bg, borderRight: `1px solid ${colors.success}30` }}>
+                        <input type="number" value={cat.options?.profitPercent || ''} onChange={(e) => updateCategoryOptions(cat.id, 'profitPercent', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="0" style={{ flex: 1, height: 40, padding: '0 12px', border: 'none', background: 'transparent', color: '#fff', fontSize: 13, textAlign: 'center' }} />
+                        <span style={{ padding: '0 12px', color: colors.success, fontSize: 12 }}>%</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', padding: '0 14px', background: `${colors.success}10`, color: (cat.options?.profitPercent || 0) > 0 ? colors.success : colors.muted, fontSize: 13, fontWeight: 700 }}>
+                        {(cat.options?.profitPercent || 0) > 0 ? `+${formatNumber(catTotals.profitAmount)}` : '—'}
                       </div>
                     </div>
 
                     {/* خصم مبلغ */}
-                    <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: 8 }}>
-                      <div style={{ flex: 1, color: colors.danger, fontSize: 12, fontWeight: 600 }}>➖ خصم مبلغ</div>
-                      <input type="number" value={cat.options?.discountAmount || ''} onChange={(e) => updateCategoryOptions(cat.id, 'discountAmount', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="0" style={{ width: 70, height: 28, padding: '0 8px', borderRadius: 6, border: `1px solid ${colors.danger}50`, background: colors.bg, color: colors.danger, fontSize: 12, fontWeight: 500, textAlign: 'center' }} />
-                      <div style={{ minWidth: 100, textAlign: 'left', fontSize: 13, fontWeight: 700, color: (cat.options?.discountAmount || 0) > 0 ? colors.danger : colors.muted, marginRight: 8 }}>
-                        {(cat.options?.discountAmount || 0) > 0 ? `-${formatNumber(cat.options?.discountAmount)} ر.س` : '—'}
+                    <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: `1px solid ${colors.danger}40` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: `${colors.danger}20`, color: colors.danger, fontSize: 12, fontWeight: 600 }}>➖ خصم مبلغ</div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: colors.bg, borderRight: `1px solid ${colors.danger}30` }}>
+                        <input type="number" value={cat.options?.discountAmount || ''} onChange={(e) => updateCategoryOptions(cat.id, 'discountAmount', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="0" style={{ flex: 1, height: 40, padding: '0 12px', border: 'none', background: 'transparent', color: '#fff', fontSize: 13, textAlign: 'center' }} />
+                        <span style={{ padding: '0 12px', color: colors.danger, fontSize: 12 }}>﷼</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', padding: '0 14px', background: `${colors.danger}10`, color: (cat.options?.discountAmount || 0) > 0 ? colors.danger : colors.muted, fontSize: 13, fontWeight: 700 }}>
+                        {(cat.options?.discountAmount || 0) > 0 ? `-${formatNumber(cat.options?.discountAmount)}` : '—'}
                       </div>
                     </div>
 
                     {/* خصم نسبة */}
-                    <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: 8, background: `${colors.text}08` }}>
-                      <div style={{ flex: 1, color: colors.danger, fontSize: 12, fontWeight: 600 }}>📉 خصم نسبة</div>
-                      <input type="number" value={cat.options?.discountPercent || ''} onChange={(e) => updateCategoryOptions(cat.id, 'discountPercent', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="0" style={{ width: 50, height: 28, padding: '0 6px', borderRadius: 6, border: `1px solid ${colors.danger}50`, background: colors.bg, color: colors.danger, fontSize: 12, fontWeight: 500, textAlign: 'center' }} />
-                      <span style={{ color: colors.danger, fontSize: 11, marginLeft: 4 }}>%</span>
-                      <div style={{ minWidth: 100, textAlign: 'left', fontSize: 13, fontWeight: 700, color: (cat.options?.discountPercent || 0) > 0 ? colors.danger : colors.muted, marginRight: 8 }}>
-                        {(cat.options?.discountPercent || 0) > 0 ? `-${formatNumber(catTotals.discountByPercent)} ر.س` : '—'}
+                    <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: `1px solid ${colors.danger}40` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: `${colors.danger}20`, color: colors.danger, fontSize: 12, fontWeight: 600 }}>📉 خصم نسبة</div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: colors.bg, borderRight: `1px solid ${colors.danger}30` }}>
+                        <input type="number" value={cat.options?.discountPercent || ''} onChange={(e) => updateCategoryOptions(cat.id, 'discountPercent', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="0" style={{ flex: 1, height: 40, padding: '0 12px', border: 'none', background: 'transparent', color: '#fff', fontSize: 13, textAlign: 'center' }} />
+                        <span style={{ padding: '0 12px', color: colors.danger, fontSize: 12 }}>%</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', padding: '0 14px', background: `${colors.danger}10`, color: (cat.options?.discountPercent || 0) > 0 ? colors.danger : colors.muted, fontSize: 13, fontWeight: 700 }}>
+                        {(cat.options?.discountPercent || 0) > 0 ? `-${formatNumber(catTotals.discountByPercent)}` : '—'}
                       </div>
                     </div>
 
                     {/* الضريبة */}
-                    <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: 8 }}>
-                      <div style={{ flex: 1, color: colors.primary, fontSize: 12, fontWeight: 600 }}>🏛️ الضريبة</div>
-                      <input type="number" value={cat.options?.taxPercent || ''} onChange={(e) => updateCategoryOptions(cat.id, 'taxPercent', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="0" style={{ width: 50, height: 28, padding: '0 6px', borderRadius: 6, border: `1px solid ${colors.primary}50`, background: colors.bg, color: colors.primary, fontSize: 12, fontWeight: 500, textAlign: 'center' }} />
-                      <span style={{ color: colors.primary, fontSize: 11, marginLeft: 4 }}>%</span>
-                      <div style={{ minWidth: 100, textAlign: 'left', fontSize: 13, fontWeight: 700, color: (cat.options?.taxPercent || 0) > 0 ? colors.primary : colors.muted, marginRight: 8 }}>
-                        {(cat.options?.taxPercent || 0) > 0 ? `+${formatNumber(catTotals.taxAmount)} ر.س` : '—'}
+                    <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: `1px solid ${colors.primary}40` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: `${colors.primary}20`, color: colors.primary, fontSize: 12, fontWeight: 600 }}>🏛️ الضريبة</div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: colors.bg, borderRight: `1px solid ${colors.primary}30` }}>
+                        <input type="number" value={cat.options?.taxPercent || ''} onChange={(e) => updateCategoryOptions(cat.id, 'taxPercent', parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} placeholder="0" style={{ flex: 1, height: 40, padding: '0 12px', border: 'none', background: 'transparent', color: '#fff', fontSize: 13, textAlign: 'center' }} />
+                        <span style={{ padding: '0 12px', color: colors.primary, fontSize: 12 }}>%</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', padding: '0 14px', background: `${colors.primary}10`, color: (cat.options?.taxPercent || 0) > 0 ? colors.primary : colors.muted, fontSize: 13, fontWeight: 700 }}>
+                        {(cat.options?.taxPercent || 0) > 0 ? `+${formatNumber(catTotals.taxAmount)}` : '—'}
                       </div>
                     </div>
                   </div>
