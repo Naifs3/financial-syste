@@ -1,10 +1,10 @@
-// QuantityCalculator.jsx - نسخة مبسطة للاختبار
+// QuantityCalculator.jsx - نسخة مصححة
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 
 const QuantityCalculator = ({ darkMode, theme }) => {
-  // ألوان بسيطة
+  // ألوان
   const colors = {
     bg: '#0f172a',
     card: '#1e293b',
@@ -37,11 +37,11 @@ const QuantityCalculator = ({ darkMode, theme }) => {
   const defaultPlaces = ['دورة مياه 1', 'دورة مياه 2', 'غرفة نوم 1', 'غرفة نوم 2', 'صالة', 'مطبخ', 'مجلس'];
 
   // === States ===
-  const [places, setPlaces] = useState([]); // الأماكن من Firebase
+  const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPlaces, setSelectedPlaces] = useState([]); // الأماكن المختارة
-  const [selectedWorkItems, setSelectedWorkItems] = useState({}); // البنود المختارة
-  const [categories, setCategories] = useState([]); // الفئات المضافة
+  const [selectedPlaces, setSelectedPlaces] = useState([]);
+  const [selectedWorkItems, setSelectedWorkItems] = useState({});
+  const [categories, setCategories] = useState([]);
   const [expandedCat, setExpandedCat] = useState(null);
   const [dimensions, setDimensions] = useState({ length: 4, width: 4 });
 
@@ -53,7 +53,6 @@ const QuantityCalculator = ({ darkMode, theme }) => {
         const data = snap.docs.map(d => ({ id: d.id, name: d.data().name }));
         setPlaces(data);
         setLoading(false);
-        // إضافة أماكن افتراضية إذا فارغة
         if (data.length === 0) {
           defaultPlaces.forEach(name => {
             addDoc(collection(db, 'calculator_places'), { name, createdAt: serverTimestamp() });
@@ -76,13 +75,20 @@ const QuantityCalculator = ({ darkMode, theme }) => {
     setSelectedWorkItems(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // === إضافة للفئات ===
   const addToCategories = () => {
+    console.log('--- بدء الإضافة ---');
+    console.log('الأماكن المختارة:', selectedPlaces);
+    console.log('البنود المختارة:', selectedWorkItems);
+    
     if (selectedPlaces.length === 0) {
       alert('اختر أماكن أولاً');
       return;
     }
     
     const activeKeys = Object.keys(selectedWorkItems).filter(k => selectedWorkItems[k]);
+    console.log('البنود الفعالة:', activeKeys);
+    
     if (activeKeys.length === 0) {
       alert('اختر بنود أولاً');
       return;
@@ -90,7 +96,6 @@ const QuantityCalculator = ({ darkMode, theme }) => {
 
     const area = dimensions.length * dimensions.width;
     
-    // إنشاء الأماكن الجديدة
     const newPlaces = selectedPlaces.map((name, i) => ({
       id: `place_${Date.now()}_${i}`,
       name,
@@ -99,88 +104,94 @@ const QuantityCalculator = ({ darkMode, theme }) => {
       width: dimensions.width,
     }));
 
-    setCategories(prev => {
-      const updated = [...prev];
+    console.log('الأماكن الجديدة:', newPlaces);
+
+    const newCategories = [];
+    
+    activeKeys.forEach(key => {
+      const config = workItemsConfig[key];
+      const catId = `cat_${Date.now()}_${key}`;
       
-      activeKeys.forEach(key => {
-        const config = workItemsConfig[key];
-        const existingIdx = updated.findIndex(c => c.code === key);
-        
-        if (existingIdx >= 0) {
-          // الفئة موجودة - أضف الأماكن للمعلق
-          updated[existingIdx] = {
-            ...updated[existingIdx],
-            pendingPlaces: [
-              ...(updated[existingIdx].pendingPlaces || []),
-              ...newPlaces.map((p, i) => ({ ...p, id: `${p.id}_${key}_${i}` }))
-            ]
-          };
-        } else {
-          // إنشاء فئة جديدة
-          updated.push({
-            id: `cat_${Date.now()}_${key}`,
-            code: key,
-            name: config.name,
-            icon: config.icon,
-            color: config.color,
-            subItems: config.subItems,
-            items: [],
-            pendingPlaces: newPlaces.map((p, i) => ({ ...p, id: `${p.id}_${key}_new_${i}` })),
-          });
-        }
+      newCategories.push({
+        id: catId,
+        code: key,
+        name: config.name,
+        icon: config.icon,
+        color: config.color,
+        subItems: config.subItems,
+        items: [],
+        pendingPlaces: newPlaces.map((p, i) => ({ ...p, id: `${p.id}_${key}_${i}` })),
       });
-      
-      // فتح أول فئة
-      if (updated.length > 0) {
-        setTimeout(() => setExpandedCat(updated[updated.length - 1].id), 50);
-      }
-      
+    });
+
+    console.log('الفئات الجديدة:', newCategories);
+
+    setCategories(prev => {
+      const updated = [...prev, ...newCategories];
+      console.log('الفئات بعد التحديث:', updated);
       return updated;
     });
 
+    // فتح أول فئة جديدة
+    if (newCategories.length > 0) {
+      setExpandedCat(newCategories[0].id);
+    }
+
     setSelectedPlaces([]);
-    alert('تمت الإضافة!');
+    setSelectedWorkItems({});
   };
 
   // === اختيار البند الفرعي ===
   const assignSubItem = (catId, placeId, subItemCode) => {
+    console.log('--- اختيار بند فرعي ---');
+    console.log('catId:', catId, 'placeId:', placeId, 'subItemCode:', subItemCode);
+    
     if (!subItemCode) return;
     
-    setCategories(prev => prev.map(cat => {
-      if (cat.id !== catId) return cat;
+    setCategories(prev => {
+      const updated = prev.map(cat => {
+        if (cat.id !== catId) return cat;
+        
+        const subItem = cat.subItems.find(s => s.code === subItemCode);
+        const place = cat.pendingPlaces.find(p => p.id === placeId);
+        
+        console.log('subItem:', subItem, 'place:', place);
+        
+        if (!subItem || !place) return cat;
+        
+        const newItem = {
+          id: `item_${Date.now()}`,
+          code: subItem.code,
+          name: subItem.name,
+          price: subItem.price,
+          places: [{ ...place }],
+        };
+        
+        console.log('البند الجديد:', newItem);
+        
+        return {
+          ...cat,
+          items: [...cat.items, newItem],
+          pendingPlaces: cat.pendingPlaces.filter(p => p.id !== placeId),
+        };
+      });
       
-      const subItem = cat.subItems.find(s => s.code === subItemCode);
-      const place = cat.pendingPlaces.find(p => p.id === placeId);
-      
-      if (!subItem || !place) return cat;
-      
-      // إنشاء بند جديد
-      const newItem = {
-        id: `item_${Date.now()}`,
-        code: subItem.code,
-        name: subItem.name,
-        price: subItem.price,
-        places: [{ ...place }],
-      };
-      
-      return {
-        ...cat,
-        items: [...cat.items, newItem],
-        pendingPlaces: cat.pendingPlaces.filter(p => p.id !== placeId),
-      };
-    }));
+      console.log('الفئات بعد التحديث:', updated);
+      return updated;
+    });
   };
 
   // === حذف فئة ===
   const deleteCategory = (catId) => {
     setCategories(prev => prev.filter(c => c.id !== catId));
+    setExpandedCat(null);
   };
 
   // === حساب الإجمالي ===
   const getCatTotal = (cat) => {
-    return cat.items.reduce((sum, item) => {
-      const itemArea = item.places.reduce((s, p) => s + p.area, 0);
-      return sum + (itemArea * item.price);
+    return (cat.items || []).reduce((sum, item) => {
+      const itemArea = (item.places || []).reduce((s, p) => s + (p.area || 0), 0);
+      return sum + (itemArea * (item.price || 0));
     }, 0);
   };
 
@@ -189,12 +200,17 @@ const QuantityCalculator = ({ darkMode, theme }) => {
   // === التحميل ===
   if (loading) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: colors.muted }}>
+      <div style={{ padding: 40, textAlign: 'center', color: colors.muted, direction: 'rtl' }}>
         <div style={{ fontSize: 40 }}>⏳</div>
         <p>جاري التحميل...</p>
       </div>
     );
   }
+
+  // === Debug Info ===
+  console.log('=== RENDER ===');
+  console.log('categories:', categories);
+  console.log('categories.length:', categories.length);
 
   // === العرض ===
   return (
@@ -202,7 +218,7 @@ const QuantityCalculator = ({ darkMode, theme }) => {
       
       {/* ===== نموذج الإدخال ===== */}
       <div style={{ background: colors.card, borderRadius: 12, padding: 20, marginBottom: 20, border: `2px solid ${colors.primary}` }}>
-        <h2 style={{ color: colors.text, marginBottom: 16, fontSize: 18 }}>📐 نموذج إدخال سريع</h2>
+        <h2 style={{ color: colors.text, marginBottom: 16, fontSize: 18, margin: 0, marginBottom: 16 }}>📐 نموذج إدخال سريع</h2>
         
         {/* الخطوة 1: الأماكن */}
         <div style={{ marginBottom: 20 }}>
@@ -304,114 +320,130 @@ const QuantityCalculator = ({ darkMode, theme }) => {
         </button>
       </div>
 
+      {/* ===== عداد الفئات للتأكد ===== */}
+      <div style={{ background: colors.warning, color: '#000', padding: 10, borderRadius: 8, marginBottom: 10, fontWeight: 700, textAlign: 'center' }}>
+        عدد الفئات: {categories.length}
+      </div>
+
       {/* ===== الفئات ===== */}
       {categories.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 40, color: colors.muted, background: colors.card, borderRadius: 12 }}>
+        <div style={{ textAlign: 'center', padding: 40, color: colors.muted, background: colors.card, borderRadius: 12, border: `1px solid ${colors.border}` }}>
           <div style={{ fontSize: 40, marginBottom: 10 }}>📦</div>
           <p>لا توجد فئات - أضف من النموذج أعلاه</p>
         </div>
       ) : (
-        categories.map(cat => {
-          const isExpanded = expandedCat === cat.id;
-          const total = getCatTotal(cat);
-          
-          return (
-            <div key={cat.id} style={{ background: colors.card, borderRadius: 12, marginBottom: 12, border: `2px solid ${isExpanded ? cat.color : colors.border}`, overflow: 'hidden' }}>
-              
-              {/* رأس الفئة */}
-              <div
-                onClick={() => setExpandedCat(isExpanded ? null : cat.id)}
-                style={{ padding: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, background: isExpanded ? `${cat.color}15` : 'transparent' }}
-              >
-                <span style={{ fontSize: 28 }}>{cat.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: colors.text }}>{cat.name}</div>
-                  <div style={{ fontSize: 12, color: colors.muted }}>
-                    {cat.items.length} بنود • {cat.pendingPlaces?.length || 0} معلق
+        <div>
+          {categories.map(cat => {
+            const isExpanded = expandedCat === cat.id;
+            const total = getCatTotal(cat);
+            const pendingCount = (cat.pendingPlaces || []).length;
+            const itemsCount = (cat.items || []).length;
+            
+            return (
+              <div key={cat.id} style={{ background: colors.card, borderRadius: 12, marginBottom: 12, border: `2px solid ${isExpanded ? cat.color : colors.border}`, overflow: 'hidden' }}>
+                
+                {/* رأس الفئة */}
+                <div
+                  onClick={() => setExpandedCat(isExpanded ? null : cat.id)}
+                  style={{ padding: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, background: isExpanded ? `${cat.color}15` : 'transparent' }}
+                >
+                  <span style={{ fontSize: 28 }}>{cat.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: colors.text }}>{cat.name}</div>
+                    <div style={{ fontSize: 12, color: colors.muted }}>
+                      {itemsCount} بنود • {pendingCount} معلق
+                    </div>
                   </div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: colors.success }}>{total.toLocaleString()} ﷼</div>
+                  <span style={{ color: cat.color, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: '0.2s' }}>▼</span>
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: colors.success }}>{total.toLocaleString()} ﷼</div>
-                <span style={{ color: cat.color, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: '0.2s' }}>▼</span>
-              </div>
 
-              {/* محتوى الفئة */}
-              {isExpanded && (
-                <div style={{ padding: 16, borderTop: `1px dashed ${cat.color}50` }}>
-                  
-                  {/* الأماكن المعلقة */}
-                  {cat.pendingPlaces?.length > 0 && (
-                    <div style={{ background: `${colors.warning}15`, borderRadius: 10, padding: 14, marginBottom: 16, border: `1px solid ${colors.warning}50` }}>
-                      <div style={{ color: colors.warning, fontWeight: 700, marginBottom: 12 }}>
-                        ⚠️ أماكن تحتاج اختيار البند الفرعي ({cat.pendingPlaces.length})
-                      </div>
-                      {cat.pendingPlaces.map(place => (
-                        <div key={place.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, padding: 10, background: colors.card, borderRadius: 8 }}>
-                          <div style={{ minWidth: 100 }}>
-                            <div style={{ fontWeight: 600, color: colors.text }}>{place.name}</div>
-                            <div style={{ fontSize: 12, color: colors.muted }}>{place.area} م²</div>
-                          </div>
-                          <select
-                            defaultValue=""
-                            onChange={(e) => assignSubItem(cat.id, place.id, e.target.value)}
-                            style={{
-                              flex: 1,
-                              padding: 10,
-                              borderRadius: 6,
-                              border: `2px solid ${cat.color}`,
-                              background: colors.bg,
-                              color: colors.text,
-                              fontSize: 14,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <option value="">-- اختر البند الفرعي --</option>
-                            {cat.subItems.map(s => (
-                              <option key={s.code} value={s.code}>
-                                [{s.code}] {s.name} - {s.price} ﷼/م²
-                              </option>
-                            ))}
-                          </select>
+                {/* محتوى الفئة */}
+                {isExpanded && (
+                  <div style={{ padding: 16, borderTop: `1px dashed ${cat.color}50` }}>
+                    
+                    {/* الأماكن المعلقة */}
+                    {pendingCount > 0 && (
+                      <div style={{ background: `${colors.warning}15`, borderRadius: 10, padding: 14, marginBottom: 16, border: `2px solid ${colors.warning}` }}>
+                        <div style={{ color: colors.warning, fontWeight: 700, marginBottom: 12, fontSize: 14 }}>
+                          ⚠️ أماكن تحتاج اختيار البند الفرعي ({pendingCount})
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* البنود المضافة */}
-                  {cat.items.length > 0 && (
-                    <div>
-                      <div style={{ color: colors.text, fontWeight: 700, marginBottom: 10 }}>📦 البنود ({cat.items.length})</div>
-                      {cat.items.map(item => {
-                        const itemArea = item.places.reduce((s, p) => s + p.area, 0);
-                        const itemTotal = itemArea * item.price;
-                        return (
-                          <div key={item.id} style={{ background: colors.bg, borderRadius: 8, padding: 12, marginBottom: 8, border: `1px solid ${colors.border}` }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div>
-                                <div style={{ fontWeight: 600, color: colors.text }}>[{item.code}] {item.name}</div>
-                                <div style={{ fontSize: 12, color: colors.muted }}>
-                                  📍 {item.places.map(p => p.name).join('، ')} | {itemArea} م² × {item.price} ﷼
-                                </div>
-                              </div>
-                              <div style={{ fontSize: 16, fontWeight: 700, color: colors.success }}>{itemTotal.toLocaleString()} ﷼</div>
+                        {(cat.pendingPlaces || []).map(place => (
+                          <div key={place.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, padding: 12, background: colors.card, borderRadius: 8, border: `1px solid ${colors.border}` }}>
+                            <div style={{ minWidth: 120 }}>
+                              <div style={{ fontWeight: 600, color: colors.text, fontSize: 14 }}>{place.name}</div>
+                              <div style={{ fontSize: 12, color: colors.muted }}>{place.area} م²</div>
                             </div>
+                            <select
+                              defaultValue=""
+                              onChange={(e) => assignSubItem(cat.id, place.id, e.target.value)}
+                              style={{
+                                flex: 1,
+                                padding: 12,
+                                borderRadius: 8,
+                                border: `2px solid ${cat.color}`,
+                                background: colors.bg,
+                                color: colors.text,
+                                fontSize: 14,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <option value="">-- اختر البند الفرعي --</option>
+                              {(cat.subItems || []).map(s => (
+                                <option key={s.code} value={s.code}>
+                                  [{s.code}] {s.name} - {s.price} ﷼/م²
+                                </option>
+                              ))}
+                            </select>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
 
-                  {/* زر الحذف */}
-                  <button
-                    onClick={() => deleteCategory(cat.id)}
-                    style={{ marginTop: 12, padding: '8px 16px', borderRadius: 6, border: `1px solid ${colors.danger}`, background: 'transparent', color: colors.danger, cursor: 'pointer', fontSize: 12 }}
-                  >
-                    🗑️ حذف الفئة
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })
+                    {/* البنود المضافة */}
+                    {itemsCount > 0 && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ color: colors.text, fontWeight: 700, marginBottom: 10, fontSize: 14 }}>📦 البنود ({itemsCount})</div>
+                        {(cat.items || []).map(item => {
+                          const itemArea = (item.places || []).reduce((s, p) => s + (p.area || 0), 0);
+                          const itemTotal = itemArea * (item.price || 0);
+                          return (
+                            <div key={item.id} style={{ background: colors.bg, borderRadius: 8, padding: 14, marginBottom: 8, border: `1px solid ${colors.border}` }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                  <div style={{ fontWeight: 600, color: colors.text, fontSize: 14 }}>[{item.code}] {item.name}</div>
+                                  <div style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>
+                                    📍 {(item.places || []).map(p => p.name).join('، ')} | {itemArea} م² × {item.price} ﷼
+                                  </div>
+                                </div>
+                                <div style={{ fontSize: 18, fontWeight: 700, color: colors.success }}>{itemTotal.toLocaleString()} ﷼</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* لا توجد بنود */}
+                    {itemsCount === 0 && pendingCount === 0 && (
+                      <div style={{ textAlign: 'center', padding: 20, color: colors.muted }}>
+                        لا توجد بنود
+                      </div>
+                    )}
+
+                    {/* زر الحذف */}
+                    <button
+                      onClick={() => deleteCategory(cat.id)}
+                      style={{ padding: '10px 20px', borderRadius: 8, border: `1px solid ${colors.danger}`, background: `${colors.danger}20`, color: colors.danger, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+                    >
+                      🗑️ حذف الفئة
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* ===== الإجمالي ===== */}
@@ -419,7 +451,7 @@ const QuantityCalculator = ({ darkMode, theme }) => {
         <div style={{ background: `linear-gradient(135deg, ${colors.success}20, ${colors.primary}20)`, borderRadius: 12, padding: 24, textAlign: 'center', marginTop: 20, border: `2px solid ${colors.success}` }}>
           <div style={{ color: colors.muted, marginBottom: 8 }}>💰 الإجمالي الكلي</div>
           <div style={{ fontSize: 36, fontWeight: 800, color: '#fff' }}>{getGrandTotal().toLocaleString()}</div>
-          <div style={{ color: colors.success }}>ريال سعودي</div>
+          <div style={{ color: colors.success, fontWeight: 600 }}>ريال سعودي</div>
         </div>
       )}
     </div>
